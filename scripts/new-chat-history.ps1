@@ -4,7 +4,9 @@ param(
     [string]$Title,
     [string]$Summary,
     [string]$NotesPath,
-    [int]$Commits = 10
+    [int]$Commits = 10,
+    [switch]$FromClipboard,
+    [string]$DiscussionPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -37,6 +39,16 @@ if ($NotesPath) {
     }
 }
 
+# Optional full discussion transcript
+$discussionText = $null
+if ($FromClipboard) {
+    try { $discussionText = Get-Clipboard -Raw } catch { }
+}
+if (-not $discussionText -and $DiscussionPath) {
+    $dp = Resolve-Path -ErrorAction SilentlyContinue -- $DiscussionPath
+    if ($dp) { $discussionText = Get-Content -Raw -- $dp }
+}
+
 # Compose content
 $content = @()
 $content += "# Chat History — $((Get-Date).ToUniversalTime().AddHours(8).ToString('yyyy-MM-dd HH:mm:ss')) (UTC+8)"
@@ -55,6 +67,13 @@ $content += ''
 if ($notesContent) {
     $content += '### Notes'
     $content += $notesContent
+    $content += ''
+}
+if ($discussionText) {
+    $content += '### Transcript'
+    $content += '```text'
+    $content += ($discussionText -split "`n")
+    $content += '```'
     $content += ''
 }
 

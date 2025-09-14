@@ -18,6 +18,10 @@ Create timestamped session records in UTC+8.
   - `./scripts/new-chat-history.ps1 -Title "Sprint planning" -Summary "Prioritized tasks and set milestones."`
 - External notes file:
   - `./scripts/new-chat-history.ps1 -NotesPath ./notes/today.md`
+- Full transcript from clipboard:
+  - Copy the chat text, then run: `./scripts/new-chat-history.ps1 -FromClipboard`
+- Full transcript from a file:
+  - `./scripts/new-chat-history.ps1 -DiscussionPath ./exports/chat.txt`
 - Configure number of recent commits (default 10):
   - `./scripts/new-chat-history.ps1 -Commits 25`
 
