@@ -15,7 +15,7 @@ $ErrorActionPreference = 'Stop'
 # Compute UTC+8 timestamp in a filename-safe format
 $timestamp = (Get-Date).ToUniversalTime().AddHours(8).ToString('yyyy-MM-dd_HH-mm-ss-\U\T\C+8')
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$dir = Join-Path $repoRoot 'docs/chat-history'
+$dir = Join-Path $repoRoot 'docs/chat-history/gh-copilot'
 New-Item -ItemType Directory -Path $dir -Force | Out-Null
 
 $file = Join-Path $dir ("$timestamp.md")

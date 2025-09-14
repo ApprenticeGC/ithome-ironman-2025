@@ -34,11 +34,11 @@ A local task is provided at `.vscode/tasks.json` (ignored by git).
 
 ## Output location
 
-Files are created in `docs/chat-history/` named like:
+Files are created in `docs/chat-history/gh-copilot/` named like:
 - `YYYY-MM-DD_HH-mm-ss-UTC+8.md`
 
 ## Notes
 
 - The script uses your current git config and remote.
 - If push fails (e.g. auth), rerun without `-Push` and push manually.
-- Before auto-commit, the script runs `gitleaks` on `docs/chat-history/` if available. If leaks are found, it aborts commit/push. Use `-NoLeakScan` to bypass (not recommended).
+- Before auto-commit, the script runs `gitleaks` on `docs/chat-history/gh-copilot/` if available. If leaks are found, it aborts commit/push. Use `-NoLeakScan` to bypass (not recommended).
