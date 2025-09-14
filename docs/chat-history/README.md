@@ -41,3 +41,4 @@ Files are created in `docs/chat-history/` named like:
 
 - The script uses your current git config and remote.
 - If push fails (e.g. auth), rerun without `-Push` and push manually.
+- Before auto-commit, the script runs `gitleaks` on `docs/chat-history/` if available. If leaks are found, it aborts commit/push. Use `-NoLeakScan` to bypass (not recommended).
