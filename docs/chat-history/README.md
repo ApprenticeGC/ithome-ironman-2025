@@ -10,11 +10,23 @@ Create timestamped session records in UTC+8.
 - Auto-commit and push:
   - PowerShell: `./scripts/new-chat-history.ps1 -Commit -Push`
 
+## Include discussion details
+
+- Inline summary:
+  - `./scripts/new-chat-history.ps1 -Summary "What was discussed, decisions made, next steps."`
+- Title and summary:
+  - `./scripts/new-chat-history.ps1 -Title "Sprint planning" -Summary "Prioritized tasks and set milestones."`
+- External notes file:
+  - `./scripts/new-chat-history.ps1 -NotesPath ./notes/today.md`
+- Configure number of recent commits (default 10):
+  - `./scripts/new-chat-history.ps1 -Commits 25`
+
 ## VS Code Task (local)
 
 A local task is provided at `.vscode/tasks.json` (ignored by git).
 - Open the Command Palette and run: "Tasks: Run Task" -> "New Chat History (UTC+8)".
 - This will generate a file, commit it with a conventional message, and push to `main`.
+- You can add arguments to the task or run the script directly for summaries/notes.
 
 ## Output location
 

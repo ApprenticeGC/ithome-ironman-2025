@@ -1,6 +1,10 @@
 param(
     [switch]$Commit,
-    [switch]$Push
+    [switch]$Push,
+    [string]$Title,
+    [string]$Summary,
+    [string]$NotesPath,
+    [int]$Commits = 10
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,8 +17,25 @@ New-Item -ItemType Directory -Path $dir -Force | Out-Null
 
 $file = Join-Path $dir ("$timestamp.md")
 
-# Gather recent git commits (last 10)
-$recentCommits = git log --oneline -n 10 2>$null
+# Gather repo snapshot
+$branch = git rev-parse --abbrev-ref HEAD 2>$null
+$head = git log -1 --oneline 2>$null
+$status = git status --porcelain=v1 -u 2>$null
+$recentCommits = git log --oneline -n $Commits 2>$null
+
+# Optional notes content
+$notesContent = $null
+if ($NotesPath) {
+    $np = Resolve-Path -ErrorAction SilentlyContinue -- $NotesPath
+    if ($np) {
+        $notesContent = Get-Content -Raw -- $np
+    }
+} else {
+    $defaultNotes = Join-Path $dir 'notes.md'
+    if (Test-Path $defaultNotes) {
+        $notesContent = Get-Content -Raw -- $defaultNotes
+    }
+}
 
 # Compose content
 $content = @()
@@ -22,14 +43,47 @@ $content += "# Chat History — $((Get-Date).ToUniversalTime().AddHours(8).ToStr
 $content += ''
 $content += 'This document records the recent discussion and actions.'
 $content += ''
-$content += '## Recent commits'
+
+# Discussion section
+if ($Title) { $content += "## $Title" } else { $content += '## Discussion' }
+if ($Summary) {
+    $content += $Summary
+} else {
+    $content += '_No summary provided. Use -Summary "..." or -NotesPath to include discussion details._'
+}
+$content += ''
+if ($notesContent) {
+    $content += '### Notes'
+    $content += $notesContent
+    $content += ''
+}
+
+# Repo snapshot
+$content += '## Repo snapshot'
+if ($branch) { $content += "- Branch: $branch" }
+if ($head) { $content += "- HEAD: $head" }
+$content += ''
+
+# Working tree status
+$content += '## Working tree status'
+if ($status) {
+    $content += '```'
+    $content += ($status -split "`n")
+    $content += '```'
+} else {
+    $content += '- clean'
+}
+$content += ''
+
+# Recent commits
+$content += "## Recent commits (last $Commits)"
 if ($recentCommits) {
     $content += ($recentCommits | ForEach-Object { "- $_" })
 } else {
     $content += '- (no recent commits found or git not available)'
 }
 $content += ''
-$content += '## Notes'
+$content += '---'
 $content += '- Created via scripts/new-chat-history.ps1'
 
 Set-Content -Path $file -Value ($content -join [Environment]::NewLine) -Encoding UTF8
