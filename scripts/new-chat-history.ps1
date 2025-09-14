@@ -6,7 +6,8 @@ param(
     [string]$NotesPath,
     [int]$Commits = 10,
     [switch]$FromClipboard,
-    [string]$DiscussionPath
+    [string]$DiscussionPath,
+    [switch]$NoLeakScan
 )
 
 $ErrorActionPreference = 'Stop'
@@ -109,7 +110,29 @@ Set-Content -Path $file -Value ($content -join [Environment]::NewLine) -Encoding
 
 Write-Host "Created: $file"
 
+# Optional secrets scan with gitleaks before committing
+$shouldScan = $true
+if ($NoLeakScan) { $shouldScan = $false }
+
 if ($Commit) {
+    if ($shouldScan) {
+        $gitleaks = Get-Command gitleaks -ErrorAction SilentlyContinue
+        if ($null -ne $gitleaks) {
+            Write-Host "Running gitleaks scan on docs/chat-history ..."
+            & gitleaks detect --no-banner --exit-code 1 --source "$dir" --redact
+            $exit = $LASTEXITCODE
+            if ($exit -ne 0) {
+                Write-Warning "Gitleaks detected potential secrets. Skipping commit and push."
+                Write-Host "Review findings above. To bypass temporarily, rerun with -NoLeakScan (not recommended)."
+                return
+            } else {
+                Write-Host "Gitleaks: no leaks detected. Proceeding to commit."
+            }
+        } else {
+            Write-Host "Gitleaks not found; skipping leak scan. Install via winget: winget install Gitleaks.Gitleaks"
+        }
+    }
+
     git add -- "$file"
     git commit -m "docs(history): add chat history $timestamp"
     Write-Host "Committed chat history: $timestamp"
