@@ -1,6 +1,8 @@
-# Game RFCs (Alias)
+# Game RFCs
 
-Canonical Game RFCs live in `../RFC/`.
+This folder contains the canonical Game RFCs for the generic game/editor (TUI-first) and engine simulation via profiles.
 
-Use this folder path only as a reference alias in tools or editors; do not duplicate RFC files here.
-
+Guidelines
+- Keep RFCs here as the single source of truth.
+- Break into micro issues only when creating GitHub issues (do not add micro files).
+- Use `../rfc-templates/RFC-TEMPLATE.md` to author new RFCs.
