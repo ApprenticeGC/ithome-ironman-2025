@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml)
 [![LOC](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ApprenticeGC/ithome-ironman-2025/main/.github/badges/dotnet_game_loc.json)](./.github/badges/dotnet_game_loc.json)
+[![CI minutes (month)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ApprenticeGC/ithome-ironman-2025/main/.github/badges/runner-usage.json)](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/runner-usage-badge.yml)
 
 Concise repo for notes, demos, and artifacts related to the 2025 iThome Ironman challenge. It uses a lightweight docs-first workflow with small, focused commits and simple automation.
 
@@ -40,3 +41,4 @@ Common actions:
 
 [![CI](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml)
 [![LOC](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ApprenticeGC/ithome-ironman-2025/main/.github/badges/dotnet_game_loc.json)](./.github/badges/dotnet_game_loc.json)
+[![CI minutes (month)](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ApprenticeGC/ithome-ironman-2025/main/.github/badges/runner-usage.json)](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/runner-usage-badge.yml)
