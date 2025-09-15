@@ -3,6 +3,11 @@ name: Auto-advance micro issues
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Optional PR number to process manually
+        required: false
 
 jobs:
   advance:
@@ -24,9 +29,8 @@ jobs:
       - name: Assign next micro-issue to Copilot
         env:
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
           ASSIGN: '1'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python .github/scripts/assign_next_micro_issue.py --assign
-
