@@ -1,0 +1,29 @@
+name: auto-ready-pr
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  mark_ready:
+    if: >-
+      ${
+        github.event.pull_request.draft == true &&
+        (startsWith(github.event.pull_request.title, 'RFC-') || contains(github.event.pull_request.title, 'RFC-')) &&
+        (github.event.pull_request.user.login == 'Copilot' || github.event.pull_request.user.login == 'app/copilot-swe-agent') &&
+        github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name
+      }
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark PR ready for review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            -X POST \
+            repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/ready_for_review
+
