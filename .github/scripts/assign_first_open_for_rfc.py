@@ -75,8 +75,8 @@ def main(argv:list[str]) -> int:
     if not iid:
         return 0
     if bot_id:
-        mut = 'mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId: $assignableId, actorIds: $actorIds }){ clientMutationId } }'
-        subprocess.run(['gh','api','graphql','-f',f'query={mut}','-F',f'assignableId={iid}','-F',f'actorIds={bot_id}'], check=False)
+        mut = 'mutation($assignableId: ID!, $assigneeIds: [ID!]!){ addAssigneesToAssignable(input:{ assignableId: $assignableId, assigneeIds: $assigneeIds }){ clientMutationId } }'
+        subprocess.run(['gh','api','graphql','-f',f'query={mut}','-F',f'assignableId={iid}','-F',f'assigneeIds={bot_id}'], check=False)
     else:
         print('no copilot bot id', file=sys.stderr)
     print(f'assigned #{sel_num} for RFC-{rfc}')
