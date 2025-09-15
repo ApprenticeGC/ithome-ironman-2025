@@ -7,7 +7,9 @@ RFC_RX = re.compile(r"(?:Game-)?RFC-(\d+)-(\d+)")
 
 def run_gh_json(args:list[str]):
     try:
-        res = subprocess.run(['gh']+args, capture_output=True, text=True, check=True)
+        # Force UTF-8 to avoid Windows codepage decode issues
+        env = {**os.environ, 'LC_ALL': 'C.UTF-8', 'LANG': 'C.UTF-8'}
+        res = subprocess.run(['gh']+args, capture_output=True, text=True, check=True, env=env)
         return json.loads(res.stdout) if res.stdout.strip() else None
     except Exception as e:
         print(f"gh failed: {e}"); return None
@@ -38,18 +40,23 @@ def assign_issue_to_copilot(repo:str, issue:int)->bool:
     owner, name = repo.split('/')
     q = '''query($owner:String!,$name:String!){repository(owner:$owner,name:$name){suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){nodes{login __typename ... on Bot {id}}}}}'''
     try:
-        out = subprocess.run(['gh','api','graphql','-f',f'query={q}','-F',f'owner={owner}','-F',f'name={name}'], capture_output=True, text=True, check=True)
+        env = {**os.environ, 'LC_ALL': 'C.UTF-8', 'LANG': 'C.UTF-8'}
+        out = subprocess.run(['gh','api','graphql','-f',f'query={q}','-F',f'owner={owner}','-F',f'name={name}'], capture_output=True, text=True, check=True, env=env)
         data=json.loads(out.stdout)
         nodes=data['data']['repository']['suggestedActors']['nodes']
         bot=None
         for n in nodes:
             if n.get('__typename')=='Bot' and 'copilot' in (n.get('login') or '').lower(): bot=n; break
-        if not bot: return False
+        if not bot:
+            print('No Copilot bot available to assign')
+            return False
         issue_id = run_gh_json(['issue','view',str(issue),'--repo',repo,'--json','id']).get('id')
         mut=f'''mutation{{ replaceActorsForAssignable(input:{{ assignableId:"{issue_id}", actorIds:["{bot['id']}"] }}){{ clientMutationId }} }}'''
-        _=subprocess.run(['gh','api','graphql','-f',f'query={mut}'], capture_output=True, text=True, check=True)
+        _=subprocess.run(['gh','api','graphql','-f',f'query={mut}'], capture_output=True, text=True, check=True, env=env)
+        print(f"Assigned issue #{issue} to Copilot (bot id {bot['id']})")
         return True
-    except Exception:
+    except Exception as e:
+        print(f"Assignment failed: {e}")
         return False
 
 def main():
@@ -76,7 +83,11 @@ def main():
     print(json.dumps({'selected': sel}))
     if assign:
         ok=assign_issue_to_copilot(repo, int(sel['number']))
-        if not ok: sys.exit(1)
+        if not ok:
+            print('Auto-advance: assignment not completed')
+            sys.exit(1)
+        else:
+            print('Auto-advance: assignment succeeded')
 
 if __name__=='__main__':
     main()

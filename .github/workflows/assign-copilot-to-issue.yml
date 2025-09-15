@@ -1,0 +1,49 @@
+name: assign-copilot-to-issue
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to assign to Copilot (e.g., 53)
+        required: true
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve issue and Copilot bot ids
+        id: ids
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          echo "Resolving node id for issue #$ISSUE in $REPO..."
+          IID=$(gh issue view "$ISSUE" --repo "$REPO" --json id --jq .id)
+          if [ -z "$IID" ]; then echo "Failed to resolve issue id"; exit 1; fi
+          OWNER=${REPO%/*}; NAME=${REPO#*/}
+          Q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } } } } }'
+          BOT=$(gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes[] | select(."__typename"=="Bot" and (.login|ascii_downcase|test("copilot"))) | .id' | head -n1)
+          if [ -z "$BOT" ]; then echo "No Copilot bot suggested for assignment"; exit 1; fi
+          echo "iid=$IID" >> $GITHUB_OUTPUT
+          echo "bot=$BOT" >> $GITHUB_OUTPUT
+          echo "Issue id: $IID | Copilot bot id: $BOT"
+
+      - name: Assign Copilot to issue via GraphQL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          IID: ${{ steps.ids.outputs.iid }}
+          BOT: ${{ steps.ids.outputs.bot }}
+        run: |
+          set -euo pipefail
+          M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId:$assignableId, actorIds:$actorIds }){ clientMutationId } }'
+          gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$BOT" >/dev/null
+          echo "Assigned Copilot to issue (assignableId=$IID)"
+          echo "Resulting assignees:"
+          gh issue view "${{ github.event.inputs.issue_number }}" --repo "$REPO" --json assignees --jq '.assignees[].login'
+
