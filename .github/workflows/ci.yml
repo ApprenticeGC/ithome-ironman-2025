@@ -3,6 +3,9 @@ name: ci
 on:
   pull_request:
     branches: ["**"]
+  push:
+    branches:
+      - 'copilot/**'
 
 jobs:
   build_test:
@@ -24,4 +27,3 @@ jobs:
 
       - name: Test
         run: dotnet test ./dotnet --no-build --verbosity normal
-
