@@ -17,3 +17,5 @@ Prove reset-proofs: if a chain breaks and is recreated, the correct issue procee
 | 01    | Create reset-proof placeholder | - [ ] Add `docs/game-rfc-test-95/PLACEHOLDER.md` with `ok-95`; - [ ] Build passes; - [ ] PR uses Conventional Commits and links RFC-095 |
 | 02    | Clean up reset-proof placeholder | - [ ] Remove `docs/game-rfc-test-95/PLACEHOLDER.md`; - [ ] Append `Flow reset tested: RFC-095` to `AGENTS.md`; - [ ] Build passes; - [ ] PR follows Conventional Commits |
 
+
+<!-- sync: trigger 095 -->
