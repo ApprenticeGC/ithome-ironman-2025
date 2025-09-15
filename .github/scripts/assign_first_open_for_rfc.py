@@ -37,6 +37,14 @@ def main(argv:list[str]) -> int:
         print('no copilot bot id', file=sys.stderr)
         return 0
 
+    # Guard: if a PR already exists for this RFC, do not assign a new micro
+    prs = run_gh_json(['pr','list','--repo',repo,'--state','open','--json','number,title']) or []
+    for pr in prs:
+        title = pr.get('title') or ''
+        if (re.search(fr"RFC-{re.escape(rfc)}-\d{{2}}", title, re.IGNORECASE)):
+            print(f'skip: open PR #{pr.get("number")} exists for RFC-{rfc}')
+            return 0
+
     issues = run_gh_json(['issue','list','--repo',repo,'--state','open','--limit','200','--json','number,title,assignees']) or []
     candidates = []
     for it in issues:
@@ -67,4 +75,3 @@ def main(argv:list[str]) -> int:
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
-

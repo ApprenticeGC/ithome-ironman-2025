@@ -21,6 +21,16 @@ def main() -> int:
         return 2
 
     issues = run_gh_json(['issue','list','--repo',repo,'--state','open','--limit','500','--json','number,title,assignees']) or []
+    # Map issue number -> is referenced by an open PR body/title
+    pr_ref: set[int] = set()
+    prs = run_gh_json(['pr','list','--repo',repo,'--state','open','--json','number,title,body']) or []
+    for pr in prs:
+        text = (pr.get('title') or '') + '\n' + (pr.get('body') or '')
+        for m in re.finditer(r'(?i)(close[sd]?|fixe?[sd]?|resolve[sd]?)\s*#(\d+)', text):
+            try:
+                pr_ref.add(int(m.group(2)))
+            except Exception:
+                pass
     groups: dict[str, list[dict]] = {}
     for it in issues:
         title = it.get('title') or ''
@@ -34,8 +44,15 @@ def main() -> int:
     for key, lst in groups.items():
         if len(lst) <= 1:
             continue
-        lst.sort(key=lambda x: x['num'])
-        keep = lst[0]['num']
+        # prefer issue referenced by an open PR
+        keep = None
+        for it in lst:
+            if it['num'] in pr_ref:
+                keep = it['num']
+                break
+        if keep is None:
+            lst.sort(key=lambda x: x['num'])
+            keep = lst[0]['num']
         for d in lst[1:]:
             actions.append((d['num'], keep))
 
@@ -54,4 +71,3 @@ def main() -> int:
 
 if __name__ == '__main__':
     sys.exit(main())
-
