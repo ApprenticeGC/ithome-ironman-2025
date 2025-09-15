@@ -29,3 +29,6 @@ logs/
 
 # Editor
 .vscode/
+ 
+# Game RFCs (archived externally)
+docs/game-rfcs/
