@@ -69,9 +69,9 @@ jobs:
               continue
             fi
             echo "Assigning first open micro for RFC-$RFC"
-            # Find first open micro without assignees
+            # Find earliest open unassigned micro; tie-break by issue number
             SEL=$(gh issue list --repo "$REPO" --state open --json number,title,assignees --jq \
-              "[ .[] | select(.title | test(\"RFC-$RFC-[0-9]{2}\"; \"i\")) | {num:.number,a:(.assignees|length),m:(.title|capture(\"RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})\").m|tonumber)} ] | sort_by(.m) | map(select(.a==0)) | .[0].num" || true)
+              "[ .[] | select(.title | test(\"RFC-$RFC-[0-9]{2}\"; \"i\")) | {num:.number,a:(.assignees|length),m:(.title|capture(\"RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})\").m|tonumber)} ] | map(select(.a==0)) | sort_by(.m, .num) | .[0].num" || true)
             if [ -z "$SEL" ] || [ "$SEL" = "null" ]; then
               echo "No unassigned micro found for RFC-$RFC"; continue; fi
             # Resolve Copilot bot id
@@ -82,5 +82,5 @@ jobs:
             IID=$(gh issue view "$SEL" --repo "$REPO" --json id --jq .id)
             M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId:$assignableId, actorIds:$actorIds }){ clientMutationId } }'
             gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$BOT" >/dev/null || true
-            echo "Assigned issue #$SEL to Copilot"
+            echo "Assigned issue #$SEL to Copilot for RFC-$RFC"
           done
