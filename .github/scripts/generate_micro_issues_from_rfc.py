@@ -95,7 +95,7 @@ def gql(query:str, variables:dict, tok:str)->dict:
         raise RuntimeError(json.dumps(obj['errors']))
     return obj.get('data',{})
 
-REPO_Q = "query($owner:String!,$name:String!){repository(owner:$owner,name:$name){id suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){nodes{id login __typename}}}}"
+REPO_Q = "query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ id suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } ... on User { id } } } } }"
 CRT_M = "mutation($rid:ID!,$title:String!,$body:String,$aids:[ID!]){createIssue(input:{repositoryId:$rid,title:$title,body:$body,assigneeIds:$aids}){issue{id number url}}}"
 REPLACE_M = "mutation($assignableId:ID!,$actorIds:[ID!]!){replaceActorsForAssignable(input:{assignableId:$assignableId,actorIds:$actorIds}){clientMutationId}}"
 
