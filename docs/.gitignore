@@ -1,0 +1,8 @@
+chat-history/claude-code/
+
+# Ephemeral doc outputs
+generated/
+.cache/
+temp/
+work/
+drafts/
