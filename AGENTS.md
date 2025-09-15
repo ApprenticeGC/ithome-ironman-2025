@@ -52,3 +52,4 @@ Notes
 - Author new RFCs using `docs/rfc-templates/RFC-TEMPLATE.md` and keep them under `docs/RFC/`.
 
 Flow smoke tested: RFC-090
+Flow smoke tested #2: RFC-091
