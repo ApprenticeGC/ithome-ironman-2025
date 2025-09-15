@@ -131,16 +131,20 @@ def main(argv:list[str])->int:
     aids=[assignee.get('id')] if assignee and assignee.get('id') else None
 
     results=[]
-    for it in sorted(micros, key=lambda x:(x['rfc_num'], x['micro_num'])):
+    micros_sorted = sorted(micros, key=lambda x:(x['rfc_num'], x['micro_num']))
+    first_ident = micros_sorted[0]['ident'] if micros_sorted else None
+    for it in micros_sorted:
         title=f"{it['ident']}: {it['title']}"
         body=it['body']
         if args.dry_run:
             results.append({'title':title})
             continue
-        d=gql(CRT_M,{'rid':rid,'title':title,'body':body,'aids':aids},tok)
+        # Assign only the first micro to enforce sequential execution; others remain unassigned
+        this_aids = aids if assignee and it['ident'] == first_ident else None
+        d=gql(CRT_M,{'rid':rid,'title':title,'body':body,'aids':this_aids},tok)
         issue=d['createIssue']['issue']
-        # If we have a bot assignee and assigneeIds didn't take, enforce via replaceActors
-        if assignee and assignee.get('id'):
+        # If assigned, ensure GraphQL assignment sticks
+        if assignee and assignee.get('id') and it['ident'] == first_ident:
             try:
                 gql(REPLACE_M,{ 'assignableId': issue['id'], 'actorIds': [assignee['id']] }, tok)
             except Exception:
