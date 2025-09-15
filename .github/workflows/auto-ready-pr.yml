@@ -15,11 +15,11 @@ permissions:
 jobs:
   mark_ready_on_ci_success:
     if: >-
-      ${
+      ${{
         github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.event == 'pull_request'
-      }
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Flip draft PR to ready when CI succeeded
@@ -46,12 +46,12 @@ jobs:
 
   mark_ready_on_command:
     if: >-
-      ${
+      ${{
         github.event_name == 'issue_comment' &&
         startsWith(github.event.comment.body, '/ready') &&
         (github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'COLLABORATOR') &&
         github.event.issue.pull_request
-      }
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Flip draft PR to ready via /ready command
