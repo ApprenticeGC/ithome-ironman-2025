@@ -38,6 +38,51 @@ def parse_micro_sections(md:str):
             i+=1
     return items
 
+def parse_micro_table(md:str):
+    items=[]
+    lines=md.splitlines()
+    # locate the section header
+    start=None
+    for idx,line in enumerate(lines):
+        if line.strip().lower().startswith('## implementation plan (micro issues)'.lower()):
+            start=idx+1; break
+    if start is None:
+        return items
+    # collect table lines
+    tbl=[]
+    for j in range(start, len(lines)):
+        s=lines[j].strip()
+        if not s:
+            if tbl: break
+            else: continue
+        if s.startswith('|'):
+            tbl.append(s)
+        elif tbl:
+            break
+    # parse rows: skip header and separator
+    rows=[r for r in tbl if r.startswith('|')]
+    if len(rows) < 3:
+        return items
+    data_rows = rows[2:]
+    # Try to extract RFC number from title at top
+    m = re.search(r'RFC-(\d+)', md, re.IGNORECASE)
+    rfc_num = int(m.group(1)) if m else 0
+    for r in data_rows:
+        parts=[p.strip() for p in r.strip('|').split('|')]
+        if len(parts) < 2:
+            continue
+        mic = parts[0]
+        title = parts[1]
+        acc = parts[2] if len(parts) > 2 else ''
+        try:
+            micro_num = int(mic)
+        except ValueError:
+            continue
+        ident = f"RFC-{rfc_num:03d}-{micro_num:02d}" if rfc_num else f"RFC-XXX-{micro_num:02d}"
+        body = f"### Objective\n{title}\n\n### Acceptance Criteria\n{acc}\n"
+        items.append({'ident':ident,'rfc_num':rfc_num,'micro_num':micro_num,'title':title,'body':body})
+    return items
+
 API = 'https://api.github.com/graphql'
 
 def gql(query:str, variables:dict, tok:str)->dict:
@@ -73,6 +118,8 @@ def main(argv:list[str])->int:
     md=read_text(args.rfc_path)
     micros=parse_micro_sections(md)
     if not micros:
+        micros=parse_micro_table(md)
+    if not micros:
         print(json.dumps({'found':0,'items':[]}))
         return 0
     tok=token()
@@ -96,4 +143,3 @@ def main(argv:list[str])->int:
 
 if __name__=='__main__':
     sys.exit(main(sys.argv[1:]))
-
