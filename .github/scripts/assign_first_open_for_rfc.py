@@ -84,8 +84,14 @@ def main(argv:list[str]) -> int:
     if not iid:
         return 0
     if bot_id:
-        mut = 'mutation($assignableId: ID!, $assigneeIds: [ID!]!){ addAssigneesToAssignable(input:{ assignableId: $assignableId, assigneeIds: $assigneeIds }){ clientMutationId } }'
-        subprocess.run(['gh','api','graphql','-f',f'query={mut}','-F',f'assignableId={iid}','-F',f'assigneeIds={bot_id}'], check=False)
+        # If this id came from suggestedActors Bot, use replaceActors; if from user(login), we still use addAssignees.
+        # Heuristic: Bot ids start with 'BOT_'
+        if str(bot_id).startswith('BOT_'):
+            mut = 'mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId: $assignableId, actorIds: $actorIds }){ clientMutationId } }'
+            subprocess.run(['gh','api','graphql','-f',f'query={mut}','-F',f'assignableId={iid}','-F',f'actorIds={bot_id}'], check=False)
+        else:
+            mut = 'mutation($assignableId: ID!, $assigneeIds: [ID!]!){ addAssigneesToAssignable(input:{ assignableId: $assignableId, assigneeIds: $assigneeIds }){ clientMutationId } }'
+            subprocess.run(['gh','api','graphql','-f',f'query={mut}','-F',f'assignableId={iid}','-F',f'assigneeIds={bot_id}'], check=False)
     else:
         print('no copilot bot id', file=sys.stderr)
     print(f'assigned #{sel_num} for RFC-{rfc}')
