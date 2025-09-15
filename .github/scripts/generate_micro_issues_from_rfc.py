@@ -79,7 +79,26 @@ def parse_micro_table(md:str):
         except ValueError:
             continue
         ident = f"RFC-{rfc_num:03d}-{micro_num:02d}" if rfc_num else f"RFC-XXX-{micro_num:02d}"
-        body = f"### Objective\n{title}\n\n### Acceptance Criteria\n{acc}\n"
+        # Format acceptance criteria into proper checklist
+        def to_checklist(text: str) -> str:
+            t = (text or '').replace('\n', ' ').strip()
+            items: list[str] = []
+            if '- [ ]' in t:
+                parts2 = [p.strip() for p in t.split('- [ ]')]
+                for p in parts2:
+                    if p:
+                        items.append(f"- [ ] {p}")
+            else:
+                import re as _re
+                parts2 = [_re.split(r';\s*', t)][0]
+                for p in parts2:
+                    p = p.strip()
+                    if p:
+                        items.append(f"- [ ] {p}")
+            return "\n".join(items) if items else "- [ ]"
+
+        checklist = to_checklist(acc)
+        body = f"### Objective\n{title}\n\n### Acceptance Criteria\n{checklist}\n"
         items.append({'ident':ident,'rfc_num':rfc_num,'micro_num':micro_num,'title':title,'body':body})
     return items
 
