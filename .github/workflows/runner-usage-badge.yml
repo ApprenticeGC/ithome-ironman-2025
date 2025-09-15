@@ -1,16 +1,17 @@
 name: Runner usage badge
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
   schedule:
-  - cron: '15 */6 * * *' # every 6 hours at minute 15
+    - cron: '15 */6 * * *'
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths:
-      - ".github/workflows/runner-usage-badge.yml"
-      - ".github/scripts/runner_usage.py"
-      - ".github/badges/**"
-      - "README.md"
+      - .github/workflows/runner-usage-badge.yml
+      - .github/scripts/runner_usage.py
+      - .github/badges/**
+      - README.md
 
 permissions:
   actions: read
@@ -18,7 +19,7 @@ permissions:
 
 jobs:
   generate:
-  if: ${{ github.actor != 'github-actions[bot]' || github.event_name != 'push' }}
+    if: ${{ !(github.event_name == 'push' && github.actor == 'github-actions[bot]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
