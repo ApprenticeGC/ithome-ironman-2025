@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "label": "ci minutes (month)",
+  "message": "0 min",
+  "color": "lightgrey",
+  "cacheSeconds": 3600
+}
