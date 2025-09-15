@@ -23,3 +23,4 @@ Only documentation changes under `docs/` so CI remains green.
 | 03    | Clean up happy-path placeholder | - [ ] Remove `docs/game-rfc-test-92/PLACEHOLDER.md`; - [ ] Append a line in `AGENTS.md`: `Flow smoke tested #3: RFC-092`; - [ ] Build passes; - [ ] PR follows Conventional Commits |
 
  \\n< !-- sync: trigger 092 -->
+ \\n< !-- sync: trigger 092 b -->
