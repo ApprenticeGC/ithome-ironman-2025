@@ -20,11 +20,20 @@ def pick_bot_id(owner:str, name:str) -> str|None:
     for n in nodes:
         if n.get('__typename') == 'Bot' and 'copilot' in (n.get('login') or '').lower():
             return n.get('id')
-    # Fallback: try resolving by login as user
-    res2 = subprocess.run(['gh','api','graphql','-f','query=query($login:String!){ user(login:$login){ id __typename } }','-F','login=copilot-swe-agent'], capture_output=True, text=True)
+    # Fallback 1: try resolving by login 'Copilot'
+    res2 = subprocess.run(['gh','api','graphql','-f','query=query($login:String!){ user(login:$login){ id __typename } }','-F','login=Copilot'], capture_output=True, text=True)
     if res2.returncode == 0 and res2.stdout.strip():
         try:
             uid = json.loads(res2.stdout)['data']['user']['id']
+            if uid:
+                return uid
+        except Exception:
+            pass
+    # Fallback 2: try resolving by login 'copilot-swe-agent'
+    res3 = subprocess.run(['gh','api','graphql','-f','query=query($login:String!){ user(login:$login){ id __typename } }','-F','login=copilot-swe-agent'], capture_output=True, text=True)
+    if res3.returncode == 0 and res3.stdout.strip():
+        try:
+            uid = json.loads(res3.stdout)['data']['user']['id']
             if uid:
                 return uid
         except Exception:
