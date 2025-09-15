@@ -95,8 +95,9 @@ def gql(query:str, variables:dict, tok:str)->dict:
         raise RuntimeError(json.dumps(obj['errors']))
     return obj.get('data',{})
 
-REPO_Q = "query($owner:String!,$name:String!){repository(owner:$owner,name:$name){id suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){nodes{login __typename ... on Bot {id}}}}}"
-CRT_M = "mutation($rid:ID!,$title:String!,$body:String,$aids:[ID!]){createIssue(input:{repositoryId:$rid,title:$title,body:$body,assigneeIds:$aids}){issue{number url}}}"
+REPO_Q = "query($owner:String!,$name:String!){repository(owner:$owner,name:$name){id suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){nodes{id login __typename}}}}"
+CRT_M = "mutation($rid:ID!,$title:String!,$body:String,$aids:[ID!]){createIssue(input:{repositoryId:$rid,title:$title,body:$body,assigneeIds:$aids}){issue{id number url}}}"
+REPLACE_M = "mutation($assignableId:ID!,$actorIds:[ID!]!){replaceActorsForAssignable(input:{assignableId:$assignableId,actorIds:$actorIds}){clientMutationId}}"
 
 def pick_assignee(nodes:list[dict], mode:str)->dict|None:
     prefer={'bot':'Bot','user':'User'}.get(mode)
@@ -104,7 +105,8 @@ def pick_assignee(nodes:list[dict], mode:str)->dict|None:
         for n in nodes:
             if n.get('__typename')==prefer and 'copilot' in (n.get('login') or '').lower():
                 return n
-    return nodes[0] if nodes else None
+    # For this generator, do not fallback to non-bot; leave unassigned if no Copilot bot
+    return None
 
 def main(argv:list[str])->int:
     p=argparse.ArgumentParser(description='Generate micro issues from an RFC file')
@@ -137,6 +139,12 @@ def main(argv:list[str])->int:
             continue
         d=gql(CRT_M,{'rid':rid,'title':title,'body':body,'aids':aids},tok)
         issue=d['createIssue']['issue']
+        # If we have a bot assignee and assigneeIds didn't take, enforce via replaceActors
+        if assignee and assignee.get('id'):
+            try:
+                gql(REPLACE_M,{ 'assignableId': issue['id'], 'actorIds': [assignee['id']] }, tok)
+            except Exception:
+                pass
         results.append({'title':title,'number':issue['number'],'url':issue['url']})
     print(json.dumps({'found':len(micros),'created':results}))
     return 0
