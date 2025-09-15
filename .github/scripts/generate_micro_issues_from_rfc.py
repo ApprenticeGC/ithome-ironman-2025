@@ -149,6 +149,25 @@ def main(argv:list[str])->int:
     assignee=pick_assignee(nodes, args.assign_mode)
     aids=[assignee.get('id')] if assignee and assignee.get('id') else None
 
+    # Helper: skip creating duplicate issues by exact title (open issues only)
+    SEARCH_Q = """
+    query($q:String!) {
+      search(query:$q, type: ISSUE, first: 1) {
+        issueCount
+        edges { node { ... on Issue { number title state } } }
+      }
+    }
+    """
+    def exists_open_issue_with_title(owner:str, name:str, title:str) -> bool:
+        # Build a GitHub search query: repo:owner/name is:issue is:open in:title "title"
+        q = f'repo:{owner}/{name} is:issue is:open in:title "{title}"'
+        try:
+            d = gql(SEARCH_Q, {'q': q}, tok)
+            cnt = ((d.get('search') or {}).get('issueCount')) or 0
+            return cnt > 0
+        except Exception:
+            return False
+
     results=[]
     micros_sorted = sorted(micros, key=lambda x:(x['rfc_num'], x['micro_num']))
     first_ident = micros_sorted[0]['ident'] if micros_sorted else None
@@ -157,6 +176,10 @@ def main(argv:list[str])->int:
         body=it['body']
         if args.dry_run:
             results.append({'title':title})
+            continue
+        # De-dup: skip if an open issue already exists with the exact title
+        if exists_open_issue_with_title(args.owner, args.repo, title):
+            results.append({'title':title, 'skipped':'exists'})
             continue
         # Assign only the first micro to enforce sequential execution; others remain unassigned
         this_aids = aids if assignee and it['ident'] == first_ident else None
