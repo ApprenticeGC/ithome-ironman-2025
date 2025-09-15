@@ -35,15 +35,6 @@ jobs:
             echo "ERROR: AUTO_APPROVE_TOKEN (PAT) is required for assignment. Configure it in repo or environment 'copilot'." >&2
             exit 1
           fi
-      - name: Debug suggestedActors (who is assignable)
-        env:
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          OWNER=${REPO%/*}; NAME=${REPO#*/}
-          Q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } ... on User { id } } } } }'
-          echo "Querying suggestedActors for $REPO"
-          gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes' || true
 
       - name: Assign specific issue to Copilot via GraphQL (bot/user id)
         env:

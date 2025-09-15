@@ -92,6 +92,14 @@ Conventions
   - Runs `cleanup_recreate_issue.py` to close PR, delete branch, close linked issue, and recreate a new issue assigned to Copilot.
 - Use case: Manual reset of a stuck/conflicted PR chain without waiting for a failing CI run.
 
+`cleanup-stalled-prs.yml`
+- Trigger: `schedule` (every 6 hours) and `workflow_dispatch` (optional `max_age_hours`)
+- What it does:
+  - Automatically finds Copilot PRs that haven't been updated in 24+ hours.
+  - For each stalled PR, extracts linked issue and runs `cleanup_recreate_issue.py` to reset the chain.
+  - PRs without linked issues are simply closed and their branches deleted.
+- Use case: Automated cleanup to prevent indefinitely stalled agent chains.
+
 `rfc-dedupe.yml`
 - Trigger: `schedule` daily and `workflow_dispatch`
 - What it does: Runs `dedupe_rfc_issues.py` to detect and close duplicate RFC micro issues by title/token, linking to the canonical.

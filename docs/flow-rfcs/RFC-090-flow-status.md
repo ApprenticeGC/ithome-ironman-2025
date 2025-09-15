@@ -14,9 +14,12 @@ What we validated
 - RFC‑091: Verified sequential consumption after hardening (assignment via PAT, CI success, merge, auto‑advance; when selection missed, fallback logic now assigns earliest unassigned next micro).
 
 Recent hardening
-- Assignment reliability: Switched to PAT; Bot/User‑aware mutations; added runner `suggestedActors` debug (temporary).
+- Assignment reliability: Switched to PAT; Bot/User‑aware mutations; removed temporary debug steps.
 - Auto‑advance selection: If exact next token not found, picks earliest unassigned with higher index, else earliest unassigned for same RFC; logs candidates when none.
 - LOC badge: Removed PR triggers; scheduled every 6h only.
+- Stalled PR cleanup: Added scheduled cleanup every 6h for PRs inactive >24h.
+- Security: Minimized workflow permissions to least-privilege principle.
+- Error handling: Enhanced logging and fallback mechanisms in Python scripts.
 
 Observed gaps (and mitigations)
 - Action approvals causing drafts to stall: Resolved by `GITHUB_TOKEN` Read+Write and using PAT for approvals/assignment.
@@ -29,9 +32,9 @@ Definition of Done for RFC‑090
 - `auto-approve-merge` enables auto‑merge; merges close the linked issue; `auto-advance-micro` assigns the next micro consistently.
 - Watchdog resets broken chains automatically; dedupe keeps the queue clean.
 
-Outstanding items to fully “set and forget”
-- Remove temporary `suggestedActors` debug steps in assignment workflows.
-- Optional: Add a nightly/6h “stalled Copilot PR” sweep to auto‑reset PRs older than N hours with no progress.
+Outstanding items to fully "set and forget"
+- ✅ Remove temporary `suggestedActors` debug steps in assignment workflows.
+- ✅ Add a scheduled "stalled Copilot PR" sweep to auto‑reset PRs older than 24 hours with no progress.
 - Optional: Tighten dedupe to normalize RFC tokens across minor title variants.
 
 Operator quick actions (when needed)

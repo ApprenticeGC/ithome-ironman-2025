@@ -11,8 +11,17 @@ def run_gh_json(args:list[str]):
         env = {**os.environ, 'LC_ALL': 'C.UTF-8', 'LANG': 'C.UTF-8'}
         res = subprocess.run(['gh']+args, capture_output=True, text=True, check=True, env=env)
         return json.loads(res.stdout) if res.stdout.strip() else None
+    except subprocess.CalledProcessError as e:
+        print(f"gh command failed (exit {e.returncode}): {' '.join(args)}")
+        if e.stderr:
+            print(f"stderr: {e.stderr}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"JSON decode failed for gh output: {e}")
+        return None
     except Exception as e:
-        print(f"gh failed: {e}"); return None
+        print(f"gh failed: {e}")
+        return None
 
 def parse_issue_title(t:str):
     m = RFC_RX.search(t or "");
@@ -85,7 +94,12 @@ def assign_issue_to_copilot(repo:str, issue:int)->bool:
 
 def main():
     repo=os.environ.get('REPO'); pr=os.environ.get('PR_NUMBER'); assign='--assign' in sys.argv or os.environ.get('ASSIGN')=='1'
-    if not repo or not pr: print('Missing REPO/PR_NUMBER'); sys.exit(1)
+    if not repo or not pr:
+        print('ERROR: Missing required environment variables REPO and/or PR_NUMBER')
+        print(f'REPO={repo}, PR_NUMBER={pr}')
+        sys.exit(1)
+
+    print(f"Processing PR #{pr} in repo {repo} (assign={assign})")
     prj=run_gh_json(['pr','view',str(pr),'--repo',repo,'--json','body,title']) or {}
     closed=None
     # find linked issue number

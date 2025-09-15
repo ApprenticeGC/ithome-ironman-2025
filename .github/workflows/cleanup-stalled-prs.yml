@@ -1,0 +1,105 @@
+name: cleanup-stalled-prs
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      max_age_hours:
+        description: 'Maximum age in hours for stalled PRs (default: 24)'
+        required: false
+        default: '24'
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Find and cleanup stalled Copilot PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          MAX_AGE_HOURS: ${{ github.event.inputs.max_age_hours || '24' }}
+        run: |
+          set -euo pipefail
+
+          echo "Looking for stalled Copilot PRs older than $MAX_AGE_HOURS hours..."
+
+          # Calculate cutoff time
+          CUTOFF=$(date -u -d "$MAX_AGE_HOURS hours ago" +%Y-%m-%dT%H:%M:%SZ)
+          echo "Cutoff time: $CUTOFF"
+
+          # Find open PRs by Copilot that haven't been updated recently
+          STALLED_PRS=$(gh pr list --repo "$REPO" --state open --author app/copilot-swe-agent \
+            --json number,title,updatedAt,headRefName,isDraft --jq "
+            map(select(.updatedAt < \"$CUTOFF\")) |
+            .[].number" || echo "")
+
+          if [ -z "$STALLED_PRS" ]; then
+            echo "No stalled Copilot PRs found"
+            exit 0
+          fi
+
+          echo "Found stalled PRs: $STALLED_PRS"
+
+          # Process each stalled PR
+          for pr_num in $STALLED_PRS; do
+            echo "Processing stalled PR #$pr_num"
+
+            # Get PR details
+            PR_JSON=$(gh pr view "$pr_num" --repo "$REPO" --json title,body,headRefName,updatedAt)
+            TITLE=$(echo "$PR_JSON" | jq -r .title)
+            BODY=$(echo "$PR_JSON" | jq -r .body)
+            BRANCH=$(echo "$PR_JSON" | jq -r .headRefName)
+            UPDATED=$(echo "$PR_JSON" | jq -r .updatedAt)
+
+            echo "  Title: $TITLE"
+            echo "  Branch: $BRANCH"
+            echo "  Last updated: $UPDATED"
+
+            # Extract linked issue number
+            ISSUE_NUM=$(echo -e "$BODY\n$TITLE" | grep -oiE 'close[sd]? #([0-9]+)|fixe?[sd]? #([0-9]+)|resolve[sd]? #([0-9]+)' | grep -oE '[0-9]+' | head -n1 || echo "")
+
+            if [ -n "$ISSUE_NUM" ]; then
+              echo "  Found linked issue: #$ISSUE_NUM"
+
+              # Use cleanup script to reset the chain
+              python .github/scripts/cleanup_recreate_issue.py \
+                --owner "${{ github.repository_owner }}" \
+                --repo "${{ github.event.repository.name }}" \
+                --pr-number "$pr_num" \
+                --branch "$BRANCH" \
+                --issue-number "$ISSUE_NUM" \
+                --title "Auto-reset from stalled PR: $(date -u +%FT%TZ)" \
+                --assign-mode bot \
+                --reason "Stalled PR cleanup (inactive for ${MAX_AGE_HOURS}h)"
+
+              echo "  Reset chain for PR #$pr_num -> Issue #$ISSUE_NUM"
+            else
+              echo "  Warning: No linked issue found, skipping reset"
+              # Just close the stalled PR without recreation
+              gh pr close "$pr_num" --repo "$REPO" --comment "Auto-closed: Stalled PR with no linked issue (inactive for ${MAX_AGE_HOURS}h)"
+              # Delete the branch if it's a Copilot branch
+              if [[ "$BRANCH" == copilot/* ]]; then
+                git push origin --delete "$BRANCH" || echo "  Warning: Could not delete branch $BRANCH"
+              fi
+            fi
+
+            echo "  Completed processing PR #$pr_num"
+          done
+
+          echo "Stalled PR cleanup completed"
