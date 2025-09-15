@@ -1,0 +1,43 @@
+name: RFC Task
+description: Create a narrowly scoped RFC micro-issue for Copilot
+title: "RFC-XXX: <short title>"
+labels: [rfc, agent]
+body:
+  - type: input
+    id: rfc_id
+    attributes:
+      label: RFC ID
+      description: e.g., RFC-014-01 (RFC number and micro index if applicable)
+      placeholder: RFC-014-01
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of the task
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Checklist Copilot must satisfy
+      value: |
+        - [ ] Code compiles with warnings as errors
+        - [ ] Tests (if present) pass
+        - [ ] Changes scoped to this RFC only
+        - [ ] Follows `.editorconfig` and repo structure
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: In/Out of Scope
+      description: Clarify boundaries to avoid unrelated changes
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link to docs/RFC/* or related materials
+

@@ -1,0 +1,39 @@
+name: generate-micro-issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      rfc_path:
+        description: 'Path to RFC file (e.g., docs/RFC/RFC-090-agent-flow-smoke-test.md)'
+        required: true
+      assign_mode:
+        description: 'Assignee preference (bot|user|auto)'
+        required: false
+        default: 'bot'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate micro issues from RFC
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          python .github/scripts/generate_micro_issues_from_rfc.py \
+            --rfc-path "${{ github.event.inputs.rfc_path }}" \
+            --owner "${{ github.repository_owner }}" \
+            --repo "${{ github.event.repository.name }}" \
+            --assign-mode "${{ github.event.inputs.assign_mode }}"
+
