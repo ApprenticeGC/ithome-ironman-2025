@@ -62,6 +62,25 @@ Naming note: Prefer `assign-copilot-to-issue`. `assign-next-micro` remains as a 
   - `gh api graphql --raw-field query='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } } } } }' --raw-field owner='<owner>' --raw-field name='<repo>'`
 - All flows here assign using `replaceActorsForAssignable` and the Copilot Bot `id`.
 
+## Token Context and Assignment
+
+- Use a user PAT for assignment: In Actions, authenticate GraphQL calls with a user PAT (`AUTO_APPROVE_TOKEN`) rather than `GITHUB_TOKEN` for assignment steps. This ensures the runner sees the Copilot bot in `suggestedActors`.
+- Environment: Put the PAT in environment `copilot` (preferred) or as a repo secret. Workflows are wired to read `AUTO_APPROVE_TOKEN` and fail fast if missing.
+- Bot vs User mutations:
+  - When `suggestedActors` returns Bot `copilot-swe-agent`, assign with `replaceActorsForAssignable(actorIds:[BOT_ID])`.
+  - If Bot isn’t visible, fallback to resolving `user(login:"copilot-swe-agent")` and assign with `addAssigneesToAssignable(assigneeIds:[USER_ID])`.
+- Runner visibility matters: `GITHUB_TOKEN` may not surface the bot in `suggestedActors`; a PAT typically does. The workflows include a debug step to print `suggestedActors` to verify runner context before assignment.
+
+## Troubleshooting Assignment
+
+- Symptom: Workflow says success but issue has no assignee
+  - Cause: Used wrong mutation for actor type or tried to assign a user id that isn’t assignable.
+  - Fix: Ensure a PAT is used; prefer Bot id via `suggestedActors` and `replaceActorsForAssignable`. Only use `addAssigneesToAssignable` for user ids.
+- Symptom: “Could not resolve to User node … BOT_…”
+  - Cause: Tried `addAssigneesToAssignable` with a Bot id. Switch to `replaceActorsForAssignable`.
+- Symptom: “No Copilot bot in suggestedActors”
+  - Cause: Token context cannot see the Bot. Confirm Copilot Coding Agent is enabled for the repo and that the PAT has repo access. Use the debug step to inspect `suggestedActors`.
+
 ## Duplicates Handling
 
 - Let `rfc-dedupe` close obvious duplicates and link to canonical. For edge cases, add `duplicate` label manually and comment with `Closes #<canonical>` on the PR.

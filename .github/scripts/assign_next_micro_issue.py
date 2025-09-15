@@ -101,9 +101,33 @@ def main():
         rfc,mic=parse_issue_title(issue.get('title',''))
     if not rfc or not mic: print('Not a micro RFC title'); sys.exit(0)
     nexti=mic+1
-    open_issues=run_gh_json(['issue','list','--repo',repo,'--state','open','--limit','200','--json','number,title,state']) or []
+    open_issues=run_gh_json(['issue','list','--repo',repo,'--state','open','--limit','200','--json','number,title,state,assignees']) or []
     sel=select_next(rfc,nexti,open_issues)
-    if not sel: print('No next micro issue'); sys.exit(0)
+    if not sel:
+        # Fallback: pick the earliest unassigned open micro for same RFC with micro > current
+        fallbacks=[]
+        for it in open_issues:
+            rr, mm = parse_issue_title(it.get('title',''))
+            if rr==rfc and mm and mm>mic:
+                assigned = (it.get('assignees') or [])
+                if len(assigned)==0:
+                    fallbacks.append((mm, int(it['number']), it))
+        fallbacks.sort(key=lambda x:(x[0],x[1]))
+        sel = fallbacks[0][2] if fallbacks else None
+        if not sel:
+            # As a last resort, pick the earliest unassigned open micro for same RFC regardless of mm>mic
+            any_unassigned=[]
+            for it in open_issues:
+                rr, mm = parse_issue_title(it.get('title',''))
+                if rr==rfc and mm:
+                    if len(it.get('assignees') or [])==0:
+                        any_unassigned.append((mm, int(it['number']), it))
+            any_unassigned.sort(key=lambda x:(x[0],x[1]))
+            sel = any_unassigned[0][2] if any_unassigned else None
+        if not sel:
+            # Log candidates to aid triage
+            print(json.dumps({'message':'No next micro issue','rfc':rfc,'current':mic,'open_titles':[it.get('title') for it in open_issues]}))
+            sys.exit(0)
     print(json.dumps({'selected': sel}))
     if assign:
         ok=assign_issue_to_copilot(repo, int(sel['number']))
