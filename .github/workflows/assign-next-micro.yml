@@ -1,0 +1,38 @@
+name: assign-next-micro
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number (e.g., 5)
+        required: true
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign specific issue to Copilot via GraphQL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          # Resolve issue node id
+          IID=$(gh issue view "$ISSUE" --repo "$REPO" --json id --jq .id)
+          # Resolve Copilot bot id from suggestedActors
+          OWNER=${REPO%/*}; NAME=${REPO#*/}
+          Q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } } } } }'
+          BOT=$(gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes[] | select(."__typename"=="Bot" and (.login|ascii_downcase|test("copilot"))) | .id' | head -n1)
+          if [ -z "$BOT" ]; then echo "No Copilot bot suggested for assignment"; exit 1; fi
+          # If already assigned, skip
+          CUR=$(gh issue view "$ISSUE" --repo "$REPO" --json assignees --jq '.assignees[].login' || true)
+          if echo "$CUR" | grep -qi '^copilot$'; then echo "Already assigned"; exit 0; fi
+          # Assign via replaceActorsForAssignable
+          M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId:$assignableId, actorIds:$actorIds }){ clientMutationId } }'
+          gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$BOT" >/dev/null
+          gh issue view "$ISSUE" --repo "$REPO" --json assignees,url
+
