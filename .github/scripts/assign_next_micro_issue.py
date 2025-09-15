@@ -49,7 +49,17 @@ def assign_issue_to_copilot(repo:str, issue:int)->bool:
             if n.get('__typename')=='Bot' and 'copilot' in (n.get('login') or '').lower() and n.get('id'):
                 bot=n; break
         if not bot:
-            # Fallback: resolve by login as user; GraphQL returns a node id usable in replaceActorsForAssignable
+            # Fallback 1: resolve by login 'Copilot'
+            out = subprocess.run(['gh','api','graphql','-f','query=query($login:String!){ user(login:$login){ id __typename } }','-F','login=Copilot'], capture_output=True, text=True, check=False, env=env)
+            if out.returncode == 0 and out.stdout.strip():
+                try:
+                    uid = json.loads(out.stdout)['data']['user']['id']
+                    if uid:
+                        bot = {'id': uid}
+                except Exception:
+                    pass
+        if not bot:
+            # Fallback 2: resolve by login 'copilot-swe-agent'
             out = subprocess.run(['gh','api','graphql','-f','query=query($login:String!){ user(login:$login){ id __typename } }','-F','login=copilot-swe-agent'], capture_output=True, text=True, check=False, env=env)
             if out.returncode == 0 and out.stdout.strip():
                 try:
