@@ -48,8 +48,10 @@ jobs:
           if [ -z "$BOT" ]; then
             echo "No Copilot bot in suggestedActors; attempting fallback via user(login:Copilot) then copilot-swe-agent"
             COPILOT_ID=$(gh api graphql -f query='query($login:String!){ user(login:$login){ id __typename } }' -F login='Copilot' --jq '.data.user.id' || true)
+            if echo "$COPILOT_ID" | grep -q '{'; then COPILOT_ID=""; fi
             if [ -z "$COPILOT_ID" ]; then
               COPILOT_ID=$(gh api graphql -f query='query($login:String!){ user(login:$login){ id __typename } }' -F login='copilot-swe-agent' --jq '.data.user.id' || true)
+              if echo "$COPILOT_ID" | grep -q '{'; then COPILOT_ID=""; fi
             fi
             if [ -n "$COPILOT_ID" ]; then BOT="$COPILOT_ID"; else echo "No Copilot id resolved"; exit 1; fi
           fi
