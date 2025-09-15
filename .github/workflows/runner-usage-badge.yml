@@ -4,6 +4,13 @@ on:
   workflow_dispatch: {}
   schedule:
   - cron: '15 */6 * * *' # every 6 hours at minute 15
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/runner-usage-badge.yml"
+      - ".github/scripts/runner_usage.py"
+      - ".github/badges/**"
+      - "README.md"
 
 permissions:
   actions: read
@@ -11,6 +18,7 @@ permissions:
 
 jobs:
   generate:
+  if: ${{ github.actor != 'github-actions[bot]' || github.event_name != 'push' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
