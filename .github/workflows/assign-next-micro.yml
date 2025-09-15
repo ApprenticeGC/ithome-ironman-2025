@@ -18,9 +18,20 @@ jobs:
   assign:
     runs-on: ubuntu-latest
     steps:
+      - name: Select token (prefer AUTO_APPROVE_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+        run: |
+          if [ -n "${AUTO_APPROVE_TOKEN:-}" ]; then
+            echo "GH_TOKEN=$AUTO_APPROVE_TOKEN" >> $GITHUB_ENV
+            echo "Using AUTO_APPROVE_TOKEN"
+          else
+            echo "GH_TOKEN=$GITHUB_TOKEN" >> $GITHUB_ENV
+            echo "Using GITHUB_TOKEN"
+          fi
       - name: Assign specific issue to Copilot via GraphQL (bot id)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           ISSUE: ${{ github.event.inputs.issue_number }}
         run: |
