@@ -1,0 +1,24 @@
+have_fun: false
+code_review:
+  disable: false
+  comment_severity_threshold: MEDIUM
+  max_review_comments: 30
+  pull_request_opened:
+    help: true
+    summary: true
+    code_review: true
+    include_drafts: true
+# Ignore generated and tooling directories/files so reviews focus on source
+ignore_patterns:
+  - "**/bin/**"
+  - "**/obj/**"
+  - ".vscode/**"
+  - ".idea/**"
+  - "build/**"
+  - "**/*.sarif"
+  - "**/*.lock"
+  - "**/*.min.*"
+  - "**/node_modules/**"
+  - "**/.DS_Store"
+  - "dotnet/**/bin/**"
+  - "dotnet/**/obj/**"
