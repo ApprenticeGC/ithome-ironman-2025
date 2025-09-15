@@ -1,5 +1,8 @@
 # iThome Ironman 2025
 
+[![CI](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml)
+[![LOC](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ApprenticeGC/ithome-ironman-2025/main/.github/badges/dotnet_game_loc.json)](./.github/badges/dotnet_game_loc.json)
+
 Concise repo for notes, demos, and artifacts related to the 2025 iThome Ironman challenge. It uses a lightweight docs-first workflow with small, focused commits and simple automation.
 
 ## Repo layout
@@ -32,3 +35,8 @@ Common actions:
 
 - Main may be fast-moving initially; branch protection can be added later.
 - Keep edits minimal and focused; avoid formatting-only diffs unless needed.
+
+## Badges
+
+[![CI](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml)
+[![LOC](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ApprenticeGC/ithome-ironman-2025/main/.github/badges/dotnet_game_loc.json)](./.github/badges/dotnet_game_loc.json)

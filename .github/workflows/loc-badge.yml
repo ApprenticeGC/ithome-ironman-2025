@@ -1,0 +1,56 @@
+name: LOC Badge (dotnet/game)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  count-loc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Count C# lines under dotnet/game
+        id: count
+        run: |
+          shopt -s globstar nullglob
+          files=(dotnet/game/**/*.cs)
+          if [ ${#files[@]} -eq 0 ]; then
+            LOC=0
+          else
+            LOC=$(wc -l ${files[@]} | tail -n 1 | awk '{print $1}')
+          fi
+          echo "loc=$LOC" >> $GITHUB_OUTPUT
+
+      - name: Generate badge JSON
+        run: |
+          mkdir -p .github/badges
+          cat > .github/badges/dotnet_game_loc.json << EOF
+          {
+            "schemaVersion": 1,
+            "label": "dotnet/game cs loc",
+            "message": "${{ steps.count.outputs.loc }}",
+            "color": "blue"
+          }
+          EOF
+
+      - name: Upload badge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet_game_loc_badge
+          path: .github/badges/dotnet_game_loc.json
+
+      - name: Commit badge to repo
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [ -n "$(git status --porcelain .github/badges/dotnet_game_loc.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/badges/dotnet_game_loc.json
+            git commit -m "chore(ci): update LOC badge"
+            git push
+          fi
