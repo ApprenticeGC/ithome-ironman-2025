@@ -3,7 +3,7 @@ name: Runner usage badge
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '15 2 * * *' # daily at 02:15 UTC
+  - cron: '15 */6 * * *' # every 6 hours at minute 15
 
 permissions:
   actions: read
