@@ -1,0 +1,65 @@
+name: cleanup-stalled-pr
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to clean up
+        required: true
+      recreate_title:
+        description: Optional new issue title override
+        required: false
+      recreate_body:
+        description: Optional new issue body override
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Derive head branch and linked issue
+        id: derive
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          pr_json=$(gh pr view "$PR" --repo "$REPO" --json headRefName,body,title)
+          echo "$pr_json" | jq -r .
+          BRANCH=$(echo "$pr_json" | jq -r '.headRefName')
+          # try to extract linked issue from body/title (close/fix/resolve #N)
+          LINKED=$(echo "$pr_json" | jq -r '.body + "\n" + .title' | grep -oiE '(close[sd]?|fixe?[sd]?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | head -n1 || true)
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "issue_number=$LINKED" >> $GITHUB_OUTPUT
+
+      - name: Cleanup and recreate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OWNER=${{ github.repository_owner }}
+          REPO_NAME=${{ github.event.repository.name }}
+          python .github/scripts/cleanup_recreate_issue.py \
+            --owner "$OWNER" \
+            --repo "$REPO_NAME" \
+            --pr-number ${{ github.event.inputs.pr_number }} \
+            --branch ${{ steps.derive.outputs.branch }} \
+            --issue-number ${{ steps.derive.outputs.issue_number }} \
+            --title "${{ github.event.inputs.recreate_title }}" \
+            --body "${{ github.event.inputs.recreate_body }}" \
+            --assign-mode bot
+
