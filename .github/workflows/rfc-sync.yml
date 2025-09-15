@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   generate_and_assign:
+    environment: copilot
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,8 +41,6 @@ jobs:
 
       - name: Generate micro issues for each changed RFC
         if: steps.changed.outputs.files != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           IFS=',' read -r -a FILES <<< "${{ steps.changed.outputs.files }}"
           for f in "${FILES[@]}"; do
@@ -53,10 +52,22 @@ jobs:
               --assign-mode bot || true
           done
 
+      - name: Select token (prefer AUTO_APPROVE_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+        run: |
+          if [ -n "${AUTO_APPROVE_TOKEN:-}" ]; then
+            echo "GH_TOKEN=$AUTO_APPROVE_TOKEN" >> $GITHUB_ENV
+            echo "Using AUTO_APPROVE_TOKEN"
+          else
+            echo "ERROR: AUTO_APPROVE_TOKEN (PAT) is required for assignment in rfc-sync." >&2
+            exit 1
+          fi
+
       - name: Ensure first open micro is assigned to Copilot
         if: steps.changed.outputs.files != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
