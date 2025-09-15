@@ -25,15 +25,18 @@ jobs:
         id: changed
         run: |
           set -euo pipefail
-          BEFORE=${{ github.event.before }}
-          AFTER=${{ github.sha }}
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            # New branch or first push – consider all RFC files changed
-            mapfile -t FILES < <(git ls-files 'docs/game-rfcs/**.md')
-          else
-            mapfile -t FILES < <(git diff --name-only "$BEFORE" "$AFTER" -- 'docs/game-rfcs/**.md')
+          # Use push payload commit lists to avoid bad-object diffs
+          EVENT_JSON='${{ toJson(github.event) }}'
+          ADDED=$(printf "%s" "$EVENT_JSON" | jq -r '.commits[]?.added[]? // empty')
+          MODIFIED=$(printf "%s" "$EVENT_JSON" | jq -r '.commits[]?.modified[]? // empty')
+          # Combine and filter for docs/game-rfcs/*.md
+          FILES=$(printf "%s\n%s\n" "$ADDED" "$MODIFIED" | grep -E '^docs/game-rfcs/.*\.md$' | sort -u || true)
+          # Fallback: if none detected (e.g., squash merge payload), include all RFCs to be safe
+          if [ -z "$FILES" ]; then
+            FILES=$(git ls-files 'docs/game-rfcs/**.md' | tr '\n' '\n')
           fi
-          printf '%s\n' "${FILES[@]}" | sed '/^$/d' | paste -sd ',' - | awk '{print "files=" $0}' >> $GITHUB_OUTPUT
+          FILES_CSV=$(printf '%s\n' $FILES | sed '/^$/d' | paste -sd ',')
+          echo "files=$FILES_CSV" >> $GITHUB_OUTPUT
 
       - name: Generate micro issues for each changed RFC
         if: steps.changed.outputs.files != ''
@@ -81,4 +84,3 @@ jobs:
             gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$BOT" >/dev/null || true
             echo "Assigned issue #$SEL to Copilot"
           done
-
