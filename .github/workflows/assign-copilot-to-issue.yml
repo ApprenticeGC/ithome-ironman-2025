@@ -8,13 +8,14 @@ on:
         required: true
 
 permissions:
+  contents: read
   issues: write
 
 jobs:
   assign:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve issue and Copilot bot ids
+      - name: Resolve issue and Copilot bot id
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -25,10 +26,14 @@ jobs:
           IID=$(gh issue view "$ISSUE" --repo "$REPO" --json id --jq .id)
           OWNER=${REPO%/*}; NAME=${REPO#*/}
           Q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } } } } }'
-          BOT=$(gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes[] | select(."__typename"=="Bot" and (.login|ascii_downcase|test("copilot"))) | .id' | head -n1)
-          if [ -z "$BOT" ]; then echo "No Copilot bot suggested for assignment"; exit 1; fi
+          BOT=$(gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes[] | select(."__typename"=="Bot" and (.login|ascii_downcase|test("copilot"))) | .id' | head -n1 || true)
           CUR=$(gh issue view "$ISSUE" --repo "$REPO" --json assignees --jq '.assignees[].login' || true)
           if echo "$CUR" | grep -qi '^copilot$'; then echo "Already assigned"; exit 0; fi
+          if [ -z "$BOT" ]; then
+            echo "No Copilot bot in suggestedActors; attempting fallback via user(login:copilot-swe-agent)"
+            UID=$(gh api graphql -f query='query($login:String!){ user(login:$login){ id __typename } }' -F login='copilot-swe-agent' --jq '.data.user.id' || true)
+            if [ -n "$UID" ]; then BOT="$UID"; else echo "No Copilot id resolved"; exit 1; fi
+          fi
           echo "Issue id: $IID | Copilot bot id: $BOT"
           echo "Assigning Copilot via replaceActorsForAssignable..."
           M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId:$assignableId, actorIds:$actorIds }){ clientMutationId } }'
