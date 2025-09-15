@@ -61,9 +61,13 @@ def main():
     for text in [prj.get('body',''), prj.get('title','')]:
         m=re.search(r'(?:close[sd]?|fixe?[sd]?|resolve[sd]?)\s+#(\d+)', text, re.I)
         if m: closed=int(m.group(1)); break
-    if not closed: print('No linked issue'); sys.exit(0)
-    issue=run_gh_json(['issue','view',str(closed),'--repo',repo,'--json','title']) or {}
-    rfc,mic=parse_issue_title(issue.get('title',''))
+    rfc=None; mic=None
+    if not closed:
+        # Fallback: infer RFC/micro from PR title (e.g., contains RFC-090-01)
+        rfc,mic = parse_issue_title(prj.get('title',''))
+    else:
+        issue=run_gh_json(['issue','view',str(closed),'--repo',repo,'--json','title']) or {}
+        rfc,mic=parse_issue_title(issue.get('title',''))
     if not rfc or not mic: print('Not a micro RFC title'); sys.exit(0)
     nexti=mic+1
     open_issues=run_gh_json(['issue','list','--repo',repo,'--state','open','--limit','200','--json','number,title,state']) or []
