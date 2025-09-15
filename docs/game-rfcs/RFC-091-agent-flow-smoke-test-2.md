@@ -8,7 +8,7 @@
 
 ## Summary
 
-Run a second safe pass to validate end-to-end Coding Agent flow with doc-only changes.
+Run a second safe pass to validate end-to-end Coding Agent flow with doc-only changes. (sync test)
 
 ## Motivation
 
