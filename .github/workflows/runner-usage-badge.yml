@@ -1,0 +1,41 @@
+name: Runner usage badge
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '15 2 * * *' # daily at 02:15 UTC
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate monthly usage badge JSON
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python .github/scripts/runner_usage.py
+
+      - name: Commit badge if changed
+        run: |
+          if git diff --quiet -- .github/badges/runner-usage.json; then
+            echo "No changes to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/badges/runner-usage.json
+            git commit -m "chore(badge): update runner usage badge"
+            git push
+          fi
