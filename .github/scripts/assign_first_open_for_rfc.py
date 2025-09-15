@@ -20,6 +20,15 @@ def pick_bot_id(owner:str, name:str) -> str|None:
     for n in nodes:
         if n.get('__typename') == 'Bot' and 'copilot' in (n.get('login') or '').lower():
             return n.get('id')
+    # Fallback: try resolving by login as user
+    res2 = subprocess.run(['gh','api','graphql','-f','query=query($login:String!){ user(login:$login){ id __typename } }','-F','login=copilot-swe-agent'], capture_output=True, text=True)
+    if res2.returncode == 0 and res2.stdout.strip():
+        try:
+            uid = json.loads(res2.stdout)['data']['user']['id']
+            if uid:
+                return uid
+        except Exception:
+            pass
     return None
 
 def main(argv:list[str]) -> int:
@@ -33,9 +42,6 @@ def main(argv:list[str]) -> int:
         return 2
     owner, name = repo.split('/')
     bot_id = pick_bot_id(owner, name)
-    if not bot_id:
-        print('no copilot bot id', file=sys.stderr)
-        return 0
 
     # Guard: if a PR already exists for this RFC, do not assign a new micro
     prs = run_gh_json(['pr','list','--repo',repo,'--state','open','--json','number,title']) or []
@@ -68,8 +74,11 @@ def main(argv:list[str]) -> int:
     iid = issue_node.get('id')
     if not iid:
         return 0
-    mut = 'mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId: $assignableId, actorIds: $actorIds }){ clientMutationId } }'
-    subprocess.run(['gh','api','graphql','-f',f'query={mut}','-F',f'assignableId={iid}','-F',f'actorIds={bot_id}'], check=False)
+    if bot_id:
+        mut = 'mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId: $assignableId, actorIds: $actorIds }){ clientMutationId } }'
+        subprocess.run(['gh','api','graphql','-f',f'query={mut}','-F',f'assignableId={iid}','-F',f'actorIds={bot_id}'], check=False)
+    else:
+        print('no copilot bot id', file=sys.stderr)
     print(f'assigned #{sel_num} for RFC-{rfc}')
     return 0
 

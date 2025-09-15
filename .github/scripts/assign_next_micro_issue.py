@@ -36,7 +36,7 @@ def select_next(rfc:int, next_micro:int, issues:list[dict]):
     return cands[0][3]
 
 def assign_issue_to_copilot(repo:str, issue:int)->bool:
-    # Use GraphQL suggestedActors to pick a Copilot bot and replace actors
+    # Use GraphQL suggestedActors to pick the Copilot Bot id and replace actors
     owner, name = repo.split('/')
     q = '''query($owner:String!,$name:String!){repository(owner:$owner,name:$name){suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){nodes{login __typename ... on Bot {id}}}}}'''
     try:
@@ -46,9 +46,20 @@ def assign_issue_to_copilot(repo:str, issue:int)->bool:
         nodes=data['data']['repository']['suggestedActors']['nodes']
         bot=None
         for n in nodes:
-            if n.get('__typename')=='Bot' and 'copilot' in (n.get('login') or '').lower(): bot=n; break
+            if n.get('__typename')=='Bot' and 'copilot' in (n.get('login') or '').lower() and n.get('id'):
+                bot=n; break
         if not bot:
-            print('No Copilot bot available to assign')
+            # Fallback: resolve by login as user; GraphQL returns a node id usable in replaceActorsForAssignable
+            out = subprocess.run(['gh','api','graphql','-f','query=query($login:String!){ user(login:$login){ id __typename } }','-F','login=copilot-swe-agent'], capture_output=True, text=True, check=False, env=env)
+            if out.returncode == 0 and out.stdout.strip():
+                try:
+                    uid = json.loads(out.stdout)['data']['user']['id']
+                    if uid:
+                        bot = {'id': uid}
+                except Exception:
+                    pass
+        if not bot:
+            print('No Copilot id available to assign')
             return False
         issue_id = run_gh_json(['issue','view',str(issue),'--repo',repo,'--json','id']).get('id')
         mut=f'''mutation{{ replaceActorsForAssignable(input:{{ assignableId:"{issue_id}", actorIds:["{bot['id']}"] }}){{ clientMutationId }} }}'''
