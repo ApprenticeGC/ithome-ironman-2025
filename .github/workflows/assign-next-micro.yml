@@ -39,8 +39,8 @@ jobs:
             COPILOT_ID=$(gh api graphql -f query='query($login:String!){ user(login:$login){ id __typename } }' -F login='copilot-swe-agent' --jq '.data.user.id' || true)
             if [ -n "$COPILOT_ID" ]; then BOT="$COPILOT_ID"; else echo "No Copilot id resolved"; exit 1; fi
           fi
-          # Assign via replaceActorsForAssignable
-          M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId:$assignableId, actorIds:$actorIds }){ clientMutationId } }'
-          gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$BOT" >/dev/null
+          # Assign via addAssigneesToAssignable
+          M='mutation($assignableId: ID!, $assigneeIds: [ID!]!){ addAssigneesToAssignable(input:{ assignableId:$assignableId, assigneeIds:$assigneeIds }){ clientMutationId } }'
+          gh api graphql -f query="$M" -F assignableId="$IID" -F assigneeIds="$BOT" >/dev/null
           gh issue view "$ISSUE" --repo "$REPO" --json assignees,url
 

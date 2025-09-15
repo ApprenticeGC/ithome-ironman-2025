@@ -62,7 +62,7 @@ def assign_issue_to_copilot(repo:str, issue:int)->bool:
             print('No Copilot id available to assign')
             return False
         issue_id = run_gh_json(['issue','view',str(issue),'--repo',repo,'--json','id']).get('id')
-        mut=f'''mutation{{ replaceActorsForAssignable(input:{{ assignableId:"{issue_id}", actorIds:["{bot['id']}"] }}){{ clientMutationId }} }}'''
+        mut=f'''mutation{{ addAssigneesToAssignable(input:{{ assignableId:"{issue_id}", assigneeIds:["{bot['id']}"] }}){{ clientMutationId }} }}'''
         _=subprocess.run(['gh','api','graphql','-f',f'query={mut}'], capture_output=True, text=True, check=True, env=env)
         print(f"Assigned issue #{issue} to Copilot (bot id {bot['id']})")
         return True
