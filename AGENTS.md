@@ -50,3 +50,5 @@ Automation flow
 Notes
 - Do not source control “micro RFC” files. Micro RFCs exist only as GitHub issues derived from a Game RFC.
 - Author new RFCs using `docs/rfc-templates/RFC-TEMPLATE.md` and keep them under `docs/RFC/`.
+
+Flow smoke tested: RFC-090
