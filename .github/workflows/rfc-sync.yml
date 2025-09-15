@@ -65,22 +65,7 @@ jobs:
             base=$(basename "$f")
             if [[ "$base" =~ RFC-([0-9]{3}) ]]; then
               RFC=${BASH_REMATCH[1]}
-            else
-              continue
+              echo "Assigning earliest unassigned for RFC-$RFC via helper"
+              REPO="${REPO}" python .github/scripts/assign_first_open_for_rfc.py "$RFC" || true
             fi
-            echo "Assigning first open micro for RFC-$RFC"
-            # Find earliest open unassigned micro; tie-break by issue number
-            SEL=$(gh issue list --repo "$REPO" --state open --json number,title,assignees --jq \
-              "[ .[] | select(.title | test(\"RFC-$RFC-[0-9]{2}\"; \"i\")) | {num:.number,a:(.assignees|length),m:(.title|capture(\"RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})\").m|tonumber)} ] | map(select(.a==0)) | sort_by(.m, .num) | .[0].num" || true)
-            if [ -z "$SEL" ] || [ "$SEL" = "null" ]; then
-              echo "No unassigned micro found for RFC-$RFC"; continue; fi
-            # Resolve Copilot bot id
-            OWNER=${REPO%/*}; NAME=${REPO#*/}
-            Q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } } } } }'
-            BOT=$(gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes[] | select(."__typename"=="Bot" and (.login|ascii_downcase|test("copilot"))) | .id' | head -n1)
-            if [ -z "$BOT" ]; then echo "No Copilot bot id"; continue; fi
-            IID=$(gh issue view "$SEL" --repo "$REPO" --json id --jq .id)
-            M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId:$assignableId, actorIds:$actorIds }){ clientMutationId } }'
-            gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$BOT" >/dev/null || true
-            echo "Assigned issue #$SEL to Copilot for RFC-$RFC"
           done
