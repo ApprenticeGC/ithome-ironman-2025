@@ -11,10 +11,10 @@ permissions:
 jobs:
   approve_and_automerge:
     if: >-
-      ${
+      ${{
         startsWith(github.event.pull_request.title, 'RFC-') ||
         contains(github.event.pull_request.title, 'RFC-')
-      }
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Guard – same repo and Copilot author
@@ -48,4 +48,3 @@ jobs:
         run: |
           # Attempt to enable auto-merge; requires repo setting "Allow auto-merge"
           gh pr merge ${{ github.event.pull_request.number }} --auto --squash --repo ${{ github.repository }} || true
-
