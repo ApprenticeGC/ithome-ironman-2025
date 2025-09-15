@@ -35,9 +35,9 @@ Definition of done
 
 Where to look
 - Flow docs: `docs/flow-rfcs/` (agent automation/process docs)
-- Game RFCs (single source of truth): `docs/RFC/`
-- Multi-modal + profiles: `docs/RFC/RFC-010-multi-modal-ui.md`, `docs/RFC/RFC-011-ui-mode-profiles.md`
-- ECS behavior: `docs/RFC/RFC-014-ecs-behavior-composition.md`
+- Game RFCs (single source of truth): `docs/game-rfcs/`
+- Multi-modal + profiles: `docs/game-rfcs/RFC-010-multi-modal-ui.md`, `docs/game-rfcs/RFC-011-ui-mode-profiles.md`
+- ECS behavior: `docs/game-rfcs/RFC-014-ecs-behavior-composition.md`
 
 Automation flow
 - Create micro RFC issues with `.github/ISSUE_TEMPLATE/rfc.yml` (use IDs like `RFC-014-01`).

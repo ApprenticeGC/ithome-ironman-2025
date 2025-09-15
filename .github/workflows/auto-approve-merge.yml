@@ -12,30 +12,12 @@ jobs:
   approve_and_automerge:
     if: >-
       ${{
-        startsWith(github.event.pull_request.title, 'RFC-') ||
-        contains(github.event.pull_request.title, 'RFC-')
+        (github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name) &&
+        (github.event.pull_request.user.login == 'Copilot' || github.event.pull_request.user.login == 'app/copilot-swe-agent') &&
+        (startsWith(github.event.pull_request.title, 'RFC-') || contains(github.event.pull_request.title, 'RFC-'))
       }}
     runs-on: ubuntu-latest
     steps:
-      - name: Guard – same repo and Copilot author
-        id: guard
-        run: |
-          BASE_REPO=${{ github.event.pull_request.base.repo.full_name }}
-          HEAD_REPO=${{ github.event.pull_request.head.repo.full_name }}
-          AUTHOR=${{ github.event.pull_request.user.login }}
-          echo "base=$BASE_REPO head=$HEAD_REPO author=$AUTHOR"
-          if [ "$BASE_REPO" != "$HEAD_REPO" ]; then
-            echo "Different repo (likely a fork); skipping" >&2
-            exit 78
-          fi
-          case "$AUTHOR" in
-            Copilot|copilot-swe-agent)
-              echo ok;;
-            *)
-              echo "Non-Copilot author; skipping" >&2
-              exit 78;;
-          esac
-
       - name: Approve PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

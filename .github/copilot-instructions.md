@@ -1,7 +1,7 @@
 # Copilot Coding Agent – Repo Instructions
 
 Scope and priorities
-- Implement one RFC-scoped task per PR (from `docs/RFC/`). Keep PRs small and self-contained.
+- Implement one RFC-scoped task per PR (from `docs/game-rfcs/`). Keep PRs small and self-contained.
 - Prefer editing existing files; avoid unrelated refactors.
 
 Build and test
