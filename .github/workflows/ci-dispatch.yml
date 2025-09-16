@@ -43,6 +43,7 @@ jobs:
         if: success()
         env:
           SHA: ${{ steps.sha.outputs.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api -X POST repos/${{ github.repository }}/statuses/$SHA \
             -f state=success \
@@ -54,6 +55,7 @@ jobs:
         if: failure()
         env:
           SHA: ${{ steps.sha.outputs.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api -X POST repos/${{ github.repository }}/statuses/$SHA \
             -f state=failure \
