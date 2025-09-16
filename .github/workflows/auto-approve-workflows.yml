@@ -10,6 +10,7 @@ on:
 permissions:
   actions: write
   contents: read
+  pull-requests: read
 
 jobs:
   auto_approve_pending_workflows:
@@ -20,6 +21,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Auto-approve or bypass blocked Copilot workflows
         env:
+          # Expose both the default GITHUB_TOKEN and the PAT if available.
+          # The script will use GITHUB_TOKEN for approvals and PAT for dispatching workflows.
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_PAT: ${{ secrets.AUTO_APPROVE_TOKEN }}
           REPO: ${{ github.repository }}
         run: python3 .github/scripts/auto_approve_or_dispatch.py
