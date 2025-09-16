@@ -1,0 +1,35 @@
+name: ci-dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: 'Git ref (branch or SHA) to run CI against'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: read
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore ./dotnet
+
+      - name: Build (warnings as errors)
+        run: dotnet build ./dotnet -warnaserror --no-restore
+
+      - name: Test
+        run: dotnet test ./dotnet --no-build --verbosity normal
