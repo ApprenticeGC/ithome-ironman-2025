@@ -12,6 +12,8 @@ pnpm-lock.yaml
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
+*.egg-info/
 
 # .NET
 **/bin/
@@ -29,6 +31,6 @@ logs/
 
 # Editor
 .vscode/
- 
+
 # Game RFCs (archived externally)
 docs/game-rfcs/

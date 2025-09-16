@@ -11,6 +11,12 @@ Concise repo for notes, demos, and artifacts related to the 2025 iThome Ironman 
 - `docs/` – Playbook, RFCs, and supporting docs
 - `dotnet/` – .NET projects (libs, samples, tests)
 - `build/` – Generated artifacts (ignored in development)
+- `scripts/python/tests/` – Python test files for GitHub automation scripts
+- `scripts/python/tools/` – Development utilities and scripts
+- `scripts/python/requirements/` – Python dependency files
+- `logs/` – Log files (git ignored)
+- `scripts/` – Automation scripts by language/type
+- `.github/scripts/` – GitHub Actions automation scripts
 - `AGENTS.md` – Coding agent rules (GitHub Copilot, etc.)
 - `CLAUDE.md` – Claude-specific agent rules
 
@@ -25,12 +31,25 @@ Common actions:
 
 - Build .NET: `dotnet build`
 - Test .NET: `dotnet test`
+- Test Python scripts: `python scripts/python/tools/run_tests.py`
+- Setup development environment: `python scripts/python/tools/setup_dev.py`
+- Install dependencies: `pip install -r scripts/python/requirements/test-requirements.txt`
+- Run pre-commit hooks: `pre-commit run --all-files`
 
-## Contributing
+## Python Testing
 
-- Follow the Playbook in `docs/playbook/PLAYBOOK.md`
-- Use Conventional Commits for messages (e.g., `feat:`, `fix:`, `docs:`, `chore:`)
-- Prefer small PRs with clear intent
+The repository includes comprehensive testing for GitHub automation scripts:
+
+- **Test Runner**: `python scripts/python/tools/run_tests.py` - Runs all validation checks
+- **Unit Tests**: `python -m pytest scripts/python/tests/` - Runs pytest test suite
+- **Pre-commit Hooks**: Automatic testing on commit via `.pre-commit-config.yaml`
+
+### Test Structure:
+- `scripts/python/tests/test_scripts.py` - Main test suite for automation scripts
+- `scripts/python/tools/run_tests.py` - Test runner with multiple validation layers
+- `scripts/python/production/` - Production automation scripts (tested by the above)
+
+All Python scripts are validated for syntax, imports, and functionality before commits.
 
 ## Notes
 
