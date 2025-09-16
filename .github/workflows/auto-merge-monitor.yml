@@ -1,6 +1,8 @@
 name: auto-merge-monitor
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_run:
@@ -28,5 +30,5 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           GITHUB_EVENT: ${{ toJson(github.event) }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || '' }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
         run: python3 scripts/python/production/ensure_automerge_or_comment.py
