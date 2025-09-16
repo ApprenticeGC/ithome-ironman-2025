@@ -46,13 +46,16 @@ def run(cmd, check=True):
 def get_workflow_run_logs(workflow_run_id: str) -> Optional[str]:
     """Get the logs for a specific workflow run."""
     try:
+        # Use gh run view --log to get text logs instead of API binary download
         result = run(
             [
                 "gh",
-                "api",
-                f"/repos/{REPO}/actions/runs/{workflow_run_id}/logs",
-                "--header",
-                "Accept: application/vnd.github+json",
+                "run",
+                "view",
+                workflow_run_id,
+                "--repo",
+                REPO,
+                "--log",
             ]
         )
         return result.stdout
