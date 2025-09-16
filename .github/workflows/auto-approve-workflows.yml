@@ -1,0 +1,55 @@
+name: auto-approve-workflows
+
+# This workflow automatically approves pending workflow runs from Copilot
+on:
+  schedule:
+    # Run every 2 minutes to check for pending workflows
+    - cron: '*/2 * * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  auto_approve_pending_workflows:
+    runs-on: ubuntu-latest
+    environment: copilot
+    steps:
+      - name: Auto-approve pending Copilot workflows
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "Checking for pending workflow runs from Copilot..."
+
+          # Get workflow runs that are waiting for approval
+          PENDING_RUNS=$(gh api repos/$REPO/actions/runs \
+            --jq '.workflow_runs[] | select(.status == "action_required" and (.actor.login == "Copilot" or .actor.login == "app/copilot-swe-agent" or (.head_branch | contains("copilot/")))) | .id')
+
+          if [ -z "$PENDING_RUNS" ]; then
+            echo "No pending Copilot workflow runs found"
+            exit 0
+          fi
+
+          echo "Found pending workflow runs: $PENDING_RUNS"
+
+          # Approve each pending run
+          for run_id in $PENDING_RUNS; do
+            echo "Approving workflow run $run_id"
+
+            # Get workflow details for logging
+            RUN_INFO=$(gh api repos/$REPO/actions/runs/$run_id --jq '{name: .workflow.name, actor: .actor.login, branch: .head_branch, conclusion: .conclusion}')
+            echo "Workflow details: $RUN_INFO"
+
+            # Approve the workflow run
+            if gh api repos/$REPO/actions/runs/$run_id/approve -X POST 2>/dev/null; then
+              echo "✅ Successfully approved workflow run $run_id"
+            else
+              echo "⚠️  Failed to approve workflow run $run_id (may already be running)"
+            fi
+          done
+
+          echo "Completed approval process"
