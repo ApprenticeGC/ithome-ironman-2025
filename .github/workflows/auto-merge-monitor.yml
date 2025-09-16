@@ -2,7 +2,7 @@ name: auto-merge-monitor
 
 on:
   workflow_run:
-    workflows: ["ci"]
+    workflows: ["ci", "ci-dispatch"]
     types: ["completed"]
 
 permissions:

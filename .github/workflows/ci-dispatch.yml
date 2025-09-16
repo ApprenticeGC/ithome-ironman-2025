@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
   build_test:
@@ -19,6 +20,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.target_ref }}
+
+      - name: Resolve target commit SHA
+        id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -33,3 +38,25 @@ jobs:
 
       - name: Test
         run: dotnet test ./dotnet --no-build --verbosity normal
+
+      - name: Set commit status (success)
+        if: success()
+        env:
+          SHA: ${{ steps.sha.outputs.sha }}
+        run: |
+          gh api -X POST repos/${{ github.repository }}/statuses/$SHA \
+            -f state=success \
+            -f context=ci-dispatch \
+            -f target_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            -f description="ci-dispatch passed"
+
+      - name: Set commit status (failure)
+        if: failure()
+        env:
+          SHA: ${{ steps.sha.outputs.sha }}
+        run: |
+          gh api -X POST repos/${{ github.repository }}/statuses/$SHA \
+            -f state=failure \
+            -f context=ci-dispatch \
+            -f target_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            -f description="ci-dispatch failed"

@@ -9,17 +9,20 @@ REPO = os.environ.get("REPO") or os.environ.get("GITHUB_REPOSITORY", "")
 EVENT_JSON = os.environ.get("GITHUB_EVENT", "")
 
 
-def run(cmd, check=True):
-    return subprocess.run(cmd, check=check, text=True, capture_output=True)
+def run(cmd, check=True, extra_env: Optional[dict] = None):
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+    return subprocess.run(cmd, check=check, text=True, capture_output=True, env=env)
 
 
-def gh_json(cmd):
-    res = run(cmd)
+def gh_json(cmd, extra_env: Optional[dict] = None):
+    res = run(cmd, extra_env=extra_env)
     return json.loads(res.stdout)
 
 
 def find_pr_number_by_branch(repo: str, branch: str) -> Optional[int]:
-    out = run(["gh", "pr", "list", "--repo", repo, "--state", "open", "--json", "number,headRefName"]).stdout
+    out = run(["gh", "pr", "list", "--repo", repo, "--state", "open", "--json", "number,headRefName"], extra_env={"GH_TOKEN": os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN", "")}).stdout
     items = json.loads(out)
     for it in items:
         if it.get("headRefName") == branch:
@@ -30,7 +33,7 @@ def find_pr_number_by_branch(repo: str, branch: str) -> Optional[int]:
 def try_enable_automerge(repo: str, pr_number: int) -> bool:
     try:
         # Resolve PR node ID
-        pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"]).stdout.strip()
+    pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"], extra_env={"GH_TOKEN": os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN", "")}).stdout.strip()
         if not pr_id:
             return False
         # Use GraphQL to enable auto-merge with SQUASH method
@@ -38,7 +41,7 @@ def try_enable_automerge(repo: str, pr_number: int) -> bool:
             "mutation($id: ID!, $method: PullRequestMergeMethod!) { "
             "enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: $method}) { clientMutationId } }"
         )
-        run(["gh", "api", "graphql", "-f", f"query={query}", "-F", f"id={pr_id}", "-F", "method=SQUASH"], check=True)
+    run(["gh", "api", "graphql", "-f", f"query={query}", "-F", f"id={pr_id}", "-F", "method=SQUASH"], check=True, extra_env={"GH_TOKEN": os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN", "")})
         return True
     except subprocess.CalledProcessError as e:
         # Bubble stderr for diagnostics and return False
@@ -47,7 +50,7 @@ def try_enable_automerge(repo: str, pr_number: int) -> bool:
 
 
 def add_comment(repo: str, pr_number: int, body: str) -> None:
-    run(["gh", "pr", "comment", str(pr_number), "--repo", repo, "--body", body], check=False)
+    run(["gh", "pr", "comment", str(pr_number), "--repo", repo, "--body", body], check=False, extra_env={"GH_TOKEN": os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN", "")})
 
 
 def main():
@@ -79,7 +82,7 @@ def main():
         print("No associated PR found")
         return
 
-    pr = gh_json(["gh", "pr", "view", str(pr_number), "--repo", REPO, "--json", "number,title,author,draft,mergeStateStatus,autoMergeRequest,baseRepository"])
+    pr = gh_json(["gh", "pr", "view", str(pr_number), "--repo", REPO, "--json", "number,title,author,draft,mergeStateStatus,autoMergeRequest,baseRepository"], extra_env={"GH_TOKEN": os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN", "")})
     title = pr.get("title", "")
     author = pr.get("author", {}).get("login", "")
     draft = pr.get("draft", True)

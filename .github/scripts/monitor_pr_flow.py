@@ -61,17 +61,18 @@ def list_open_copilot_prs(repo: str):
 
 
 def has_success_ci(repo: str, branch: str) -> bool:
-    # Find workflow id for 'ci'
+    """Return True if either 'ci' or 'ci-dispatch' has a successful run on branch."""
     try:
         wfs = gh_json(["gh", "workflow", "list", "--repo", repo, "--json", "name,id"])
-        ci_id = next((str(wf["id"]) for wf in wfs if wf.get("name") == "ci"), None)
-        if not ci_id:
+        names_to_check = {"ci", "ci-dispatch"}
+        ids = [str(wf["id"]) for wf in wfs if wf.get("name") in names_to_check]
+        if not ids:
             return False
-        # The runs endpoint: use query params instead of -F to avoid method confusion
-        data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{ci_id}/runs?branch={branch}&per_page=20"])
-        for run in data.get("workflow_runs", []) or []:
-            if run.get("head_branch") == branch and run.get("conclusion") == "success":
-                return True
+        for wf_id in ids:
+            data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{wf_id}/runs?branch={branch}&per_page=20"])
+            for run in data.get("workflow_runs", []) or []:
+                if run.get("head_branch") == branch and run.get("conclusion") == "success":
+                    return True
         return False
     except subprocess.CalledProcessError as e:
         sys.stderr.write(f"has_success_ci error for {branch}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
@@ -138,6 +139,21 @@ def enable_automerge(repo: str, pr_number: int) -> bool:
         return False
 
 
+def try_merge_now(repo: str, pr_number: int) -> bool:
+    """Attempt an immediate merge (squash) as a fallback when auto-merge cannot be enabled."""
+    try:
+        env_pat = {}
+        pat = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN")
+        if pat:
+            env_pat["GH_TOKEN"] = pat
+        # Merge immediately with squash; --yes to skip prompt; delete branch after merge
+        run(["gh", "pr", "merge", str(pr_number), "--repo", repo, "--squash", "--delete-branch", "--yes"], check=True, extra_env=env_pat)
+        return True
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(f"try_merge_now error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
+        return False
+
+
 def main():
     if not REPO:
         print("REPO not set", file=sys.stderr)
@@ -169,7 +185,11 @@ def main():
                 if enable_automerge(REPO, number):
                     print(f"Enabled auto-merge for PR #{number}")
                 else:
-                    print(f"Failed to enable auto-merge for PR #{number}")
+                    # Fallback: try to merge immediately when auto-merge cannot be enabled (e.g., no branch protection rules)
+                    if try_merge_now(REPO, number):
+                        print(f"Merged PR #{number} directly (fallback)")
+                    else:
+                        print(f"Failed to enable auto-merge or merge PR #{number}")
     except Exception as e:
         # Never fail this monitor; just log the issue
         sys.stderr.write(f"monitor_pr_flow unexpected error: {e}\n")
