@@ -1,8 +1,8 @@
 name: rfc-cleanup-duplicates
 
 on:
-  pull_request:
-    types: [opened]
+  schedule:
+    - cron: '*/10 * * * *'  # Every 10 minutes
   workflow_dispatch:
 
 permissions:
@@ -12,10 +12,14 @@ permissions:
 
 jobs:
   cleanup_duplicate_rfcs:
-    if: contains(github.event.pull_request.title, 'RFC-') && contains(github.event.pull_request.title, '-')
     environment: copilot
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
       - name: Select token (prefer AUTO_APPROVE_TOKEN)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
