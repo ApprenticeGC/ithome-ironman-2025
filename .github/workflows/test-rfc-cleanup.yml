@@ -1,0 +1,104 @@
+name: test-rfc-cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no actual changes)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  test_cleanup:
+    environment: copilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select token (prefer AUTO_APPROVE_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+        run: |
+          if [ -n "${AUTO_APPROVE_TOKEN:-}" ]; then
+            echo "GH_TOKEN=$AUTO_APPROVE_TOKEN" >> $GITHUB_ENV
+            echo "Using AUTO_APPROVE_TOKEN"
+          else
+            echo "GH_TOKEN=$GITHUB_TOKEN" >> $GITHUB_ENV
+            echo "Using GITHUB_TOKEN"
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          # Add any required dependencies here if needed
+
+      - name: Run RFC cleanup tests
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "🧪 Running RFC Cleanup Tests"
+          echo "============================"
+
+          # Run the Python unit tests
+          echo "🐍 Running Python unit tests..."
+          cd scripts/python/tests
+          python3 test_rfc_cleanup.py
+
+          # Run the shell script tests if available
+          if [ -f "test-rfc-cleanup.sh" ]; then
+            echo "🐚 Running shell script tests..."
+            bash test-rfc-cleanup.sh
+          fi
+
+      - name: Test cleanup script (dry run)
+        if: inputs.dry_run == 'true'
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "🔍 Testing RFC cleanup script (dry run)..."
+          python3 scripts/python/production/rfc_cleanup_duplicates.py --dry-run --repo "$GITHUB_REPOSITORY"
+
+      - name: Test cleanup script (actual run)
+        if: inputs.dry_run == 'false'
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "⚠️  Running actual cleanup (not dry run)..."
+          echo "This will make real changes to PRs and issues!"
+          python3 scripts/python/production/rfc_cleanup_duplicates.py --repo "$GITHUB_REPOSITORY"
+
+      - name: Test Results
+        run: |
+          echo "✅ Test workflow completed successfully!"
+          echo ""
+          echo "📊 Summary:"
+          echo "  - Python unit tests: ✅"
+          if [ -f "scripts/python/tests/test-rfc-cleanup.sh" ]; then
+            echo "  - Shell script tests: ✅"
+          fi
+          echo "  - Cleanup script test: ✅ (${{ inputs.dry_run == 'true' && 'dry run' || 'actual run' }})"

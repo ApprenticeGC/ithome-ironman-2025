@@ -11,20 +11,52 @@ permissions:
 
 jobs:
   assign_earliest_unassigned:
+    environment: copilot
     runs-on: ubuntu-latest
     steps:
+      - name: Select token (prefer AUTO_APPROVE_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+        run: |
+          if [ -n "${AUTO_APPROVE_TOKEN:-}" ]; then
+            echo "GH_TOKEN=$AUTO_APPROVE_TOKEN" >> $GITHUB_ENV
+            echo "Using AUTO_APPROVE_TOKEN"
+          else
+            echo "GH_TOKEN=$GITHUB_TOKEN" >> $GITHUB_ENV
+            echo "Using GITHUB_TOKEN"
+          fi
+          # Note: AUTO_APPROVE_TOKEN provides broader permissions for assignment
+          # If not available, we'll use GITHUB_TOKEN (may have limited permissions)
       - name: Resolve Copilot bot id
         id: bot
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ env.GH_TOKEN }}
         run: |
           set -euo pipefail
           OWNER=${{ github.repository_owner }}
           NAME=${{ github.event.repository.name || github.event.workflow_run.repository.name || '' }}
           if [ -z "$NAME" ]; then NAME=$(basename "${{ github.repository }}"); fi
-          Q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } } } } }'
-          BOT=$(gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes[] | select(."__typename"=="Bot" and (.login|ascii_downcase|test("copilot"))) | .id' | head -n1)
-          if [ -z "$BOT" ]; then echo "No Copilot bot id found"; exit 0; fi
+
+          # Skip suggestedActors query (may not work with AUTO_APPROVE_TOKEN)
+          # Go straight to fallback methods
+          BOT=""
+
+          # Try fallback: direct bot lookup
+          echo "Trying fallback: direct bot lookup"
+          BOT=$(gh api graphql -f query='query{ user(login:"copilot-swe-agent"){ id } }' --jq '.data.user.id' 2>/dev/null || true)
+
+          # If still no bot found, use known bot ID as last resort
+          if [ -z "$BOT" ]; then
+            echo "Using known bot ID as fallback"
+            BOT="BOT_kgDOC9w8XQ"
+          fi
+
+          if [ -z "$BOT" ]; then
+            echo "No Copilot bot id found with any method"
+            exit 0
+          fi
+
           echo "id=$BOT" >> $GITHUB_OUTPUT
           echo "Resolved Copilot bot id: $BOT"
 
@@ -32,13 +64,20 @@ jobs:
         id: select
         if: steps.bot.outputs.id != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ env.GH_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+
+          # First, get all open PRs and their RFC numbers
+          OPEN_PRS=$(gh pr list --repo "$REPO" --state open --json number,title \
+            --jq '[ .[]
+                    | select(.title | test("RFC-[0-9]{3}-[0-9]{2}"; "i"))
+                    | (.title|capture("RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})").r|tonumber) ] | unique')
+
           # Gather open issues that look like micro RFCs and pick the earliest unassigned per RFC
           IDS=$(gh issue list --repo "$REPO" --state open --json number,title,assignees \
-            --jq '[ .[]
+            --jq --argjson openPrRfcs "$OPEN_PRS" '[ .[]
                     | select(.title | test("RFC-[0-9]{3}-[0-9]{2}"; "i"))
                     | {num:.number,
                        a:(.assignees|length),
@@ -46,6 +85,7 @@ jobs:
                        m:(.title|capture("RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})").m|tonumber)} ]
                   | sort_by(.r, .m, .num)
                   | group_by(.r)
+                  | map( select( ($openPrRfcs | index(.[0].r)) == null ) )  # Filter out RFCs with open PRs
                   | map( (map(select(.a==0)) | first) )
                   | map(select(. != null))
                   | map(.num)
@@ -58,7 +98,7 @@ jobs:
       - name: Assign selected issues to Copilot
         if: steps.select.outputs.ids != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ env.GH_TOKEN }}
           REPO: ${{ github.repository }}
           BOT: ${{ steps.bot.outputs.id }}
         run: |

@@ -1,0 +1,61 @@
+name: rfc-cleanup-duplicates
+
+on:
+  pull_request:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  cleanup_duplicate_rfcs:
+    if: contains(github.event.pull_request.title, 'RFC-') && contains(github.event.pull_request.title, '-')
+    environment: copilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select token (prefer AUTO_APPROVE_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+        run: |
+          if [ -n "${AUTO_APPROVE_TOKEN:-}" ]; then
+            echo "GH_TOKEN=$AUTO_APPROVE_TOKEN" >> $GITHUB_ENV
+            echo "Using AUTO_APPROVE_TOKEN"
+          else
+            echo "GH_TOKEN=$GITHUB_TOKEN" >> $GITHUB_ENV
+            echo "Using GITHUB_TOKEN"
+          fi
+
+      - name: Find RFC series with multiple open PRs
+        id: find_duplicates
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Run Python script to find duplicates (dry run)
+          echo "🔍 Analyzing for duplicate RFCs..."
+          python3 scripts/python/production/rfc_cleanup_duplicates.py --dry-run --repo "$REPO" || true
+
+          # For workflow purposes, we need to set outputs
+          echo "analysis_complete=true" >> $GITHUB_OUTPUT
+
+      - name: Clean up duplicate RFC PRs
+        if: steps.find_duplicates.outputs.analysis_complete == 'true'
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "🧹 Running RFC cleanup..."
+          python3 scripts/python/production/rfc_cleanup_duplicates.py --repo "$REPO"
+
+      - name: Summary
+        if: steps.find_duplicates.outputs.analysis_complete == 'true'
+        run: |
+          echo "✅ RFC cleanup workflow completed successfully"
