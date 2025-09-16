@@ -37,6 +37,14 @@ Common actions:
 - Main may be fast-moving initially; branch protection can be added later.
 - Keep edits minimal and focused; avoid formatting-only diffs unless needed.
 
+### Autonomous Flow Test
+
+This repository includes RFC-096, an autonomous flow test designed to validate the end-to-end Copilot workflow described in RFC-090. The test creates simple micro issues that exercise the complete autonomous flow: micro-issue generation → Copilot assignment → PR creation → CI → auto-ready → auto-merge → auto-advance.
+
+- **Test RFC**: `docs/game-rfcs/RFC-096-autonomous-flow-test-20250916.md`
+- **Test Timestamp**: 2025-09-16T01:36:57Z  
+- **Test Class**: `dotnet/TestLib/AutonomousFlowTest.cs`
+
 ## Badges
 
 [![CI](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml/badge.svg)](https://github.com/ApprenticeGC/ithome-ironman-2025/actions/workflows/ci.yml)
