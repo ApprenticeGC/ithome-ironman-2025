@@ -135,6 +135,12 @@ def dispatch_ci(repo: str, branch: str) -> bool:
                 return True
         except subprocess.CalledProcessError as e2:
             sys.stderr.write(f"dispatch_ci id error for {branch}: {e2}\nSTDOUT: {e2.stdout}\nSTDERR: {e2.stderr}\n")
+    # Fallback: use ci-dispatch workflow with explicit input
+    try:
+        run(["gh", "workflow", "run", "ci-dispatch", "-f", f"target_ref={branch}"], check=True, extra_env=env_pat)
+        return True
+    except subprocess.CalledProcessError as e3:
+        sys.stderr.write(f"dispatch_ci fallback error for {branch}: {e3}\nSTDOUT: {e3.stdout}\nSTDERR: {e3.stderr}\n")
     return False
 
 def main():
