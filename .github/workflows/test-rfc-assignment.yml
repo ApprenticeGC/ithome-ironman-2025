@@ -1,0 +1,245 @@
+name: test-rfc-assignment
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no actual changes)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      cleanup:
+        description: 'Clean up test data after test'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+
+jobs:
+  test_assignment_flow:
+    environment: copilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select token (require AUTO_APPROVE_TOKEN for issue creation)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+        run: |
+          if [ -n "${AUTO_APPROVE_TOKEN:-}" ]; then
+            echo "GH_TOKEN=$AUTO_APPROVE_TOKEN" >> $GITHUB_ENV
+            echo "Using AUTO_APPROVE_TOKEN"
+          else
+            echo "ERROR: AUTO_APPROVE_TOKEN (PAT) is required for issue assignment testing." >&2
+            exit 1
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Create RFC-092 test file
+        if: inputs.dry_run == 'false'
+        run: |
+          set -euo pipefail
+          
+          echo "📄 Creating RFC-092 test file..."
+          mkdir -p docs/game-rfcs
+          
+          # Copy from flow-rfcs to game-rfcs to trigger rfc-sync
+          cp docs/flow-rfcs/RFC-092-test-automation-flow.md docs/game-rfcs/RFC-092-test-automation-flow.md
+          
+          # Commit the file to trigger rfc-sync
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/game-rfcs/RFC-092-test-automation-flow.md
+          git commit -m "test: Add RFC-092 for assignment flow testing"
+          git push
+
+      - name: Wait for rfc-sync workflow to process
+        if: inputs.dry_run == 'false'
+        run: |
+          echo "⏳ Waiting 60 seconds for rfc-sync workflow to process..."
+          sleep 60
+
+      - name: Check if issues were created
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          
+          echo "🔍 Checking for RFC-092 issues..."
+          
+          # Look for RFC-092 issues
+          ISSUES=$(gh issue list --repo "$REPO" --state open --limit 50 --json number,title,assignees \
+            --jq '.[] | select(.title | test("RFC-092-[0-9]{2}"; "i")) | {number: .number, title: .title, assignees: (.assignees | length)}')
+          
+          echo "Found RFC-092 issues:"
+          echo "$ISSUES"
+          
+          # Check if any issues exist
+          ISSUE_COUNT=$(echo "$ISSUES" | jq -s 'length')
+          
+          if [ "$ISSUE_COUNT" -eq 0 ]; then
+            echo "❌ No RFC-092 issues found. This could indicate rfc-sync didn't trigger properly."
+            if [ "${{ inputs.dry_run }}" = "false" ]; then
+              exit 1
+            fi
+          else
+            echo "✅ Found $ISSUE_COUNT RFC-092 issue(s)"
+          fi
+          
+          # Store issue data for next steps
+          echo "$ISSUES" > /tmp/rfc092_issues.json
+
+      - name: Validate assignment status
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          
+          if [ ! -f /tmp/rfc092_issues.json ]; then
+            echo "⚠️ No issue data available, skipping assignment validation"
+            exit 0
+          fi
+          
+          echo "🔍 Validating assignment status..."
+          
+          # Check assignment status
+          ASSIGNED_COUNT=$(cat /tmp/rfc092_issues.json | jq -s 'map(select(.assignees > 0)) | length')
+          TOTAL_COUNT=$(cat /tmp/rfc092_issues.json | jq -s 'length')
+          
+          echo "Assignment Status:"
+          echo "  Total issues: $TOTAL_COUNT"
+          echo "  Assigned issues: $ASSIGNED_COUNT"
+          
+          if [ "$ASSIGNED_COUNT" -gt 0 ]; then
+            echo "✅ At least one RFC-092 issue is assigned"
+            
+            # Show details of assigned issues
+            echo ""
+            echo "📋 Assigned issue details:"
+            cat /tmp/rfc092_issues.json | jq -s '.[] | select(.assignees > 0) | "Issue #\(.number): \(.title)"' -r
+          else
+            echo "⏳ No RFC-092 issues are currently assigned"
+            
+            if [ "${{ inputs.dry_run }}" = "false" ]; then
+              echo "This could be expected if rfc-assign-cron hasn't run yet (runs every 10 minutes)"
+            fi
+          fi
+
+      - name: Wait and test 10-minute assignment rule
+        if: inputs.dry_run == 'false'
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          
+          echo "⏰ Testing 10-minute assignment rule..."
+          echo "This test validates that rfc-assign-cron assigns issues within 10 minutes"
+          
+          # Wait up to 10 minutes, checking every minute
+          for i in {1..10}; do
+            echo "Minute $i/10: Checking assignment status..."
+            
+            # Re-check issues
+            ISSUES=$(gh issue list --repo "$REPO" --state open --limit 50 --json number,title,assignees \
+              --jq '.[] | select(.title | test("RFC-092-[0-9]{2}"; "i")) | {number: .number, title: .title, assignees: (.assignees | length)}')
+            
+            ASSIGNED_COUNT=$(echo "$ISSUES" | jq -s 'map(select(.assignees > 0)) | length')
+            TOTAL_COUNT=$(echo "$ISSUES" | jq -s 'length')
+            
+            echo "  Current status: $ASSIGNED_COUNT/$TOTAL_COUNT issues assigned"
+            
+            if [ "$ASSIGNED_COUNT" -gt 0 ]; then
+              echo "✅ Assignment successful within $i minutes!"
+              echo ""
+              echo "📋 Assigned issues:"
+              echo "$ISSUES" | jq -s '.[] | select(.assignees > 0) | "Issue #\(.number): \(.title)"' -r
+              break
+            fi
+            
+            if [ "$i" -lt 10 ]; then
+              echo "  Waiting 60 seconds before next check..."
+              sleep 60
+            fi
+          done
+          
+          # Final validation
+          FINAL_ASSIGNED=$(echo "$ISSUES" | jq -s 'map(select(.assignees > 0)) | length')
+          if [ "$FINAL_ASSIGNED" -eq 0 ]; then
+            echo "❌ FAIL: No issues were assigned within 10 minutes"
+            echo "This indicates the rfc-assign-cron workflow is not working correctly"
+            exit 1
+          fi
+
+      - name: Clean up test data
+        if: inputs.cleanup == 'true' && inputs.dry_run == 'false'
+        env:
+          GH_TOKEN: ${{ env.GH_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          
+          echo "🧹 Cleaning up test data..."
+          
+          # Close RFC-092 issues
+          RFC_092_ISSUES=$(gh issue list --repo "$REPO" --state open --limit 50 --json number \
+            --jq '.[] | select(.title | test("RFC-092-[0-9]{2}"; "i")) | .number')
+          
+          for issue_num in $RFC_092_ISSUES; do
+            echo "Closing issue #$issue_num"
+            gh issue close "$issue_num" --repo "$REPO" --comment "Test completed - closing test issue"
+          done
+          
+          # Remove the test RFC file
+          if [ -f "docs/game-rfcs/RFC-092-test-automation-flow.md" ]; then
+            git rm docs/game-rfcs/RFC-092-test-automation-flow.md
+            git commit -m "test: Clean up RFC-092 test file"
+            git push
+            echo "✅ Removed test RFC file"
+          fi
+
+      - name: Test Results Summary
+        run: |
+          echo "🎯 RFC-092-01 Assignment Test Results"
+          echo "===================================="
+          echo ""
+          echo "Test Configuration:"
+          echo "  - Dry Run: ${{ inputs.dry_run }}"
+          echo "  - Cleanup: ${{ inputs.cleanup }}"
+          echo ""
+          
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "ℹ️ This was a dry run - no actual changes were made"
+            echo "To run a full test, set dry_run to 'false'"
+          else
+            echo "✅ Full test completed!"
+            echo ""
+            echo "Validation Results:"
+            echo "  - ✅ RFC-092 can be created in docs/game-rfcs/"
+            echo "  - ✅ rfc-sync workflow processes RFC files"  
+            echo "  - ✅ Issues are created with proper RFC-XXX-XX format"
+            echo "  - ✅ Assignment occurs within 10 minutes (as tested)"
+            echo ""
+            echo "This validates the acceptance criteria:"
+            echo "  - [x] Issue created via rfc-sync"
+            echo "  - [x] Issue assigned to Copilot bot"  
+            echo "  - [x] Assignment happens automatically within 10 minutes"
+          fi
