@@ -184,21 +184,50 @@ This repository contains 21 GitHub workflows that implement an automated coding 
 - `pull-requests: write` - For PR operations
 - `actions: write` - For workflow management
 
-## Why the Flow Keeps Breaking
+## Why the Flow Keeps Breaking (Corrected Analysis)
 
-1. **Manual Bottlenecks**: Key steps require manual trigger (RFC creation, issue generation)
+### **Real Bottlenecks Identified:**
 
-2. **Missing Automation**: No automatic PR creation from assigned issues
+1. **Draft→Ready-for-Review Pipeline Failure**
+   - **Problem**: PRs get stuck in draft state even when CI shows "success"
+   - **Root Cause**: `auto-ready-pr.yml` only checks `workflow_run.conclusion == 'success'` but doesn't validate actual build logs
+   - **Impact**: Blocks entire auto-merge pipeline since PRs never become ready
+   - **Location**: Lines 22-24 in `auto-ready-pr.yml`
 
-3. **Token Failures**: PAT dependency creates single points of failure
+2. **Multi-Assignment Race Conditions**
+   - **Problem**: Multiple issues from same RFC series get assigned simultaneously (e.g., RFC-093-01 and RFC-093-03)
+   - **Rule Violation**: Only ONE issue per RFC series should be assigned to Copilot at a time
+   - **Impact**: Creates competing PRs, workflow chaos, and resource conflicts
+   - **Current Gap**: `rfc-assign-cron.yml` prevents some cases but not all race conditions
 
-4. **State Inconsistency**: No centralized tracking of where issues are in the lifecycle
+3. **Assignment Non-Reversibility**
+   - **Problem**: Once Copilot is assigned to an issue, it cannot be unassigned
+   - **Consequence**: Only solution is to remove entire chain (issue + PR + branch)
+   - **Missing**: Atomic cleanup mechanism for removing assignment chains
 
-5. **Cleanup Race Conditions**: Multiple cleanup workflows may interfere with each other
+4. **False CI Success Detection**
+   - **Problem**: GitHub Actions reports "success" but build logs contain actual failures
+   - **Impact**: PRs appear ready but contain broken code
+   - **Missing**: Deep log analysis in CI success validation
 
-6. **RFC Path Confusion**: Workflows reference different RFC paths (`docs/game-rfcs/` vs others)
+### **Corrected Understanding:**
 
-7. **Environment Dependency**: Many workflows require `copilot` environment which may not be available
+❌ **Previous Incorrect Assumptions:**
+- Issue→PR creation is missing (Actually: Copilot DOES create PRs automatically)
+- PR merge→Issue closure is missing (Actually: GitHub's "Closes #123" works)
+- RFC creation is entirely manual (Actually: `rfc-sync.yml` handles pushes)
+
+✅ **Actual Working Components:**
+- RFC Push → Issue Creation (`rfc-sync.yml`)
+- Issue Assignment → PR Creation (Copilot automatic)
+- PR Merge → Issue Closure (GitHub native linking)
+- Assignment → Bot Engagement (`rfc-assign-cron.yml`)
+
+❌ **Actual Broken Components:**
+- CI Success → Draft→Ready transition (shallow validation)
+- Multi-assignment prevention (race conditions)
+- Assignment chain cleanup (atomic removal missing)
+- Deep CI validation (log analysis missing)
 
 ## Current Flow Analysis
 
@@ -221,27 +250,143 @@ This repository contains 21 GitHub workflows that implement an automated coding 
 - **Pre-commit hooks**: Enhanced with robust YAML validation for workflow files
 - **Token handling**: Improved fallback mechanisms in several workflows
 
-## Recommended Fixes
+## Recommended Fixes (Updated)
 
-1. **Add Missing Workflows**:
-   - `create-rfc-from-issue.yml`
-   - `create-pr-from-assigned-issue.yml`
-   - `auto-close-issues-on-merge.yml`
+### **Priority 1: Critical Pipeline Fixes**
 
-2. **Improve Token Management**:
-   - Implement robust fallback chains
-   - Use service accounts instead of PAT where possible
+1. **Enhance CI Success Validation**
+   - Improve `auto-ready-pr.yml` to analyze build logs, not just status
+   - Add deep validation for .NET build warnings/errors
+   - Implement retry mechanism for false positives
 
-3. **Add State Management**:
-   - Central workflow state tracking
-   - Clear handoff mechanisms between steps
+2. **Strengthen Multi-Assignment Prevention**
+   - Add mutex locks in `rfc-assign-cron.yml`
+   - Implement pre-assignment RFC series conflict checking
+   - Add validation before any assignment operation
 
-4. **Standardize RFC Paths**:
-   - Consistent RFC file location references
-   - Single source of truth for RFC management
+3. **Create Atomic Assignment Chain Cleanup**
+   - New workflow: `cleanup-assignment-chain.yml`
+   - Atomic operations: close issue + close PR + delete branch
+   - Triggered by manual dispatch or automatic detection
 
-5. **Reduce Manual Dependencies**:
-   - Automate RFC creation from templates
-   - Automatic PR creation integration
+### **Priority 2: System Robustness**
 
-The system shows sophisticated understanding of automated workflows but suffers from incomplete automation and fragile dependencies that cause frequent breakdowns in the intended flow.
+4. **Improve Token Management**:
+   - Implement robust fallback chains for `AUTO_APPROVE_TOKEN`
+   - Add graceful degradation when PAT is unavailable
+
+5. **Add Assignment Chain State Tracking**:
+   - Track RFC series → active issue mapping
+   - Prevent new assignments when series is active
+   - Clear state when chains are cleaned up
+
+### **Priority 3: Testing Infrastructure**
+
+6. **Implement Workflow Testing Framework**:
+   - Test issue creation scenarios
+   - Test multi-assignment race conditions
+   - Test CI success/failure transitions
+   - Test cleanup operations
+
+## Workflow Testing Framework Design
+
+### **Testing Approach Options**
+
+#### **Option 1: Live Issue Testing (Current Reality)**
+- **Method**: Create real issues with test RFC prefixes (e.g., RFC-999-XX)
+- **Pros**: Tests actual workflow behavior, real GitHub API interactions
+- **Cons**: Clutters issue tracker, uses real resources, harder to cleanup
+- **Use Cases**: End-to-end integration testing
+
+#### **Option 2: Dedicated Test Repository**
+- **Method**: Mirror workflows in a test repo with isolated environment
+- **Pros**: No pollution of main repo, safe experimentation
+- **Cons**: May not reflect real environment behavior, maintenance overhead
+- **Use Cases**: Workflow development and validation
+
+#### **Option 3: Workflow Simulation Framework**
+- **Method**: Mock GitHub API responses and simulate workflow triggers
+- **Pros**: Fast, repeatable, no resource usage
+- **Cons**: May miss real-world edge cases and timing issues
+- **Use Cases**: Unit testing of workflow logic
+
+### **Recommended Test Cases**
+
+#### **Scenario 1: Normal Flow**
+```
+Test: RFC-999-01 → Assignment → PR Creation → CI Success → Ready → Merge → Issue Close
+Expected: Complete successful workflow
+Validation: Issue closed, PR merged, branch deleted
+```
+
+#### **Scenario 2: Multi-Assignment Race Condition**
+```
+Test: RFC-999-01 and RFC-999-02 created simultaneously
+Expected: Only RFC-999-01 gets assigned, RFC-999-02 remains unassigned
+Validation: Single assignment per RFC series rule enforced
+```
+
+#### **Scenario 3: CI False Success**
+```
+Test: CI reports success but build logs contain warnings/errors
+Expected: PR remains in draft state, not marked ready
+Validation: Deep CI validation prevents false ready transition
+```
+
+#### **Scenario 4: Assignment Chain Cleanup**
+```
+Test: Manual cleanup of RFC-999-03 assignment chain
+Expected: Issue closed, PR closed, branch deleted atomically
+Validation: Complete chain removal, no orphaned resources
+```
+
+#### **Scenario 5: Token Failure Recovery**
+```
+Test: AUTO_APPROVE_TOKEN unavailable during assignment
+Expected: Graceful fallback to GITHUB_TOKEN or error handling
+Validation: System continues functioning or fails gracefully
+```
+
+#### **Scenario 6: RFC Cleanup Duplicates**
+```
+Test: RFC-999-01 created after RFC-999-03 is already active
+Expected: RFC-999-03 PR/issue closed, recreated as unassigned issue
+Validation: RFC ordering rules enforced, cleanup workflow works
+```
+
+### **Testing Implementation Strategy**
+
+#### **Phase 1: Live Testing with Test RFC Series**
+1. **Create**: RFC-998-XX test series for safe experimentation
+2. **Document**: Expected behaviors for each scenario
+3. **Execute**: Run each test case manually with observation
+4. **Validate**: Confirm workflows behave as expected
+5. **Cleanup**: Remove test artifacts after validation
+
+#### **Phase 2: Automated Test Workflow**
+1. **Create**: `test-workflow-scenarios.yml` for automated testing
+2. **Implement**: Test harness that creates/cleans test issues
+3. **Validate**: Automated assertion checking for expected outcomes
+4. **Report**: Test results and workflow health metrics
+
+#### **Phase 3: Continuous Workflow Validation**
+1. **Monitor**: Real workflow performance metrics
+2. **Alert**: When workflows deviate from expected behavior
+3. **Recover**: Automatic or guided manual recovery procedures
+
+### **Test Execution Recommendations**
+
+**Immediate Testing Approach:**
+- Use RFC-998-XX series for safe live testing
+- Create issues manually with predictable titles
+- Observe workflow behavior in real GitHub environment
+- Document actual vs. expected behavior
+- Use findings to improve workflow robustness
+
+**Long-term Testing Strategy:**
+- Build automated test harness
+- Implement comprehensive scenario coverage
+- Add workflow health monitoring
+- Create self-healing mechanisms for common failures
+
+The live testing approach with dedicated test RFC series (998-XX) provides the most realistic validation while minimizing impact on production workflows.
