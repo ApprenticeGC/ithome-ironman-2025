@@ -43,7 +43,8 @@ jobs:
           if [[ "$TITLE" != *RFC-* ]]; then echo "No RFC tag in title"; exit 0; fi
           # Ensure same-repo (not a fork)
           if [ "$BASE" != "${{ github.repository }}" ]; then echo "Different base repo"; exit 0; fi
-          gh api -X POST repos/${{ github.repository }}/pulls/$PR_NUMBER/ready_for_review
+          # Use GraphQL to mark PR as ready for review
+          gh api graphql -f query='mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }' -F id="$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json id -q .id)"
 
   mark_ready_on_command:
     if: >-
@@ -65,7 +66,8 @@ jobs:
           PR_JSON=$(gh pr view "$PR_NUMBER" --repo ${{ github.repository }} --json draft)
           DRAFT=$(jq -r .draft <<< "$PR_JSON")
           if [ "$DRAFT" = "true" ]; then
-            gh api -X POST repos/${{ github.repository }}/pulls/$PR_NUMBER/ready_for_review
+            # Use GraphQL to mark PR as ready for review
+            gh api graphql -f query='mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }' -F id="$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json id -q .id)"
           else
             echo "PR already ready"
           fi
