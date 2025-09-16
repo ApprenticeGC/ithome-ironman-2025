@@ -72,7 +72,8 @@ def try_enable_automerge(repo: str, pr_number: int) -> bool:
         # Use GraphQL to enable auto-merge with SQUASH method
         query = (
             "mutation($id: ID!, $method: PullRequestMergeMethod!) { "
-            "enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: $method}) { clientMutationId } }"
+            "enablePullRequestAutoMerge(input: {pullRequestId: $id, "
+            "mergeMethod: $method}) { clientMutationId } }"
         )
         run(
             [
@@ -110,40 +111,8 @@ def add_comment(repo: str, pr_number: int, body: str) -> None:
     )
 
 
-def main():
-    global EVENT_JSON
-    if not REPO:
-        print("REPO not set", file=sys.stderr)
-        sys.exit(1)
-
-    if not EVENT_JSON:
-        EVENT_JSON = (
-            os.environ.get("GITHUB_EVENT_PATH")
-            and open(os.environ["GITHUB_EVENT_PATH"], "r", encoding="utf-8").read()
-            or "{}"
-        )
-    evt = json.loads(EVENT_JSON)
-
-    wr = evt.get("workflow_run", {})
-    conclusion = wr.get("conclusion")
-    if conclusion != "success":
-        print("Not a successful workflow_run; exiting")
-        return
-
-    pr_number = None
-    prs = wr.get("pull_requests") or []
-    if prs:
-        pr_number = prs[0].get("number")
-
-    if pr_number is None:
-        branch = wr.get("head_branch")
-        if branch:
-            pr_number = find_pr_number_by_branch(REPO, branch)
-
-    if pr_number is None:
-        print("No associated PR found")
-        return
-
+def process_pr(repo: str, pr_number: int) -> None:
+    """Process a PR to enable auto-merge if appropriate."""
     pr = gh_json(
         [
             "gh",
@@ -151,9 +120,10 @@ def main():
             "view",
             str(pr_number),
             "--repo",
-            REPO,
+            repo,
             "--json",
-            "number,title,author,draft,mergeStateStatus,autoMergeRequest,baseRepository",
+            "number,title,author,draft,mergeStateStatus,"
+            "autoMergeRequest,baseRepository",
         ],
         extra_env={
             "GH_TOKEN": os.environ.get("AUTO_APPROVE_PAT")
@@ -176,7 +146,7 @@ def main():
     if "RFC-" not in title:
         print("No RFC tag in title; skipping")
         return
-    if base != REPO:
+    if base != repo:
         print("Different base repo; skipping")
         return
     if draft:
@@ -188,7 +158,7 @@ def main():
         print("Auto-merge already enabled")
         return
 
-    if try_enable_automerge(REPO, pr_number):
+    if try_enable_automerge(repo, pr_number):
         print(f"Enabled auto-merge for PR #{pr_number}")
         return
 
@@ -201,8 +171,64 @@ def main():
         "- Branch protection prevents auto-merge\n"
         "\nAction taken: None. Please adjust settings or enable auto-merge manually."
     )
-    add_comment(REPO, pr_number, body)
+    add_comment(repo, pr_number, body)
     print("Posted diagnostic comment")
+
+
+def main():
+    global EVENT_JSON
+    if not REPO:
+        print("REPO not set", file=sys.stderr)
+        sys.exit(1)
+
+    # Check if PR number is provided directly
+    pr_number_env = os.environ.get("PR_NUMBER")
+    if pr_number_env:
+        try:
+            pr_number = int(pr_number_env)
+            print(f"Using PR number from environment: #{pr_number}")
+            process_pr(REPO, pr_number)
+            return
+        except (ValueError, TypeError):
+            print("Invalid PR_NUMBER in environment", file=sys.stderr)
+
+    if not EVENT_JSON:
+        EVENT_JSON = (
+            os.environ.get("GITHUB_EVENT_PATH")
+            and open(os.environ["GITHUB_EVENT_PATH"], "r", encoding="utf-8").read()
+            or "{}"
+        )
+    evt = json.loads(EVENT_JSON)
+
+    # Handle direct PR events
+    if evt.get("pull_request"):
+        pr_number = evt["pull_request"]["number"]
+        print(f"Processing PR from direct event: #{pr_number}")
+        process_pr(REPO, pr_number)
+        return
+
+    # Handle workflow_run events (existing logic)
+    wr = evt.get("workflow_run", {})
+    conclusion = wr.get("conclusion")
+    if conclusion != "success":
+        print("Not a successful workflow_run; exiting")
+        return
+
+    pr_number = None
+    prs = wr.get("pull_requests") or []
+    if prs:
+        pr_number = prs[0].get("number")
+
+    if pr_number is None:
+        branch = wr.get("head_branch")
+        if branch:
+            pr_number = find_pr_number_by_branch(REPO, branch)
+
+    if pr_number is None:
+        print("No associated PR found")
+        return
+
+    process_pr(REPO, pr_number)
 
 
 if __name__ == "__main__":

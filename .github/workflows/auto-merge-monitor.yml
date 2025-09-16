@@ -1,6 +1,8 @@
 name: auto-merge-monitor
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_run:
     workflows: ["ci", "ci-dispatch"]
     types: ["completed"]
@@ -13,9 +15,13 @@ jobs:
   ensure_automerge:
     if: >-
       ${{
-        github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+        (github.event_name == 'pull_request' && github.event.pull_request.draft == false) ||
+        (github.event_name == 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success' &&
+         (github.event.workflow_run.event == 'pull_request' ||
+          github.event.workflow_run.event == 'pull_request_target' ||
+          github.event.workflow_run.event == 'push' ||
+          github.event.workflow_run.event == 'workflow_dispatch'))
       }}
     environment: copilot
     runs-on: ubuntu-latest
@@ -27,4 +33,5 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           GITHUB_EVENT: ${{ toJson(github.event) }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || '' }}
         run: python3 scripts/python/production/ensure_automerge_or_comment.py
