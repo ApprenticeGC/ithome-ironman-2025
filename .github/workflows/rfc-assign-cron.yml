@@ -14,6 +14,9 @@ jobs:
     environment: copilot
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Select token (prefer AUTO_APPROVE_TOKEN)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,8 +63,7 @@ jobs:
           echo "id=$BOT" >> $GITHUB_OUTPUT
           echo "Resolved Copilot bot id: $BOT"
 
-      - name: Select earliest unassigned micro per RFC
-        id: select
+      - name: Find and assign unassigned RFC issues
         if: steps.bot.outputs.id != ''
         env:
           GH_TOKEN: ${{ env.GH_TOKEN }}
@@ -69,47 +71,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          # First, get all open PRs and their RFC numbers
-          OPEN_PRS=$(gh pr list --repo "$REPO" --state open --json number,title \
-            --jq '[ .[]
-                    | select(.title | test("RFC-[0-9]{3}-[0-9]{2}"; "i"))
-                    | (.title|capture("RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})").r|tonumber) ] | unique')
+          # Get all unique RFC numbers from open unassigned issues
+          RFC_NUMBERS=$(gh issue list --repo "$REPO" --state open --json number,title,assignees \
+            --jq '[ .[] | select(.title | test("RFC-[0-9]{3}-[0-9]{2}"; "i")) | select((.assignees | length) == 0) | .title | capture("RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})").r ] | unique | .[]' | tr -d '"')
 
-          # Gather open issues that look like micro RFCs and pick the earliest unassigned per RFC
-          IDS=$(gh issue list --repo "$REPO" --state open --json number,title,assignees \
-            --jq --argjson openPrRfcs "$OPEN_PRS" '[ .[]
-                    | select(.title | test("RFC-[0-9]{3}-[0-9]{2}"; "i"))
-                    | {num:.number,
-                       a:(.assignees|length),
-                       r:(.title|capture("RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})").r|tonumber),
-                       m:(.title|capture("RFC-(?<r>[0-9]{3})-(?<m>[0-9]{2})").m|tonumber)} ]
-                  | sort_by(.r, .m, .num)
-                  | group_by(.r)
-                  | map( select( ($openPrRfcs | index(.[0].r)) == null ) )  # Filter out RFCs with open PRs
-                  | map( (map(select(.a==0)) | first) )
-                  | map(select(. != null))
-                  | map(.num)
-                  | @sh')
-          # Output space-separated list
-          # shellcheck disable=SC2086
-          echo "ids=$IDS" >> $GITHUB_OUTPUT
-          echo "Selected issues: $IDS"
+          echo "Found unassigned RFCs: $RFC_NUMBERS"
 
-      - name: Assign selected issues to Copilot
-        if: steps.select.outputs.ids != ''
-        env:
-          GH_TOKEN: ${{ env.GH_TOKEN }}
-          REPO: ${{ github.repository }}
-          BOT: ${{ steps.bot.outputs.id }}
-        run: |
-          set -euo pipefail
-          # Parse the sh-encoded array from previous step
-          eval "ARR=(${ { steps.select.outputs.ids } })" 2>/dev/null || eval "ARR=(${steps.select.outputs.ids})"
-          M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId: $assignableId, actorIds: $actorIds }){ clientMutationId } }'
-          for ISSUE in "${ARR[@]}"; do
-            IID=$(gh issue view "$ISSUE" --repo "$REPO" --json id --jq .id)
-            if [ -n "$IID" ]; then
-              gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$BOT" >/dev/null || true
-              echo "Assigned #$ISSUE"
-            fi
+          # For each RFC number, assign the first unassigned issue using Python script
+          for RFC_NUM in $RFC_NUMBERS; do
+            echo "Processing RFC-$RFC_NUM"
+            python3 scripts/python/production/assign_first_open_for_rfc.py "$RFC_NUM" || echo "Failed to assign RFC-$RFC_NUM"
           done
