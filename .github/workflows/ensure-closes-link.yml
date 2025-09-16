@@ -13,6 +13,8 @@ jobs:
   ensure_link:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Ensure PR body contains Closes #<issue>
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

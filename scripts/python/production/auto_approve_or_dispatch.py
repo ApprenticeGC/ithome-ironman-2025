@@ -25,11 +25,25 @@ def gh_json(cmd: List[str], extra_env: dict | None = None):
     return json.loads(res.stdout)
 
 
+def branch_exists(repo: str, branch: str) -> bool:
+    """Check if a branch exists in the repository."""
+    try:
+        run(
+            ["gh", "api", f"repos/{repo}/branches/{branch}"],
+            check=True,
+            capture=True,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 def list_action_required_runs(repo: str):
-    # Paginate through all runs; some older action_required runs may not show on first page.
+    # Paginate through recent runs only (limit to 3 pages to avoid processing hundreds of old runs)
     runs: List[dict] = []
     page = 1
-    while True:
+    max_pages = 3  # Limit to recent runs to avoid excessive processing
+    while page <= max_pages:
         try:
             data = gh_json(
                 ["gh", "api", f"repos/{repo}/actions/runs?per_page=100&page={page}"]
@@ -51,7 +65,11 @@ def list_action_required_runs(repo: str):
                 status in ("action_required", "waiting")
                 or conclusion == "action_required"
             ) and head.startswith("copilot/"):
-                runs.append(wr)
+                # Only process runs from existing branches
+                if branch_exists(repo, head):
+                    runs.append(wr)
+                else:
+                    print(f"Skipping action_required run for deleted branch: {head}")
         page += 1
     return runs
 
@@ -96,6 +114,10 @@ def approve_run(repo: str, run_id: int) -> bool:
         )
         return True
     except subprocess.CalledProcessError as e:
+        # Check if it's the expected "not from fork" error
+        if "This run is not from a fork pull request" in str(e.stdout):
+            # This is expected for non-fork runs, don't log as error
+            return False
         sys.stderr.write(
             f"approve_run error for {run_id}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
         )
@@ -158,6 +180,11 @@ def rerun(repo: str, run_id: int) -> bool:
 
 
 def dispatch_ci(repo: str, branch: str) -> bool:
+    # Check if branch exists first
+    if not branch_exists(repo, branch):
+        print(f"Branch {branch} does not exist, skipping CI dispatch")
+        return False
+
     # Try by workflow name, fall back to id
     # Use PAT if available to bypass approval gate
     env_pat = {}

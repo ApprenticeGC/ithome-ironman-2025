@@ -27,7 +27,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Flip draft PR to ready when CI succeeded
+      - name: Enhanced CI log validation
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          GITHUB_EVENT: ${{ toJson(github.event) }}
+        run: python3 scripts/python/production/validate_ci_logs.py
+      - name: Flip draft PR to ready when CI truly succeeded
+        if: success()
         env:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
