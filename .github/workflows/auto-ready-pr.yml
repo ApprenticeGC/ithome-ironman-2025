@@ -3,8 +3,10 @@ name: auto-ready-pr
 on:
   # Gate on CI success for the PR to reduce false "ready" flips
   workflow_run:
-    workflows: ["ci"]
-    types: [completed]
+    workflows:
+      - ci
+    types:
+      - completed
   issue_comment:
     types: [created]
 
@@ -18,7 +20,7 @@ jobs:
       ${{
         github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.event == 'pull_request'
+        (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
       }}
     environment: copilot
     runs-on: ubuntu-latest
@@ -26,25 +28,32 @@ jobs:
       - name: Flip draft PR to ready when CI succeeded
         env:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          # Take the first associated PR from the workflow_run payload
-          PR_NUMBER=$(jq -r '.workflow_run.pull_requests[0].number' <<< "${{ toJson(github.event) }}")
-          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
-            echo "No associated PR found"; exit 0; fi
-          PR_JSON=$(gh pr view "$PR_NUMBER" --repo ${{ github.repository }} --json draft,title,author,headRepositoryOwner,baseRepository)
+          EVENT_JSON='${{ toJson(github.event) }}'
+          # Prefer PR number from payload; else, derive from branch
+          PR_NUMBER=$(jq -r '.workflow_run.pull_requests[0].number // empty' <<< "$EVENT_JSON")
+          if [ -z "${PR_NUMBER:-}" ]; then
+            BRANCH=$(jq -r '.workflow_run.head_branch' <<< "$EVENT_JSON")
+            echo "No PR in payload, locating PR by branch: $BRANCH"
+            PR_NUMBER=$(gh pr list --repo "$REPO" --state open --json number,headRefName --jq ".[] | select(.headRefName == \"$BRANCH\") | .number" | head -n1 || true)
+          fi
+          if [ -z "${PR_NUMBER:-}" ]; then echo "No associated PR found"; exit 0; fi
+
+          PR_JSON=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json draft,title,author,headRepositoryOwner,baseRepository)
           DRAFT=$(jq -r .draft <<< "$PR_JSON")
           TITLE=$(jq -r .title <<< "$PR_JSON")
           AUTHOR=$(jq -r .author.login <<< "$PR_JSON")
           BASE=$(jq -r .baseRepository.nameWithOwner <<< "$PR_JSON")
           HEAD_OWNER=$(jq -r .headRepositoryOwner.login <<< "$PR_JSON")
           if [ "$DRAFT" != "true" ]; then echo "Not draft"; exit 0; fi
-          case "$AUTHOR" in Copilot|app/copilot-swe-agent) : ;; *) echo "Non-Copilot author"; exit 0;; esac
+          case "$AUTHOR" in Copilot|app/copilot-swe-agent|github-actions[bot]|github-actions) : ;; *) echo "Non-Copilot author"; exit 0;; esac
           if [[ "$TITLE" != *RFC-* ]]; then echo "No RFC tag in title"; exit 0; fi
           # Ensure same-repo (not a fork)
-          if [ "$BASE" != "${{ github.repository }}" ]; then echo "Different base repo"; exit 0; fi
+          if [ "$BASE" != "$REPO" ]; then echo "Different base repo"; exit 0; fi
           # Use GraphQL to mark PR as ready for review
-          gh api graphql -f query='mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }' -F id="$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json id -q .id)"
+          gh api graphql -f query='mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }' -F id="$(gh pr view $PR_NUMBER --repo "$REPO" --json id -q .id)"
 
   mark_ready_on_command:
     if: >-

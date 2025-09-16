@@ -69,6 +69,15 @@ Conventions
   - `issue_comment` with `/ready` by a member/owner/collaborator
 - What it does: Flips draft PR to "ready for review" after CI success, or when `/ready` is commented.
 
+`auto-approve-workflows.yml`
+- Trigger: schedule every 2 minutes; manual dispatch
+- Permissions: `actions: write`, `contents: read`; Environment: `copilot`
+- What it does:
+  - Detects `action_required` runs from Copilot (actor login or `copilot/*` branch).
+  - Attempts approval via Actions REST `POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve`.
+  - Falls back to dispatching `ci` via `workflow_dispatch` on each affected `copilot/*` branch so CI runs under a trusted token and bypasses approval.
+- Requirements: Prefer `AUTO_APPROVE_TOKEN` (PAT with `actions:write`) to allow approval + dispatch reliably; falls back to `GITHUB_TOKEN` if missing.
+
 `auto-approve-merge.yml`
 - Trigger: `pull_request_target` on `opened|ready_for_review|synchronize`
 - Permissions: `contents: write`, `pull-requests: write`; Environment: `copilot`

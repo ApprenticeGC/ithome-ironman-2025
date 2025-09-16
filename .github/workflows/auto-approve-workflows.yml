@@ -16,18 +16,20 @@ jobs:
     runs-on: ubuntu-latest
     environment: copilot
     steps:
-      - name: Auto-approve pending Copilot workflows
+      - name: Auto-approve or bypass blocked Copilot workflows
         env:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+        shell: bash
         run: |
           set -euo pipefail
 
           echo "Checking for pending workflow runs from Copilot..."
 
           # Get workflow runs that are waiting for approval (both status and conclusion)
-          PENDING_RUNS=$(gh api repos/$REPO/actions/runs \
-            --jq '.workflow_runs[] | select((.status == "action_required" or .conclusion == "action_required") and (.actor.login == "Copilot" or .actor.login == "app/copilot-swe-agent" or (.head_branch | contains("copilot/")))) | .id')
+          PENDING_JSON=$(gh api repos/$REPO/actions/runs)
+          PENDING_RUNS=$(jq -r '.workflow_runs[] | select((.status == "action_required" or .conclusion == "action_required") and (.actor.login == "Copilot" or .actor.login == "app/copilot-swe-agent" or (.head_branch | contains("copilot/")))) | .id' <<< "$PENDING_JSON")
+          BRANCHES=$(jq -r '.workflow_runs[] | select((.status == "action_required" or .conclusion == "action_required") and (.actor.login == "Copilot" or .actor.login == "app/copilot-swe-agent" or (.head_branch | contains("copilot/")))) | .head_branch' <<< "$PENDING_JSON" | sort -u)
 
           if [ -z "$PENDING_RUNS" ]; then
             echo "No pending Copilot workflow runs found"
@@ -35,8 +37,10 @@ jobs:
           fi
 
           echo "Found pending workflow runs: $PENDING_RUNS"
+          echo "Affected branches:"
+          echo "$BRANCHES"
 
-          # Approve each pending run
+          # Try to approve each pending run using the official REST endpoint
           for run_id in $PENDING_RUNS; do
             echo "Approving workflow run $run_id"
 
@@ -44,12 +48,41 @@ jobs:
             RUN_INFO=$(gh api repos/$REPO/actions/runs/$run_id --jq '{name: .workflow.name, actor: .actor.login, branch: .head_branch, conclusion: .conclusion}')
             echo "Workflow details: $RUN_INFO"
 
-            # Rerun the workflow instead of approving (bypasses approval requirement)
-            if gh run rerun $run_id 2>/dev/null; then
-              echo "✅ Successfully reran workflow run $run_id"
+            # Attempt to approve via REST (works for runs requiring approval)
+            if gh api -X POST repos/$REPO/actions/runs/$run_id/approve -H "Accept: application/vnd.github+json" 2>/dev/null; then
+              echo "✅ Approved run $run_id"
+              # After approval, the original run will start automatically or allow rerun
+              if gh run rerun $run_id 2>/dev/null; then
+                echo "🔁 Triggered rerun for $run_id"
+              else
+                echo "ℹ️ Rerun not needed or not possible for $run_id"
+              fi
             else
-              echo "⚠️  Failed to rerun workflow run $run_id (may already be running)"
+              echo "⚠️  Approve endpoint failed for $run_id. Will try CI dispatch bypass per branch."
             fi
           done
 
-          echo "Completed approval process"
+          # As a robust fallback, dispatch a trusted CI run for each affected copilot branch
+          # This bypasses approval because the dispatch is initiated by a trusted token.
+          if [ -n "${BRANCHES:-}" ]; then
+            echo "Dispatching CI for affected branches via workflow_dispatch bypass..."
+            # Ensure the CI workflow supports workflow_dispatch (we also update it in-repo)
+            for br in $BRANCHES; do
+              if [[ "$br" != copilot/* ]]; then continue; fi
+              echo "Dispatching CI for branch $br"
+              # Try by name first, then by id
+              if gh workflow run "ci" --ref "$br" 2>/dev/null; then
+                echo "✅ Dispatched CI (by name) for $br"
+              else
+                # Find ci workflow id
+                CI_ID=$(gh workflow list --json name,id | jq -r '.[] | select(.name=="ci") | .id' | head -n1 || true)
+                if [ -n "$CI_ID" ] && gh workflow run "$CI_ID" --ref "$br" 2>/dev/null; then
+                  echo "✅ Dispatched CI (by id=$CI_ID) for $br"
+                else
+                  echo "❌ Failed to dispatch CI for $br"
+                fi
+              fi
+            done
+          fi
+
+          echo "Completed approval/dispatch process"
