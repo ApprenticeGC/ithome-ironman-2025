@@ -63,12 +63,12 @@ def list_open_copilot_prs(repo: str):
 def has_success_ci(repo: str, branch: str) -> bool:
     # Find workflow id for 'ci'
     try:
-    wfs = gh_json(["gh", "workflow", "list", "--repo", repo, "--json", "name,id"])
+        wfs = gh_json(["gh", "workflow", "list", "--repo", repo, "--json", "name,id"])
         ci_id = next((str(wf["id"]) for wf in wfs if wf.get("name") == "ci"), None)
         if not ci_id:
             return False
-    # The runs endpoint: use query params instead of -F to avoid method confusion
-    data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{ci_id}/runs?branch={branch}&per_page=20"])
+        # The runs endpoint: use query params instead of -F to avoid method confusion
+        data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{ci_id}/runs?branch={branch}&per_page=20"])
         for run in data.get("workflow_runs", []) or []:
             if run.get("head_branch") == branch and run.get("conclusion") == "success":
                 return True
