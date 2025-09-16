@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
+  issues:
+    types: [opened]
 
 permissions:
   contents: read
@@ -38,8 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           OWNER=${{ github.repository_owner }}
-          NAME=${{ github.event.repository.name || github.event.workflow_run.repository.name || '' }}
-          if [ -z "$NAME" ]; then NAME=$(basename "${{ github.repository }}"); fi
+          NAME=$(basename "${{ github.repository }}")
+          # Handle different event types: issues, schedule, workflow_dispatch
 
           # Skip suggestedActors query (may not work with AUTO_APPROVE_TOKEN)
           # Go straight to fallback methods
