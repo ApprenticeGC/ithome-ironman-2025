@@ -34,41 +34,14 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve issue and Copilot actor
+      - name: Assign issue to Copilot
         env:
-          REPO: ${{ github.repository }}
-          ISSUE: ${{ github.event.inputs.issue_number }}
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          echo "Resolving issue node id and Copilot bot id..."
-          IID=$(gh issue view "$ISSUE" --repo "$REPO" --json id --jq .id)
-          OWNER=${REPO%/*}; NAME=${REPO#*/}
-          Q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ suggestedActors(capabilities:[CAN_BE_ASSIGNED],first:100){ nodes{ login __typename ... on Bot { id } } } } }'
-          NODE=$(gh api graphql -f query="$Q" -F owner="$OWNER" -F name="$NAME" --jq '.data.repository.suggestedActors.nodes[] | select(."__typename"=="Bot" and (.login|ascii_downcase|test("copilot")))' | head -n1 || true)
-          ACTOR_ID=$(jq -r 'select(.) | .id // empty' <<<"$NODE" || true)
-          ACTOR_TYPE=$(jq -r 'select(.) | .__typename // empty' <<<"$NODE" || true)
-          CUR=$(gh issue view "$ISSUE" --repo "$REPO" --json assignees --jq '.assignees[].login' || true)
-          if echo "$CUR" | grep -qi '^copilot$'; then echo "Already assigned"; exit 0; fi
-          if [ -z "${ACTOR_ID:-}" ]; then
-            echo "No Copilot bot in suggestedActors; attempting fallback via user(login:Copilot)"
-            COPILOT_ID=$(gh api graphql -f query='query($login:String!){ user(login:$login){ id __typename } }' -F login='Copilot' --jq '.data.user.id' || true)
-            # Guard against error JSON leaking into COPILOT_ID
-            if echo "$COPILOT_ID" | grep -q '{'; then COPILOT_ID=""; fi
-            if [ -z "$COPILOT_ID" ]; then
-              echo "Fallback Copilot user(login:Copilot) not found; trying user(login:copilot-swe-agent)"
-              COPILOT_ID=$(gh api graphql -f query='query($login:String!){ user(login:$login){ id __typename } }' -F login='copilot-swe-agent' --jq '.data.user.id' || true)
-              if echo "$COPILOT_ID" | grep -q '{'; then COPILOT_ID=""; fi
-            fi
-            if [ -n "$COPILOT_ID" ]; then ACTOR_ID="$COPILOT_ID"; ACTOR_TYPE="User"; else echo "No Copilot id resolved"; exit 1; fi
-          fi
-          echo "Issue id: $IID | Copilot actor id: $ACTOR_ID type: $ACTOR_TYPE"
-          if [ "$ACTOR_TYPE" = "Bot" ]; then
-            echo "Assigning via replaceActorsForAssignable (Bot)"
-            M='mutation($assignableId: ID!, $actorIds: [ID!]!){ replaceActorsForAssignable(input:{ assignableId:$assignableId, actorIds:$actorIds }){ clientMutationId } }'
-            gh api graphql -f query="$M" -F assignableId="$IID" -F actorIds="$ACTOR_ID" >/dev/null
-          else
-            echo "Assigning via addAssigneesToAssignable (User)"
-            M='mutation($assignableId: ID!, $assigneeIds: [ID!]!){ addAssigneesToAssignable(input:{ assignableId:$assignableId, assigneeIds:$assigneeIds }){ clientMutationId } }'
-            gh api graphql -f query="$M" -F assignableId="$IID" -F assigneeIds="$ACTOR_ID" >/dev/null
-          fi
-          gh issue view "$ISSUE" --repo "$REPO" --json assignees,url
+          OWNER=${{ github.repository_owner }}
+          REPO_NAME=${{ github.event.repository.name }}
+          python3 scripts/python/production/assign_issue_to_copilot.py \
+            --owner "$OWNER" \
+            --repo "$REPO_NAME" \
+            --issue-number ${{ github.event.inputs.issue_number }} \
+            --assign-mode bot

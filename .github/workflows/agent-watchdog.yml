@@ -59,7 +59,7 @@ jobs:
         run: |
           OWNER=${{ github.repository_owner }}
           REPO_NAME=${{ github.event.repository.name }}
-          python .github/scripts/cleanup_recreate_issue.py \
+          python scripts/python/production/cleanup_recreate_issue.py \
             --owner "$OWNER" \
             --repo "$REPO_NAME" \
             --run-id ${{ github.event.workflow_run.id }} \
@@ -74,4 +74,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Watchdog could not auto-derive PR/Issue from failed run. Manual retry required." 
+          echo "Watchdog could not auto-derive PR/Issue from failed run. Manual retry required."

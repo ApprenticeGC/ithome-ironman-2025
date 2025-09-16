@@ -72,4 +72,3 @@ jobs:
             gh api graphql -f query="$M" -F assignableId="$IID" -F assigneeIds="$ACTOR_ID" >/dev/null
           fi
           gh issue view "$ISSUE" --repo "$REPO" --json assignees,url
-

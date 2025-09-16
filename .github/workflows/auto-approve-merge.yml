@@ -26,7 +26,13 @@ jobs:
           # Prefer environment PAT if provided, else fall back to GITHUB_TOKEN
           GH_TOKEN="${{ secrets.AUTO_APPROVE_TOKEN }}"; export GH_TOKEN
           if [ -z "$GH_TOKEN" ]; then GH_TOKEN='${{ secrets.GITHUB_TOKEN }}'; export GH_TOKEN; fi
-          if ! gh pr review ${{ github.event.pull_request.number }} --approve --repo ${{ github.repository }}; then
+
+          # Get PR ID for GraphQL
+          PR_ID=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json id -q .id)
+
+          # Approve PR using GraphQL
+          APPROVE_MUTATION='mutation($id: ID!) { addPullRequestReview(input: {pullRequestId: $id, event: APPROVE}) { clientMutationId } }'
+          if ! gh api graphql -f query="$APPROVE_MUTATION" -F id="$PR_ID"; then
             echo "Approval failed (policy may block Actions approvals). Proceeding without failing the job."
           fi
 
@@ -35,5 +41,10 @@ jobs:
           set -euo pipefail
           GH_TOKEN="${{ secrets.AUTO_APPROVE_TOKEN }}"; export GH_TOKEN
           if [ -z "$GH_TOKEN" ]; then GH_TOKEN='${{ secrets.GITHUB_TOKEN }}'; export GH_TOKEN; fi
-          # Attempt to enable auto-merge; requires repo setting "Allow auto-merge"
-          gh pr merge ${{ github.event.pull_request.number }} --auto --squash --repo ${{ github.repository }} || true
+
+          # Get PR ID for GraphQL
+          PR_ID=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json id -q .id)
+
+          # Enable auto-merge using GraphQL
+          MERGE_MUTATION='mutation($id: ID!) { enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: SQUASH}) { clientMutationId } }'
+          gh api graphql -f query="$MERGE_MUTATION" -F id="$PR_ID" || true

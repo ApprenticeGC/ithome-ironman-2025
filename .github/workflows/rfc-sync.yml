@@ -45,7 +45,7 @@ jobs:
           IFS=',' read -r -a FILES <<< "${{ steps.changed.outputs.files }}"
           for f in "${FILES[@]}"; do
             echo "Generating for $f"
-            python .github/scripts/generate_micro_issues_from_rfc.py \
+            python scripts/python/production/generate_micro_issues_from_rfc.py \
               --rfc-path "$f" \
               --owner "${{ github.repository_owner }}" \
               --repo "${{ github.event.repository.name }}" \
@@ -77,6 +77,6 @@ jobs:
             if [[ "$base" =~ RFC-([0-9]{3}) ]]; then
               RFC=${BASH_REMATCH[1]}
               echo "Assigning earliest unassigned for RFC-$RFC via helper"
-              REPO="${REPO}" python .github/scripts/assign_first_open_for_rfc.py "$RFC" || true
+              REPO="${REPO}" python scripts/python/production/assign_first_open_for_rfc.py "$RFC" || true
             fi
           done

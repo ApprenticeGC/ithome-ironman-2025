@@ -27,4 +27,4 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           GITHUB_EVENT: ${{ toJson(github.event) }}
-        run: python3 .github/scripts/ensure_automerge_or_comment.py
+        run: python3 scripts/python/production/ensure_automerge_or_comment.py

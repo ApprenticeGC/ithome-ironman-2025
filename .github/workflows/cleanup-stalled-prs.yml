@@ -78,7 +78,7 @@ jobs:
               echo "  Found linked issue: #$ISSUE_NUM"
 
               # Use cleanup script to reset the chain
-              python .github/scripts/cleanup_recreate_issue.py \
+              python scripts/python/production/cleanup_recreate_issue.py \
                 --owner "${{ github.repository_owner }}" \
                 --repo "${{ github.event.repository.name }}" \
                 --pr-number "$pr_num" \

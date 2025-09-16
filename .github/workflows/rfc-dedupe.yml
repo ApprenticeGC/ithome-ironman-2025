@@ -26,5 +26,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          python .github/scripts/dedupe_rfc_issues.py
-
+          python scripts/python/production/dedupe_rfc_issues.py

@@ -46,4 +46,4 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
           ASSIGN: '1'
         run: |
-          python .github/scripts/assign_next_micro_issue.py --assign
+          python scripts/python/production/assign_next_micro_issue.py --assign

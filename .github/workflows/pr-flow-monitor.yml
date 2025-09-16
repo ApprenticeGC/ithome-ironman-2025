@@ -25,4 +25,4 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           AUTO_APPROVE_PAT: ${{ secrets.AUTO_APPROVE_TOKEN }}
           REPO: ${{ github.repository }}
-        run: python3 .github/scripts/monitor_pr_flow.py
+        run: python3 scripts/python/production/monitor_pr_flow.py

@@ -31,9 +31,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          python .github/scripts/generate_micro_issues_from_rfc.py \
+          python scripts/python/production/generate_micro_issues_from_rfc.py \
             --rfc-path "${{ github.event.inputs.rfc_path }}" \
             --owner "${{ github.repository_owner }}" \
             --repo "${{ github.event.repository.name }}" \
             --assign-mode "${{ github.event.inputs.assign_mode }}"
-

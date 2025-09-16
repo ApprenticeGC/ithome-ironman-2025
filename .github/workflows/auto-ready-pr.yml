@@ -32,7 +32,7 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           GITHUB_EVENT: ${{ toJson(github.event) }}
-        run: python3 .github/scripts/mark_pr_ready_on_ci.py
+        run: python3 scripts/python/production/mark_pr_ready_on_ci.py
 
   mark_ready_on_command:
     if: >-

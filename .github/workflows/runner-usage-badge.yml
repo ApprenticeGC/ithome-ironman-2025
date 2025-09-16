@@ -10,6 +10,7 @@ on:
     paths:
       - .github/workflows/runner-usage-badge.yml
       - .github/scripts/runner_usage.py
+      - scripts/python/production/runner_usage.py
       - .github/badges/**
       - README.md
 
@@ -35,7 +36,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          python .github/scripts/runner_usage.py
+          python scripts/python/production/runner_usage.py
 
       - name: Commit badge if changed
         run: |

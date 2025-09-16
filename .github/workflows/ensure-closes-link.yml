@@ -19,22 +19,9 @@ jobs:
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          set -euo pipefail
-          # Skip non-Copilot PRs and non-RFC titles
-          AUTHOR='${{ github.event.pull_request.user.login }}'
-          TITLE='${{ github.event.pull_request.title }}'
-          case "$AUTHOR" in Copilot|app/copilot-swe-agent) : ;; *) echo "Non-Copilot PR"; exit 0;; esac
-          if [[ "$TITLE" != *RFC-* ]]; then echo "No RFC in title"; exit 0; fi
-          # If body already has closes reference, skip
-          BODY=$(gh pr view "$PR" --repo "$REPO" --json body --jq .body)
-          if echo "$BODY" | grep -qiE '\b(close[sd]?|fixe?[sd]?|resolve[sd]?) #[0-9]+'; then echo "Closes link exists"; exit 0; fi
-          # Infer issue by matching title tokens against open issues
-          RFC=$(echo "$TITLE" | sed -nE 's/.*(RFC-[0-9]{3}-[0-9]{2}).*/\1/p' | head -n1)
-          if [ -z "$RFC" ]; then echo "No RFC token"; exit 0; fi
-          ISSUE_NUM=$(gh issue list --repo "$REPO" --state open --json number,title --jq \
-            ".[] | select(.title | test(\"$RFC\"; ""i"")) | .number" | head -n1)
-          if [ -z "$ISSUE_NUM" ]; then echo "No matching issue for $RFC"; exit 0; fi
-          NEW_BODY="$BODY\n\nCloses #$ISSUE_NUM"
-          gh api -X PATCH repos/$REPO/pulls/$PR -f body="$NEW_BODY"
-          echo "Appended Closes #$ISSUE_NUM"
-
+          OWNER=${REPO%/*}
+          REPO_NAME=${REPO#*/}
+          python3 scripts/python/production/ensure_closes_link.py \
+            --owner "$OWNER" \
+            --repo "$REPO_NAME" \
+            --pr-number "$PR"
