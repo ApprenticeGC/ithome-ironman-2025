@@ -20,6 +20,8 @@ jobs:
     environment: copilot
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Ensure auto-merge or comment diagnostics
         env:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}

@@ -61,7 +61,7 @@ def main():
         print("No associated PR found")
         sys.exit(0)
 
-    pr = gh_json(["gh", "pr", "view", str(pr_number), "--repo", REPO, "--json", "draft,title,author,headRepositoryOwner,baseRepository"])    
+    pr = gh_json(["gh", "pr", "view", str(pr_number), "--repo", REPO, "--json", "draft,title,author,headRepositoryOwner,baseRepository"])
     if not pr.get("draft", True):
         print("Not draft; nothing to do")
         sys.exit(0)

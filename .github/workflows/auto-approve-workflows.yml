@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: copilot
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Auto-approve or bypass blocked Copilot workflows
         env:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
