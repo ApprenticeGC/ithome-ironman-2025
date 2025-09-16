@@ -34,11 +34,9 @@ def list_open_copilot_prs(repo: str):
     found = []
     while True:
         try:
+            # Correct pulls list endpoint with query params
             prs = gh_json([
-                "gh", "api", f"repos/{repo}/pulls",
-                "-F", "state=open",
-                "-F", "per_page=100",
-                "-F", f"page={page}"
+                "gh", "api", f"repos/{repo}/pulls?state=open&per_page=100&page={page}"
             ])
         except subprocess.CalledProcessError as e:
             sys.stderr.write(f"list_open_copilot_prs error: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")

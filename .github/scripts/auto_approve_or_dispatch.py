@@ -22,11 +22,13 @@ def list_action_required_runs(repo: str):
     runs: List[dict] = []
     page = 1
     while True:
-        data = gh_json([
-            "gh", "api", f"repos/{repo}/actions/runs",
-            "-F", "per_page=100",
-            "-F", f"page={page}"
-        ])
+        try:
+            data = gh_json([
+                "gh", "api", f"repos/{repo}/actions/runs?per_page=100&page={page}"
+            ])
+        except subprocess.CalledProcessError as e:
+            sys.stderr.write(f"list_action_required_runs error: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
+            break
         page_runs = data.get("workflow_runs", [])
         if not page_runs:
             break
