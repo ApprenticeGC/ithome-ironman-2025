@@ -150,4 +150,3 @@ Conventions
 Notes
 - GITHUB_TOKEN must be Read+Write; assignments prefer `AUTO_APPROVE_TOKEN`.
 - Copilot Coding Agent must be enabled; Bot should appear in `suggestedActors`.
-

@@ -43,4 +43,3 @@ Troubleshooting
 
 Rollback / Cleanup
 - If a PR is stuck, comment `/ready` or close it; `agent-watchdog` will recycle on next failed `ci` or run `rfc-dedupe` to reconcile issues.
-

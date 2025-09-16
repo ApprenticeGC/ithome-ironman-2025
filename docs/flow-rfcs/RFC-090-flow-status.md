@@ -44,4 +44,3 @@ Operator quick actions (when needed)
 
 Confidence
 - With PAT + Bot‑id assignment and selection fallback, the flow is functionally complete. Remaining friction points are environmental (policy approvals) and rare edge cases (stalled PRs), both mitigated and optionally automatable.
-
