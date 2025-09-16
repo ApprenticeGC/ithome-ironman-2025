@@ -11,6 +11,7 @@ permissions:
   actions: write
   contents: read
   pull-requests: read
+  deployments: write
 
 jobs:
   auto_approve_pending_workflows:

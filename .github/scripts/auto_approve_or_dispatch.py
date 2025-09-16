@@ -36,7 +36,11 @@ def list_action_required_runs(repo: str):
             status = wr.get("status")
             conclusion = wr.get("conclusion")
             head = wr.get("head_branch", "")
-            if (status == "action_required" or conclusion == "action_required") and head.startswith("copilot/"):
+            # Include both explicit action_required as well as "waiting" (often environment approval)
+            if (
+                status in ("action_required", "waiting")
+                or conclusion == "action_required"
+            ) and head.startswith("copilot/"):
                 runs.append(wr)
         page += 1
     return runs
@@ -46,10 +50,7 @@ def list_open_copilot_pr_branches(repo: str) -> Set[str]:
     page = 1
     while True:
         prs = gh_json([
-            "gh", "api", f"repos/{repo}/pulls",
-            "-F", "state=open",
-            "-F", "per_page=100",
-            "-F", f"page={page}"
+            "gh", "api", f"repos/{repo}/pulls?state=open&per_page=100&page={page}"
         ])
         if not isinstance(prs, list) or not prs:
             break
@@ -72,6 +73,38 @@ def approve_run(repo: str, run_id: int) -> bool:
         return True
     except subprocess.CalledProcessError as e:
         sys.stderr.write(f"approve_run error for {run_id}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
+        return False
+
+def approve_pending_deployments(repo: str, run_id: int) -> bool:
+    """Approve pending environment deployments for a workflow run (environment protection)."""
+    try:
+        token = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
+        # List pending deployments to collect environment IDs
+        resp = gh_json([
+            "gh", "api", f"repos/{repo}/actions/runs/{run_id}/pending_deployments"
+        ], extra_env={"GH_TOKEN": token})
+        pds = resp if isinstance(resp, list) else resp.get("pending_deployments", [])
+        env_ids = []
+        for pd in pds or []:
+            env_obj = pd.get("environment") or {}
+            if env_obj.get("id"):
+                env_ids.append(str(env_obj["id"]))
+        if not env_ids:
+            return False
+        # Approve all pending environments
+        cmd = [
+            "gh", "api", "-X", "POST",
+            f"repos/{repo}/actions/runs/{run_id}/pending_deployments",
+            "-H", "Accept: application/vnd.github+json",
+            "-f", "state=approved",
+            "-f", "comment=Auto-approved by Copilot bot"
+        ]
+        for eid in env_ids:
+            cmd.extend(["-f", f"environment_ids[]={eid}"])
+        run(cmd, check=True, extra_env={"GH_TOKEN": token})
+        return True
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(f"approve_pending_deployments error for {run_id}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
         return False
 
 def rerun(repo: str, run_id: int) -> bool:
@@ -141,6 +174,9 @@ def main():
             branches.add(head)
         print(f"Approving workflow run {run_id} (branch={head})")
         ok = approve_run(REPO, run_id)
+        if not ok:
+            # If not a fork PR scenario, try approving pending environment deployments
+            ok = approve_pending_deployments(REPO, run_id)
         if ok:
             print(f"Approved {run_id}")
             if rerun(REPO, run_id):

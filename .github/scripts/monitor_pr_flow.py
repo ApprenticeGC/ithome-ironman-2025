@@ -63,12 +63,12 @@ def list_open_copilot_prs(repo: str):
 def has_success_ci(repo: str, branch: str) -> bool:
     # Find workflow id for 'ci'
     try:
-        wfs = gh_json(["gh", "workflow", "list", "--repo", repo, "--json", "name,id"])
+    wfs = gh_json(["gh", "workflow", "list", "--repo", repo, "--json", "name,id"])
         ci_id = next((str(wf["id"]) for wf in wfs if wf.get("name") == "ci"), None)
         if not ci_id:
             return False
-        # The runs endpoint does not filter by 'status=success' directly via -F; fetch and check
-        data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{ci_id}/runs", "-F", f"branch={branch}", "-F", "per_page=20"]) 
+    # The runs endpoint: use query params instead of -F to avoid method confusion
+    data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{ci_id}/runs?branch={branch}&per_page=20"])
         for run in data.get("workflow_runs", []) or []:
             if run.get("head_branch") == branch and run.get("conclusion") == "success":
                 return True
@@ -102,8 +102,12 @@ def dispatch_ci(repo: str, branch: str) -> bool:
 
 def mark_ready(repo: str, pr_number: int) -> bool:
     try:
-        pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"]).stdout.strip()
-        run(["gh", "api", "graphql", "-f", "query=mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }", "-F", f"id={pr_id}"], check=True)
+        env_pat = {}
+        pat = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN")
+        if pat:
+            env_pat["GH_TOKEN"] = pat
+        pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"], extra_env=env_pat).stdout.strip()
+        run(["gh", "api", "graphql", "-f", "query=mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }", "-F", f"id={pr_id}"], check=True, extra_env=env_pat)
         return True
     except subprocess.CalledProcessError as e:
         sys.stderr.write(f"mark_ready error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
@@ -112,12 +116,16 @@ def mark_ready(repo: str, pr_number: int) -> bool:
 
 def enable_automerge(repo: str, pr_number: int) -> bool:
     try:
-        pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"]).stdout.strip()
+        env_pat = {}
+        pat = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN")
+        if pat:
+            env_pat["GH_TOKEN"] = pat
+        pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"], extra_env=env_pat).stdout.strip()
         query = (
             "mutation($id: ID!, $method: PullRequestMergeMethod!) { "
             "enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: $method}) { clientMutationId } }"
         )
-        run(["gh", "api", "graphql", "-f", f"query={query}", "-F", f"id={pr_id}", "-F", "method=SQUASH"], check=True)
+        run(["gh", "api", "graphql", "-f", f"query={query}", "-F", f"id={pr_id}", "-F", "method=SQUASH"], check=True, extra_env=env_pat)
         return True
     except subprocess.CalledProcessError as e:
         sys.stderr.write(f"enable_automerge error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
