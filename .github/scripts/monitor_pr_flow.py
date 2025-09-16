@@ -50,7 +50,8 @@ def list_open_copilot_prs(repo: str):
             base_repo = (pr.get("base") or {}).get("repo") or {}
             base_full = base_repo.get("full_name", "")
             title = pr.get("title", "")
-            if head.startswith("copilot/") and base_full == repo and "RFC-" in title:
+            # Target Copilot-authored branches in this repo; do not hard-require RFC token
+            if head.startswith("copilot/") and base_full == repo:
                 found.append({
                     "number": pr.get("number"),
                     "headRefName": head,
@@ -68,9 +69,12 @@ def has_success_ci(repo: str, branch: str) -> bool:
         ci_id = next((str(wf["id"]) for wf in wfs if wf.get("name") == "ci"), None)
         if not ci_id:
             return False
-        data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{ci_id}/runs", "-F", f"branch={branch}", "-F", "status=success", "-F", "per_page=1"]) 
-        total = data.get("total_count", 0)
-        return total > 0
+        # The runs endpoint does not filter by 'status=success' directly via -F; fetch and check
+        data = gh_json(["gh", "api", f"repos/{repo}/actions/workflows/{ci_id}/runs", "-F", f"branch={branch}", "-F", "per_page=20"]) 
+        for run in data.get("workflow_runs", []) or []:
+            if run.get("head_branch") == branch and run.get("conclusion") == "success":
+                return True
+        return False
     except subprocess.CalledProcessError as e:
         sys.stderr.write(f"has_success_ci error for {branch}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
         return False

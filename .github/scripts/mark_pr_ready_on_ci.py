@@ -6,7 +6,7 @@ import sys
 from typing import Optional
 
 REPO = os.environ.get("REPO") or os.environ.get("GITHUB_REPOSITORY", "")
-EVENT_JSON = os.environ.get("GITHUB_EVENT", "")
+EVENT_JSON_ENV = os.environ.get("GITHUB_EVENT", "")
 
 def run(cmd, check=True):
     return subprocess.run(cmd, check=check, text=True, capture_output=True)
@@ -29,7 +29,7 @@ def find_pr_number_by_branch(repo: str, branch: str) -> Optional[int]:
 def mark_ready(repo: str, pr_number: int):
     try:
         pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"]).stdout.strip()
-        run(["gh", "api", "graphql", "-f", "query=mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }", "-F", f"id={pr_id}"])
+    run(["gh", "api", "graphql", "-f", "query=mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }", "-F", f"id={pr_id}"])
         return True
     except subprocess.CalledProcessError:
         return False
@@ -39,9 +39,16 @@ def main():
         print("REPO not set", file=sys.stderr)
         sys.exit(1)
 
-    if not EVENT_JSON:
-        EVENT_JSON = os.environ.get("GITHUB_EVENT_PATH") and open(os.environ["GITHUB_EVENT_PATH"], "r", encoding="utf-8").read() or "{}"
-    evt = json.loads(EVENT_JSON)
+    event_json = EVENT_JSON_ENV
+    if not event_json:
+        # Fallback to file path provided by Actions runtime
+        path = os.environ.get("GITHUB_EVENT_PATH")
+        if path and os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                event_json = f.read()
+        else:
+            event_json = "{}"
+    evt = json.loads(event_json)
     wr = evt.get("workflow_run", {})
 
     # Try PR from payload first
@@ -70,12 +77,12 @@ def main():
     title = pr.get("title", "")
     base = (pr.get("baseRepository") or {}).get("nameWithOwner", "")
 
-    if author not in {"Copilot", "app/copilot-swe-agent", "github-actions[bot]", "github-actions"}:
+    # Allow Copilot and automation accounts; widen to include 'Copilot' app id variants
+    allowed_authors = {"Copilot", "app/copilot-swe-agent", "github-actions[bot]", "github-actions", "app/github-actions"}
+    if author not in allowed_authors:
         print("Non-Copilot author; skipping")
         sys.exit(0)
-    if "RFC-" not in title:
-        print("No RFC tag in title; skipping")
-        sys.exit(0)
+    # Do not strictly require RFC token; some drafts may not include it yet
     if base != REPO:
         print("Different base repo; skipping")
         sys.exit(0)
