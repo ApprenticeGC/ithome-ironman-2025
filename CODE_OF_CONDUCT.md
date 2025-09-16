@@ -79,4 +79,3 @@ This Code of Conduct is adapted from the [Contributor Covenant][homepage],
 version 2.1.
 
 [homepage]: https://www.contributor-covenant.org
-
