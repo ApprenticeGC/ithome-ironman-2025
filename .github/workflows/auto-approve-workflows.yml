@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
       - name: Auto-approve or bypass blocked Copilot workflows
         env:
           # Expose both the default GITHUB_TOKEN and the PAT if available.
