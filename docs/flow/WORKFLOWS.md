@@ -85,6 +85,12 @@ Conventions
   - Attempts to approve the PR (best effort) using `AUTO_APPROVE_TOKEN` or `GITHUB_TOKEN`.
   - Enables auto‑merge (squash). Requires repo setting "Allow auto‑merge".
 
+`auto-merge-monitor.yml`
+- Trigger: `workflow_run` for `ci` on `completed` (success)
+- What it does:
+  - When CI succeeds on a Copilot PR, ensures auto-merge is enabled.
+  - If enabling auto-merge fails (settings or protections), posts a diagnostic comment explaining likely causes.
+
 ## Recovery and Hygiene
 
 `agent-watchdog.yml`

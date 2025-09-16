@@ -1,0 +1,28 @@
+name: auto-merge-monitor
+
+on:
+  workflow_run:
+    workflows: ["ci"]
+    types: ["completed"]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  ensure_automerge:
+    if: >-
+      ${{
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+      }}
+    environment: copilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure auto-merge or comment diagnostics
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          GITHUB_EVENT: ${{ toJson(github.event) }}
+        run: python3 .github/scripts/ensure_automerge_or_comment.py
