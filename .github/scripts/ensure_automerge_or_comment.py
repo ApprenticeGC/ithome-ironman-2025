@@ -29,9 +29,19 @@ def find_pr_number_by_branch(repo: str, branch: str) -> Optional[int]:
 
 def try_enable_automerge(repo: str, pr_number: int) -> bool:
     try:
-        run(["gh", "pr", "merge", str(pr_number), "--auto", "--squash", "--repo", repo], check=True)
+        # Resolve PR node ID
+        pr_id = run(["gh", "pr", "view", str(pr_number), "--repo", repo, "--json", "id", "-q", ".id"]).stdout.strip()
+        if not pr_id:
+            return False
+        # Use GraphQL to enable auto-merge with SQUASH method
+        query = (
+            "mutation($id: ID!, $method: PullRequestMergeMethod!) { "
+            "enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: $method}) { clientMutationId } }"
+        )
+        run(["gh", "api", "graphql", "-f", f"query={query}", "-F", f"id={pr_id}", "-F", "method=SQUASH"], check=True)
         return True
     except subprocess.CalledProcessError as e:
+        # Bubble stderr for diagnostics and return False
         sys.stderr.write(e.stderr or "")
         return False
 
@@ -86,6 +96,11 @@ def main():
         return
     if draft:
         print("PR still draft; skipping auto-merge enable")
+        return
+
+    # Skip if auto-merge already requested
+    if pr.get("autoMergeRequest"):
+        print("Auto-merge already enabled")
         return
 
     if try_enable_automerge(REPO, pr_number):
