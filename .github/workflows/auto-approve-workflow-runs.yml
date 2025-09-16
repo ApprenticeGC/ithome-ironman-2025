@@ -1,0 +1,84 @@
+name: auto-approve-workflow-runs
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions:
+  actions: write
+  contents: read
+  pull-requests: read
+
+jobs:
+  approve_workflow_runs:
+    if: >-
+      ${{
+        (github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name) &&
+        (github.event.pull_request.user.login == 'Copilot' || github.event.pull_request.user.login == 'app/copilot-swe-agent') &&
+        (startsWith(github.event.pull_request.title, 'RFC-') || contains(github.event.pull_request.title, 'RFC-'))
+      }}
+    runs-on: ubuntu-latest
+    environment: copilot
+    steps:
+      - name: Auto-approve workflow runs for Copilot PRs
+        run: |
+          set -euo pipefail
+
+          # Use PAT with actions:write permission
+          GH_TOKEN="${{ secrets.AUTO_APPROVE_TOKEN }}"
+          if [ -z "$GH_TOKEN" ]; then
+            echo "ERROR: AUTO_APPROVE_TOKEN secret required for workflow approval"
+            exit 1
+          fi
+          export GH_TOKEN
+
+          # Get pending workflow runs for this PR
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          echo "Checking for pending workflow runs on PR #${PR_NUMBER}..."
+
+          # Get workflow runs that are waiting for approval
+          RUNS=$(gh api repos/${REPO}/actions/runs \
+            --jq '.workflow_runs[] | select(.status == "action_required" or .status == "queued") | select(.pull_requests[]?.number == '$PR_NUMBER') | .id')
+
+          if [ -z "$RUNS" ]; then
+            echo "No workflow runs requiring approval found"
+            exit 0
+          fi
+
+          # Approve each workflow run
+          for RUN_ID in $RUNS; do
+            echo "Approving workflow run: $RUN_ID"
+
+            # Try to approve the workflow run
+            if gh api repos/${REPO}/actions/runs/${RUN_ID}/approve -X POST; then
+              echo "✅ Successfully approved workflow run $RUN_ID"
+            else
+              echo "⚠️ Failed to approve workflow run $RUN_ID (may already be approved or completed)"
+            fi
+          done
+
+          echo "Workflow approval process completed"
+
+      - name: Wait for workflows to start
+        run: |
+          echo "Waiting 30 seconds for approved workflows to start..."
+          sleep 30
+
+          GH_TOKEN="${{ secrets.AUTO_APPROVE_TOKEN }}"
+          export GH_TOKEN
+
+          # Check if workflows are now running
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          ACTIVE_RUNS=$(gh api repos/${REPO}/actions/runs \
+            --jq '.workflow_runs[] | select(.status == "in_progress" or .status == "queued") | select(.pull_requests[]?.number == '$PR_NUMBER') | .id')
+
+          if [ -n "$ACTIVE_RUNS" ]; then
+            echo "✅ Workflows are now active for PR #${PR_NUMBER}"
+            echo "Active run IDs: $ACTIVE_RUNS"
+          else
+            echo "⚠️ No active workflows found - they may have completed quickly or failed to start"
+          fi

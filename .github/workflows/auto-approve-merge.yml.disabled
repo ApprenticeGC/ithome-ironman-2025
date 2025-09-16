@@ -1,0 +1,50 @@
+name: auto-approve-merge
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  approve_and_automerge:
+    environment: copilot
+    if: >-
+      ${{
+        (github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name) &&
+        (github.event.pull_request.user.login == 'Copilot' || github.event.pull_request.user.login == 'app/copilot-swe-agent') &&
+        (startsWith(github.event.pull_request.title, 'RFC-') || contains(github.event.pull_request.title, 'RFC-'))
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approve PR (best-effort)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          # Prefer environment PAT if provided, else fall back to GITHUB_TOKEN
+          GH_TOKEN="${{ secrets.AUTO_APPROVE_TOKEN }}"; export GH_TOKEN
+          if [ -z "$GH_TOKEN" ]; then GH_TOKEN='${{ secrets.GITHUB_TOKEN }}'; export GH_TOKEN; fi
+
+          # Get PR ID for GraphQL
+          PR_ID=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json id -q .id)
+
+          # Approve PR using GraphQL
+          APPROVE_MUTATION='mutation($id: ID!) { addPullRequestReview(input: {pullRequestId: $id, event: APPROVE}) { clientMutationId } }'
+          if ! gh api graphql -f query="$APPROVE_MUTATION" -F id="$PR_ID"; then
+            echo "Approval failed (policy may block Actions approvals). Proceeding without failing the job."
+          fi
+
+      - name: Enable auto-merge (squash)
+        run: |
+          set -euo pipefail
+          GH_TOKEN="${{ secrets.AUTO_APPROVE_TOKEN }}"; export GH_TOKEN
+          if [ -z "$GH_TOKEN" ]; then GH_TOKEN='${{ secrets.GITHUB_TOKEN }}'; export GH_TOKEN; fi
+
+          # Get PR ID for GraphQL
+          PR_ID=$(gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json id -q .id)
+
+          # Enable auto-merge using GraphQL
+          MERGE_MUTATION='mutation($id: ID!) { enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: SQUASH}) { clientMutationId } }'
+          gh api graphql -f query="$MERGE_MUTATION" -F id="$PR_ID" || true
