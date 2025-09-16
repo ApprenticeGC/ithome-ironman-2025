@@ -74,7 +74,8 @@ def approve_run(repo: str, run_id: int) -> bool:
 
 def rerun(repo: str, run_id: int) -> bool:
     try:
-    run(["gh", "run", "rerun", str(run_id)], check=True)
+        # Attempt to rerun the workflow run after approval
+        run(["gh", "run", "rerun", str(run_id)], check=True)
         return True
     except subprocess.CalledProcessError:
         return False
