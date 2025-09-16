@@ -25,9 +25,9 @@ jobs:
 
           echo "Checking for pending workflow runs from Copilot..."
 
-          # Get workflow runs that are waiting for approval
+          # Get workflow runs that are waiting for approval (both status and conclusion)
           PENDING_RUNS=$(gh api repos/$REPO/actions/runs \
-            --jq '.workflow_runs[] | select(.status == "action_required" and (.actor.login == "Copilot" or .actor.login == "app/copilot-swe-agent" or (.head_branch | contains("copilot/")))) | .id')
+            --jq '.workflow_runs[] | select((.status == "action_required" or .conclusion == "action_required") and (.actor.login == "Copilot" or .actor.login == "app/copilot-swe-agent" or (.head_branch | contains("copilot/")))) | .id')
 
           if [ -z "$PENDING_RUNS" ]; then
             echo "No pending Copilot workflow runs found"
