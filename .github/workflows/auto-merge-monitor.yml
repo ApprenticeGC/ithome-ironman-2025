@@ -16,12 +16,7 @@ jobs:
     if: >-
       ${{
         (github.event_name == 'pull_request' && github.event.pull_request.draft == false) ||
-        (github.event_name == 'workflow_run' &&
-         github.event.workflow_run.conclusion == 'success' &&
-         (github.event.workflow_run.event == 'pull_request' ||
-          github.event.workflow_run.event == 'pull_request_target' ||
-          github.event.workflow_run.event == 'push' ||
-          github.event.workflow_run.event == 'workflow_dispatch'))
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
       }}
     environment: copilot
     runs-on: ubuntu-latest
