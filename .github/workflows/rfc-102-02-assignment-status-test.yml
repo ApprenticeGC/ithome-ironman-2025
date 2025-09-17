@@ -1,0 +1,70 @@
+name: RFC-102-02 Assignment Status Workflow Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup:
+        description: 'Automatically cleanup test issue after test'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  test-assignment-status-workflow:
+    environment: copilot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Select token (prefer AUTO_APPROVE_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+        run: |
+          if [ -n "${AUTO_APPROVE_TOKEN:-}" ]; then
+            echo "GH_TOKEN=$AUTO_APPROVE_TOKEN" >> $GITHUB_ENV
+            echo "Using AUTO_APPROVE_TOKEN for assignment operations"
+          else
+            echo "GH_TOKEN=$GITHUB_TOKEN" >> $GITHUB_ENV
+            echo "Using GITHUB_TOKEN (may have limited assignment permissions)"
+          fi
+
+      - name: Run RFC-102-02 Assignment Status Test
+        env:
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🧪 Starting RFC-102-02 Assignment Status Workflow Test"
+          echo "Repository: ${{ github.repository }}"
+          echo "Cleanup after test: ${{ inputs.cleanup }}"
+          echo ""
+          
+          # Run the test
+          python3 scripts/python/production/test_assignment_status_workflow.py
+          
+          echo ""
+          echo "🎯 Assignment status workflow test completed"
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## RFC-102-02 Assignment Status Workflow Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This test validates that the \`update-project-status-on-assignment.yml\` workflow correctly:" >> $GITHUB_STEP_SUMMARY
+          echo "- Detects issue assignment events" >> $GITHUB_STEP_SUMMARY
+          echo "- Updates project status to 'In Progress' when assigned to Copilot" >> $GITHUB_STEP_SUMMARY
+          echo "- Updates project status to 'Todo' when unassigned from Copilot" >> $GITHUB_STEP_SUMMARY
+          echo "- Adds appropriate project status update comments to issues" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the workflow logs above for detailed test results." >> $GITHUB_STEP_SUMMARY
