@@ -13,12 +13,17 @@ on:
         - list-project-items
         - create-project-item
         - create-repo-issue-and-add-to-project
+        - add-existing-issue-to-project
       project_number:
         description: 'Project number (for project-specific actions)'
         required: false
         type: string
       item_title:
         description: 'Item title (for create-project-item)'
+        required: false
+        type: string
+      issue_number:
+        description: 'Issue number (for add-existing-issue-to-project)'
         required: false
         type: string
 
@@ -320,6 +325,101 @@ jobs:
         echo "🎉 Workflow complete! Issue created and added to project."
         echo "📋 Issue URL: $ISSUE_URL"
         echo "📊 Project URL: https://github.com/users/${{ github.repository_owner }}/projects/${{ github.event.inputs.project_number }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+
+    - name: Add Existing Issue to Project
+      if: github.event.inputs.action == 'add-existing-issue-to-project' && github.event.inputs.project_number != '' && github.event.inputs.issue_number != ''
+      run: |
+        echo "Adding existing repository issue #${{ github.event.inputs.issue_number }} to project #${{ github.event.inputs.project_number }}..."
+
+        # First, find the project ID
+        PROJECT_DATA=$(gh api graphql -f query='
+        {
+          viewer {
+            projectsV2(first: 10) {
+              nodes {
+                id
+                number
+                title
+                url
+              }
+            }
+          }
+        }' --jq '.data.viewer.projectsV2.nodes[] | select(.number == ${{ github.event.inputs.project_number }})')
+
+        if [ -z "$PROJECT_DATA" ]; then
+          echo "❌ Project #${{ github.event.inputs.project_number }} not found"
+          exit 1
+        fi
+
+        PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.id')
+        PROJECT_TITLE=$(echo "$PROJECT_DATA" | jq -r '.title')
+        PROJECT_URL=$(echo "$PROJECT_DATA" | jq -r '.url')
+
+        echo "✅ Target Project: $PROJECT_TITLE"
+        echo "✅ Project ID: $PROJECT_ID"
+        echo "✅ Project URL: $PROJECT_URL"
+
+        # Get the existing issue details
+        echo ""
+        echo "Getting issue #${{ github.event.inputs.issue_number }} details..."
+        ISSUE_DATA=$(gh api graphql -f query="
+        {
+          repository(owner: \"${{ github.repository_owner }}\", name: \"ithome-ironman-2025\") {
+            issue(number: ${{ github.event.inputs.issue_number }}) {
+              id
+              title
+              number
+              url
+              state
+            }
+          }
+        }" --jq '.data.repository.issue')
+
+        if [ -z "$ISSUE_DATA" ] || [ "$ISSUE_DATA" = "null" ]; then
+          echo "❌ Issue #${{ github.event.inputs.issue_number }} not found"
+          exit 1
+        fi
+
+        ISSUE_NODE_ID=$(echo "$ISSUE_DATA" | jq -r '.id')
+        ISSUE_TITLE=$(echo "$ISSUE_DATA" | jq -r '.title')
+        ISSUE_URL=$(echo "$ISSUE_DATA" | jq -r '.url')
+        ISSUE_STATE=$(echo "$ISSUE_DATA" | jq -r '.state')
+
+        echo "✅ Issue: $ISSUE_TITLE"
+        echo "✅ Issue Node ID: $ISSUE_NODE_ID"
+        echo "✅ Issue URL: $ISSUE_URL"
+        echo "✅ Issue State: $ISSUE_STATE"
+
+        # Add the issue to the project
+        echo ""
+        echo "Adding issue to project..."
+        gh api graphql -f query="
+        mutation {
+          addProjectV2ItemById(input: {
+            projectId: \"$PROJECT_ID\"
+            contentId: \"$ISSUE_NODE_ID\"
+          }) {
+            item {
+              id
+              content {
+                ... on Issue {
+                  title
+                  number
+                  url
+                }
+              }
+            }
+          }
+        }" --jq '.data.addProjectV2ItemById.item | "✅ Added to project: \(.content.title) (#\(.content.number))"'
+
+        echo ""
+        echo "🎉 Workflow complete! Existing issue added to project."
+        echo "📋 Issue: $ISSUE_TITLE (#${{ github.event.inputs.issue_number }})"
+        echo "📋 Issue URL: $ISSUE_URL"
+        echo "📊 Project: $PROJECT_TITLE"
+        echo "📊 Project URL: $PROJECT_URL"
       env:
         GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
 
