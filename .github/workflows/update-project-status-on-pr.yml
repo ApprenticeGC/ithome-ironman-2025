@@ -1,0 +1,266 @@
+name: Update Project Status on PR Events
+
+on:
+  pull_request:
+    types: [opened, closed]
+  workflow_run:
+    workflows: ["*"]
+    types: [requested, completed]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  update-project-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Project Item Status for PR Events
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+
+            let targetStatus;
+            let linkedIssues = [];
+
+            // Handle different event types
+            if (context.eventName === 'pull_request') {
+              const pr = context.payload.pull_request;
+              const action = context.payload.action;
+
+              console.log(`🔍 Processing PR #${pr.number} ${action}`);
+
+              // Find linked issues in PR body or title
+              const prBody = pr.body || '';
+              const prTitle = pr.title || '';
+              const text = `${prTitle} ${prBody}`;
+
+              // Look for "fixes #123", "closes #456", etc.
+              const issuePattern = /(?:fixes|closes|resolves|fix|close|resolve)\s+#(\d+)/gi;
+              let match;
+              while ((match = issuePattern.exec(text)) !== null) {
+                linkedIssues.push(parseInt(match[1]));
+              }
+
+              if (action === 'opened') {
+                targetStatus = 'In progress';
+                console.log(`🚀 PR opened → Moving linked issues to "In progress"`);
+              } else if (action === 'closed' && pr.merged) {
+                targetStatus = 'Done';
+                console.log(`✅ PR merged → Moving linked issues to "Done"`);
+              } else {
+                console.log('ℹ️ No status change needed for this PR action');
+                return;
+              }
+
+            } else if (context.eventName === 'workflow_run') {
+              const workflow = context.payload.workflow_run;
+              const action = context.payload.action;
+
+              console.log(`🔍 Processing workflow "${workflow.name}" ${action}`);
+
+              // Find linked PR/issues from the workflow run
+              if (workflow.pull_requests && workflow.pull_requests.length > 0) {
+                const pr = workflow.pull_requests[0];
+
+                // Get PR details to find linked issues
+                const prData = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: pr.number
+                });
+
+                const prBody = prData.data.body || '';
+                const prTitle = prData.data.title || '';
+                const text = `${prTitle} ${prBody}`;
+
+                const issuePattern = /(?:fixes|closes|resolves|fix|close|resolve)\s+#(\d+)/gi;
+                let match;
+                while ((match = issuePattern.exec(text)) !== null) {
+                  linkedIssues.push(parseInt(match[1]));
+                }
+
+                if (action === 'requested') {
+                  targetStatus = 'In progress';
+                  console.log(`⚡ Workflow started → Moving linked issues to "In progress"`);
+                } else if (action === 'completed' && workflow.conclusion === 'success') {
+                  targetStatus = 'In review';
+                  console.log(`✅ Workflow completed successfully → Moving linked issues to "In review"`);
+                } else {
+                  console.log('ℹ️ No status change needed for this workflow action');
+                  return;
+                }
+              } else {
+                console.log('ℹ️ No linked PRs found for this workflow run');
+                return;
+              }
+            }
+
+            if (linkedIssues.length === 0) {
+              console.log('ℹ️ No linked issues found');
+              return;
+            }
+
+            console.log(`🎯 Target status: ${targetStatus}`);
+            console.log(`📋 Linked issues: ${linkedIssues.join(', ')}`);
+
+            // Update status for each linked issue
+            for (const issueNumber of linkedIssues) {
+              try {
+                console.log(`\n🔄 Processing issue #${issueNumber}`);
+
+                // Get issue and its project items
+                const issueQuery = `
+                  query($owner: String!, $repo: String!, $number: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      issue(number: $number) {
+                        id
+                        title
+                        projectItems(first: 10) {
+                          nodes {
+                            id
+                            project {
+                              id
+                              title
+                              number
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                `;
+
+                const issueResponse = await github.graphql(issueQuery, {
+                  owner,
+                  repo,
+                  number: issueNumber
+                });
+
+                const issue = issueResponse.repository.issue;
+                console.log(`✅ Found issue: ${issue.title}`);
+
+                if (!issue.projectItems.nodes.length) {
+                  console.log(`ℹ️ Issue #${issueNumber} is not in any projects, skipping`);
+                  continue;
+                }
+
+                // Update status in each project
+                for (const projectItem of issue.projectItems.nodes) {
+                  const project = projectItem.project;
+                  console.log(`📊 Processing project: ${project.title} (#${project.number})`);
+
+                  // Get project Status field
+                  const fieldsQuery = `
+                    query($projectId: ID!) {
+                      node(id: $projectId) {
+                        ... on ProjectV2 {
+                          fields(first: 20) {
+                            nodes {
+                              ... on ProjectV2SingleSelectField {
+                                id
+                                name
+                                options {
+                                  id
+                                  name
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  `;
+
+                  const fieldsResponse = await github.graphql(fieldsQuery, {
+                    projectId: project.id
+                  });
+
+                  const statusField = fieldsResponse.node.fields.nodes.find(
+                    field => field.name === 'Status'
+                  );
+
+                  if (!statusField) {
+                    console.log(`⚠️ No Status field found in project ${project.title}`);
+                    continue;
+                  }
+
+                  const statusOption = statusField.options.find(
+                    option => option.name === targetStatus
+                  );
+
+                  if (!statusOption) {
+                    console.log(`⚠️ Status option "${targetStatus}" not found in project ${project.title}`);
+                    console.log(`Available options: ${statusField.options.map(o => o.name).join(', ')}`);
+                    continue;
+                  }
+
+                  console.log(`🎯 Found status option: ${statusOption.name} (${statusOption.id})`);
+
+                  // Update project item status
+                  const updateMutation = `
+                    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                      updateProjectV2ItemFieldValue(
+                        input: {
+                          projectId: $projectId
+                          itemId: $itemId
+                          fieldId: $fieldId
+                          value: {
+                            singleSelectOptionId: $optionId
+                          }
+                        }
+                      ) {
+                        projectV2Item {
+                          id
+                        }
+                      }
+                    }
+                  `;
+
+                  await github.graphql(updateMutation, {
+                    projectId: project.id,
+                    itemId: projectItem.id,
+                    fieldId: statusField.id,
+                    optionId: statusOption.id
+                  });
+
+                  console.log(`✅ Updated project ${project.title}: Status set to "${targetStatus}"`);
+
+                  // Add comment to issue
+                  const comment = `🤖 **Project Status Update**\n\n` +
+                    `📊 **Project**: ${project.title}\n` +
+                    `🔄 **Status**: ${targetStatus}\n` +
+                    `⚡ **Trigger**: ${context.eventName} ${context.payload.action}\n\n` +
+                    `_Automated by GitHub Actions workflow._`;
+
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: issueNumber,
+                    body: comment
+                  });
+
+                  console.log(`💬 Added status update comment to issue #${issueNumber}`);
+                }
+
+              } catch (error) {
+                console.error(`❌ Error updating issue #${issueNumber}:`, error);
+
+                // Add error comment
+                const errorComment = `❌ **Project Status Update Failed**\n\n` +
+                  `**Error**: ${error.message}\n` +
+                  `**Issue**: #${issueNumber}\n` +
+                  `**Trigger**: ${context.eventName} ${context.payload.action}\n\n` +
+                  `_Please check the workflow logs for details._`;
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  body: errorComment
+                });
+              }
+            }
