@@ -271,7 +271,7 @@ jobs:
         - Workflow: GitHub Projects v2 PAT Demo
         - Created via: GitHub Actions workflow" \
           --assignee @me \
-          --label "enhancement,automation" > issue_output.txt
+          --label "enhancement" > issue_output.txt
 
         ISSUE_URL=$(cat issue_output.txt)
         echo "✅ Created repository issue: $ISSUE_URL"
