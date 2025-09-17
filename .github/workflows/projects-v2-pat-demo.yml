@@ -12,6 +12,7 @@ on:
         - list-projects
         - list-project-items
         - create-project-item
+        - create-repo-issue-and-add-to-project
       project_number:
         description: 'Project number (for project-specific actions)'
         required: false
@@ -217,6 +218,108 @@ jobs:
             }
           }
         }" --jq '.data.addProjectV2DraftIssue.projectItem | "✅ Created item: \(.content.title) (ID: \(.id))"'
+      env:
+        GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+
+    - name: Create Repository Issue and Add to Project
+      if: github.event.inputs.action == 'create-repo-issue-and-add-to-project' && github.event.inputs.project_number != '' && github.event.inputs.item_title != ''
+      run: |
+        echo "Creating repository issue '${{ github.event.inputs.item_title }}' and adding to project #${{ github.event.inputs.project_number }}..."
+
+        # First, find the project ID
+        PROJECT_DATA=$(gh api graphql -f query='
+        {
+          viewer {
+            projectsV2(first: 10) {
+              nodes {
+                id
+                number
+                title
+                url
+              }
+            }
+          }
+        }' --jq '.data.viewer.projectsV2.nodes[] | select(.number == ${{ github.event.inputs.project_number }})')
+
+        if [ -z "$PROJECT_DATA" ]; then
+          echo "❌ Project #${{ github.event.inputs.project_number }} not found"
+          exit 1
+        fi
+
+        PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.id')
+        PROJECT_TITLE=$(echo "$PROJECT_DATA" | jq -r '.title')
+
+        echo "✅ Target Project: $PROJECT_TITLE"
+        echo "✅ Project ID: $PROJECT_ID"
+
+        # Create the repository issue first using GitHub CLI
+        echo ""
+        echo "Creating repository issue..."
+
+        # Create issue with proper body formatting
+        gh issue create \
+          --title "${{ github.event.inputs.item_title }}" \
+          --body "This is a test issue created to demonstrate the issue → PR → CI runner workflow chain.
+
+        ## Purpose
+        - Test GitHub Projects v2 integration with repository issues
+        - Validate the workflow: issue → PR → CI runner
+        - Follow RFC naming conventions
+
+        ## Related
+        - Project: $PROJECT_TITLE
+        - Workflow: GitHub Projects v2 PAT Demo
+        - Created via: GitHub Actions workflow" \
+          --assignee @me \
+          --label "enhancement,automation" > issue_output.txt
+
+        ISSUE_URL=$(cat issue_output.txt)
+        echo "✅ Created repository issue: $ISSUE_URL"
+
+        # Extract issue number
+        ISSUE_NUMBER=$(echo "$ISSUE_URL" | grep -o '[0-9]*$')
+        echo "✅ Issue number: #$ISSUE_NUMBER"
+
+        # Get the issue node ID via GraphQL
+        ISSUE_NODE_ID=$(gh api graphql -f query="
+        {
+          repository(owner: \"${{ github.repository_owner }}\", name: \"ithome-ironman-2025\") {
+            issue(number: $ISSUE_NUMBER) {
+              id
+              title
+              url
+            }
+          }
+        }" --jq '.data.repository.issue.id')
+
+        echo "✅ Issue node ID: $ISSUE_NODE_ID"
+
+        # Add the issue to the project
+        echo ""
+        echo "Adding issue to project..."
+        gh api graphql -f query="
+        mutation {
+          addProjectV2ItemById(input: {
+            projectId: \"$PROJECT_ID\"
+            contentId: \"$ISSUE_NODE_ID\"
+          }) {
+            item {
+              id
+              content {
+                ... on Issue {
+                  title
+                  number
+                  url
+                }
+              }
+            }
+          }
+        }" --jq '.data.addProjectV2ItemById.item | "✅ Added to project: \(.content.title) (#\(.content.number))"'
+
+        echo ""
+        echo "🎉 Workflow complete! Issue created and added to project."
+        echo "📋 Issue URL: $ISSUE_URL"
+        echo "📊 Project URL: https://github.com/users/${{ github.repository_owner }}/projects/${{ github.event.inputs.project_number }}"
       env:
         GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
 
