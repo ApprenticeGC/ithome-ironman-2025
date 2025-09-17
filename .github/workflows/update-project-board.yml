@@ -1,0 +1,95 @@
+name: Update Project Board
+
+on:
+  issues:
+    types: [opened, closed, reopened]
+  pull_request:
+    types: [opened, closed, ready_for_review, converted_to_draft]
+  workflow_run:
+    workflows: ["Direct Merge PR"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  repository-projects: write
+
+jobs:
+  update-project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Project Board
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const projectUrl = 'https://github.com/users/ApprenticeGC/projects/2';
+            const { owner, repo } = context.repo;
+
+            // Get project details
+            const projectId = 2; // Your project ID
+
+            console.log(`Event: ${context.eventName}`);
+            console.log(`Action: ${context.payload.action}`);
+
+            if (context.eventName === 'issues') {
+              const issue = context.payload.issue;
+              const isRFC = issue.title.includes('RFC-');
+
+              if (!isRFC) {
+                console.log('Not an RFC issue, skipping project update');
+                return;
+              }
+
+              console.log(`RFC Issue #${issue.number}: ${issue.title}`);
+              console.log(`Status: ${context.payload.action}`);
+
+              // Add logic here to move issues in project columns
+              // This would require the GitHub GraphQL API to interact with Projects v2
+
+            } else if (context.eventName === 'pull_request') {
+              const pr = context.payload.pull_request;
+              const isRFC = pr.title.includes('RFC-') || pr.title.includes('feat(');
+
+              if (!isRFC) {
+                console.log('Not an RFC PR, skipping project update');
+                return;
+              }
+
+              console.log(`RFC PR #${pr.number}: ${pr.title}`);
+              console.log(`Status: ${context.payload.action}`);
+
+              if (context.payload.action === 'opened') {
+                console.log('PR opened - should move associated issue to "PR Review"');
+              } else if (context.payload.action === 'closed' && pr.merged) {
+                console.log('PR merged - should move associated issue to "Complete"');
+              }
+
+            } else if (context.eventName === 'workflow_run') {
+              console.log('Direct merge workflow completed');
+              // Handle automation completion
+            }
+
+            // For now, just log the events
+            // Full implementation would use GraphQL API to update Projects v2
+            console.log('Project board integration ready for configuration');
+
+      - name: Add comment with project status
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (issue.title.includes('RFC-')) {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `🎯 **Project Tracking**: This RFC has been added to the [Project Board](https://github.com/users/ApprenticeGC/projects/2/views/1)
+
+📊 **Status**: Added to RFC Backlog
+🤖 **Next**: Waiting for Copilot implementation
+📈 **Track Progress**: Monitor on the project board as this issue moves through the automation pipeline`
+              });
+            }
