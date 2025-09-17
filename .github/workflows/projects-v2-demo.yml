@@ -1,0 +1,184 @@
+name: GitHub Projects v2 Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'list-projects'
+        type: choice
+        options:
+        - list-projects
+        - list-project-items
+        - create-project-item
+      project_number:
+        description: 'Project number (for project-specific actions)'
+        required: false
+        type: string
+      item_title:
+        description: 'Item title (for create-project-item)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  projects-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: List Projects v2
+      if: github.event.inputs.action == 'list-projects'
+      run: |
+        echo "Listing Projects v2 for user..."
+        gh api graphql -f query='
+        {
+          viewer {
+            projectsV2(first: 10) {
+              nodes {
+                id
+                number
+                title
+                url
+                shortDescription
+                public
+                closed
+                createdAt
+                updatedAt
+              }
+            }
+          }
+        }' --jq '.data.viewer.projectsV2.nodes[] | "Project #\(.number): \(.title) - \(.url)"'
+
+        echo ""
+        echo "Listing Projects v2 for repository..."
+        gh api graphql -f query='
+        {
+          repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }}") {
+            projectsV2(first: 10) {
+              nodes {
+                id
+                number
+                title
+                url
+                shortDescription
+                public
+                closed
+                createdAt
+                updatedAt
+              }
+            }
+          }
+        }' --jq '.data.repository.projectsV2.nodes[] | "Repo Project #\(.number): \(.title) - \(.url)"'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: List Project Items
+      if: github.event.inputs.action == 'list-project-items' && github.event.inputs.project_number != ''
+      run: |
+        echo "Listing items for project #${{ github.event.inputs.project_number }}..."
+
+        # First get the project ID
+        PROJECT_ID=$(gh api graphql -f query='
+        {
+          viewer {
+            projectV2(number: ${{ github.event.inputs.project_number }}) {
+              id
+              title
+            }
+          }
+        }' --jq -r '.data.viewer.projectV2.id')
+
+        echo "Project ID: $PROJECT_ID"
+
+        # Then get the items
+        gh api graphql -f query="
+        {
+          node(id: \"$PROJECT_ID\") {
+            ... on ProjectV2 {
+              title
+              items(first: 20) {
+                nodes {
+                  id
+                  type
+                  content {
+                    ... on Issue {
+                      title
+                      number
+                      url
+                    }
+                    ... on PullRequest {
+                      title
+                      number
+                      url
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }" --jq '.data.node.items.nodes[] | "Item: \(.content.title // "Draft") (\(.type))"'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Project Item
+      if: github.event.inputs.action == 'create-project-item' && github.event.inputs.project_number != '' && github.event.inputs.item_title != ''
+      run: |
+        echo "Creating draft item in project #${{ github.event.inputs.project_number }}..."
+
+        # Get the project ID
+        PROJECT_ID=$(gh api graphql -f query='
+        {
+          viewer {
+            projectV2(number: ${{ github.event.inputs.project_number }}) {
+              id
+              title
+            }
+          }
+        }' --jq -r '.data.viewer.projectV2.id')
+
+        echo "Project ID: $PROJECT_ID"
+
+        # Create a draft item
+        gh api graphql -f query="
+        mutation {
+          addProjectV2DraftIssue(input: {
+            projectId: \"$PROJECT_ID\"
+            title: \"${{ github.event.inputs.item_title }}\"
+          }) {
+            projectItem {
+              id
+              content {
+                ... on DraftIssue {
+                  title
+                }
+              }
+            }
+          }
+        }" --jq '.data.addProjectV2DraftIssue.projectItem | "Created item: \(.content.title) (ID: \(.id))"'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Display Results Summary
+      run: |
+        echo "## Projects v2 Demo Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Action performed:** ${{ github.event.inputs.action }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "This workflow demonstrates how to use GitHub's built-in GITHUB_TOKEN to interact with Projects v2 API." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Key Advantages:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ No PAT required" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Automatic permissions management" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Secure token handling" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Scoped to repository/organization" >> $GITHUB_STEP_SUMMARY
