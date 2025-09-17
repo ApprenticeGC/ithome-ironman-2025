@@ -100,7 +100,20 @@ def main():
     ):
         tests_passed += 1
 
-    # Test 5: Run comprehensive unit tests
+    # Test 5: Syntax check test_pr_creation.py
+    total_tests += 1
+    if run_command(
+        [
+            sys.executable,
+            "-m",
+            "py_compile",
+            "scripts/python/production/test_pr_creation.py",
+        ],
+        "Syntax check: test_pr_creation.py",
+    ):
+        tests_passed += 1
+
+    # Test 6: Run comprehensive unit tests
     total_tests += 1
     if run_command(
         [
@@ -115,7 +128,7 @@ def main():
     ):
         tests_passed += 1
 
-    # Test 6: Import test (ensure all modules can be imported)
+    # Test 7: Import test (ensure all modules can be imported)
     total_tests += 1
     if run_command(
         [
@@ -129,6 +142,7 @@ try:
     import assign_issue_to_copilot
     import ensure_closes_link
     import auto_approve_or_dispatch
+    import test_pr_creation
     print("All modules imported successfully")
 except ImportError as e:
     print(f"Import error: {e}")
@@ -139,7 +153,7 @@ except ImportError as e:
     ):
         tests_passed += 1
 
-    # Test 7: Pre-commit validation (optional)
+    # Test 8: Pre-commit validation (optional)
     if args.include_precommit:
         total_tests += 1
         if run_command(
