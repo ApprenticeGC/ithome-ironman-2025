@@ -7,8 +7,7 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -115,8 +114,7 @@ class TestEnsureAutomergeOrComment:
         mock_gh_json.return_value = {
             "title": "feat(flow): RFC-090 test",
             "author": {"login": "Copilot"},
-            "draft": False,
-            "baseRepository": {"nameWithOwner": "test/repo"},
+            "isDraft": False,
             "autoMergeRequest": None,
         }
         mock_try_automerge.return_value = True
@@ -140,8 +138,7 @@ class TestEnsureAutomergeOrComment:
         mock_gh_json.return_value = {
             "title": "feat(flow): RFC-090 test",
             "author": {"login": "Copilot"},
-            "draft": False,
-            "baseRepository": {"nameWithOwner": "test/repo"},
+            "isDraft": False,
             "autoMergeRequest": None,
         }
         mock_try_automerge.return_value = False
@@ -188,8 +185,7 @@ class TestEnsureAutomergeOrComment:
         mock_gh_json.return_value = {
             "title": "feat(flow): RFC-090 test",
             "author": {"login": "human-user"},
-            "draft": False,
-            "baseRepository": {"nameWithOwner": "test/repo"},
+            "isDraft": False,
         }
 
         ensure_automerge_main()
@@ -208,8 +204,7 @@ class TestEnsureAutomergeOrComment:
         mock_gh_json.return_value = {
             "title": "feat(flow): regular feature",
             "author": {"login": "Copilot"},
-            "draft": False,
-            "baseRepository": {"nameWithOwner": "test/repo"},
+            "isDraft": False,
         }
 
         ensure_automerge_main()
@@ -227,8 +222,7 @@ class TestEnsureAutomergeOrComment:
         mock_gh_json.return_value = {
             "title": "feat(flow): RFC-090 test",
             "author": {"login": "Copilot"},
-            "draft": True,
-            "baseRepository": {"nameWithOwner": "test/repo"},
+            "isDraft": True,
         }
 
         ensure_automerge_main()
@@ -246,8 +240,7 @@ class TestEnsureAutomergeOrComment:
         mock_gh_json.return_value = {
             "title": "feat(flow): RFC-090 test",
             "author": {"login": "Copilot"},
-            "draft": False,
-            "baseRepository": {"nameWithOwner": "test/repo"},
+            "isDraft": False,
             "autoMergeRequest": {"enabled": True},
         }
 

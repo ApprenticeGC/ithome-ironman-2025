@@ -122,8 +122,7 @@ def process_pr(repo: str, pr_number: int) -> None:
             "--repo",
             repo,
             "--json",
-            "number,title,author,draft,mergeStateStatus,"
-            "autoMergeRequest,baseRepository",
+            "number,title,author,isDraft,mergeStateStatus," "autoMergeRequest",
         ],
         extra_env={
             "GH_TOKEN": os.environ.get("AUTO_APPROVE_PAT")
@@ -132,8 +131,8 @@ def process_pr(repo: str, pr_number: int) -> None:
     )
     title = pr.get("title", "")
     author = pr.get("author", {}).get("login", "")
-    draft = pr.get("draft", True)
-    base = (pr.get("baseRepository") or {}).get("nameWithOwner", "")
+    draft = pr.get("isDraft", True)
+    base = repo  # Use the repo parameter directly since we know it's the right repo
 
     if author not in {
         "Copilot",
