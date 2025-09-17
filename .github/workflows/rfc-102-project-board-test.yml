@@ -1,0 +1,54 @@
+name: RFC-102-01 Project Board Integration Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup:
+        description: 'Automatically cleanup test issue after test'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  test-project-board-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run RFC-102-01 Integration Test
+        env:
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🧪 Starting RFC-102-01 Project Board Integration Test"
+          echo "Repository: ${{ github.repository }}"
+          echo "Cleanup after test: ${{ inputs.cleanup }}"
+          echo ""
+          
+          # Run the test
+          python3 scripts/python/production/test_project_board_integration.py
+          
+          echo ""
+          echo "🎯 Integration test completed"
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## RFC-102-01 Integration Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This test validates that the \`update-project-board.yml\` workflow correctly:" >> $GITHUB_STEP_SUMMARY
+          echo "- Detects RFC issues by title pattern" >> $GITHUB_STEP_SUMMARY
+          echo "- Adds project tracking comments to new RFC issues" >> $GITHUB_STEP_SUMMARY
+          echo "- Uses the correct comment format and project board links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the workflow logs above for detailed test results." >> $GITHUB_STEP_SUMMARY
