@@ -1,0 +1,52 @@
+name: Test Project Board Integration
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  test-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test RFC Detection
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('🔍 Testing project board integration...');
+            console.log(`Event: ${context.eventName}`);
+            console.log(`Action: ${context.payload.action}`);
+
+            if (context.eventName === 'issues') {
+              const issue = context.payload.issue;
+              console.log(`Issue #${issue.number}: ${issue.title}`);
+
+              const isRFC = issue.title.includes('RFC-');
+              console.log(`Is RFC issue: ${isRFC}`);
+
+              if (isRFC) {
+                console.log('✅ RFC issue detected!');
+                console.log('📋 Would add to project board...');
+
+                // Add test comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: '🧪 **Test Comment**: Project board integration test workflow triggered successfully!\n\n' +
+                        '✅ RFC issue detected\n' +
+                        '✅ Workflow ran correctly\n' +
+                        '📋 Ready to integrate with project board'
+                });
+
+                console.log('✅ Test comment added to issue');
+              } else {
+                console.log('ℹ️ Not an RFC issue, skipping');
+              }
+            }
+
+            console.log('🎯 Project board integration test complete!');
