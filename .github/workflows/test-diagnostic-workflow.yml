@@ -1,0 +1,103 @@
+name: test-diagnostic-workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      manual_trigger:
+        description: 'Manual trigger for diagnostic workflow test'
+        required: false
+        default: 'true'
+  schedule:
+    # Run every 30 minutes to continuously monitor diagnostic workflow
+    - cron: '*/30 * * * *'
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+  workflow_run:
+    workflows: ["ci"]
+    types: ["completed"]
+
+permissions:
+  issues: read
+  pull-requests: read
+  actions: read
+  contents: read
+
+jobs:
+  test_diagnostic_workflow:
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'schedule' ||
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.title, 'RFC-099')) ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      }}
+    runs-on: ubuntu-latest
+    environment: copilot
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh
+          
+      - name: Run diagnostic workflow test
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python3 scripts/python/production/test_diagnostic_workflow.py
+        
+      - name: Post diagnostic results as comment
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.title, 'RFC-099')
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f "/tmp/diagnostic_test_results.json" ]; then
+            echo "📊 **Diagnostic Workflow Test Results**" > comment.md
+            echo "" >> comment.md
+            echo "🔍 **Test Summary:**" >> comment.md
+            python3 -c "
+            import json
+            with open('/tmp/diagnostic_test_results.json', 'r') as f:
+                results = json.load(f)
+            
+            print('- **Repository:** ' + results['repo'])
+            print('- **Timestamp:** ' + results['timestamp'])
+            print('- **Overall Success:** ' + ('✅ Yes' if results['overall_success'] else '❌ No'))
+            print()
+            
+            print('🎯 **Stage Results:**')
+            for stage, info in results['stages'].items():
+                status_icon = '✅' if info['status'] == 'success' else '⚠️' if info['status'] == 'warning' else '❌'
+                print(f'- {status_icon} **{stage.replace(\"_\", \" \").title()}:** {info[\"message\"]}')
+            
+            if results['blockers']:
+                print()
+                print('🚨 **Blockers Detected:**')
+                for blocker in results['blockers']:
+                    level_icon = '⚠️' if blocker['level'] == 'warning' else '🚫'
+                    print(f'- {level_icon} **[{blocker[\"stage\"]}]** {blocker[\"message\"]}')
+            else:
+                print()
+                print('✅ **No blockers detected**')
+            " >> comment.md
+            
+            gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md
+          fi
+          
+      - name: Upload diagnostic results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: diagnostic-test-results-${{ github.run_id }}
+          path: /tmp/diagnostic_test_results.json
+          retention-days: 7

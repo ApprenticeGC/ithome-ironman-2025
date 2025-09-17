@@ -32,3 +32,13 @@ jobs:
           GITHUB_EVENT: ${{ toJson(github.event) }}
           PR_NUMBER: ${{ github.event.pull_request.number || '' }}
         run: python3 scripts/python/production/ensure_automerge_or_comment.py
+        
+      - name: Run diagnostic workflow analysis for RFC-099
+        if: contains(github.event.pull_request.title || github.event.workflow_run.head_branch, 'RFC-099')
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          echo "🔍 Running diagnostic workflow analysis for RFC-099..."
+          python3 scripts/python/production/test_diagnostic_workflow.py || echo "Diagnostic test completed with warnings/errors"
