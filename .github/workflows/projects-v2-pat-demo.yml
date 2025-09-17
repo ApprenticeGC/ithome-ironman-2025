@@ -1,12 +1,14 @@
 name: GitHub Projects v2 PAT Demo
 
 on:
+  issues:
+    types: [opened]
   workflow_dispatch:
     inputs:
       action:
         description: 'Action to perform'
         required: true
-        default: 'list-projects'
+        default: 'add-existing-issue-to-project'
         type: choice
         options:
         - list-projects
@@ -37,6 +39,48 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Auto-add new issue to project
+      if: github.event_name == 'issues' && github.event.action == 'opened'
+      env:
+        GH_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+      run: |
+        echo "New issue #${{ github.event.issue.number }} created, adding to project..."
+
+        PROJECT_NUMBER=2
+        ISSUE_NUMBER=${{ github.event.issue.number }}
+
+        echo "Getting project ID for project number: $PROJECT_NUMBER"
+        PROJECT_ID=$(gh api graphql -f query='
+        query($login: String!) {
+          user(login: $login) {
+            projectV2(number: '$PROJECT_NUMBER') {
+              id
+            }
+          }
+        }' -f login=${{ github.repository_owner }} --jq '.data.user.projectV2.id')
+
+        echo "Project ID: $PROJECT_ID"
+
+        echo "Getting issue ID for issue number: $ISSUE_NUMBER"
+        ISSUE_ID=$(gh api repos/${{ github.repository }}/issues/$ISSUE_NUMBER --jq '.node_id')
+
+        echo "Issue ID: $ISSUE_ID"
+
+        echo "Adding issue to project..."
+        gh api graphql -f query='
+        mutation($projectId: ID!, $contentId: ID!) {
+          addProjectV2ItemByContentId(input: {
+            projectId: $projectId
+            contentId: $contentId
+          }) {
+            item {
+              id
+            }
+          }
+        }' -f projectId="$PROJECT_ID" -f contentId="$ISSUE_ID"
+
+        echo "✅ Issue #$ISSUE_NUMBER added to Project #$PROJECT_NUMBER"
 
     - name: List Projects v2 with PAT
       if: github.event.inputs.action == 'list-projects'
