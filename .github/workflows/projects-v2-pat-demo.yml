@@ -1,0 +1,217 @@
+name: GitHub Projects v2 PAT Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'list-projects'
+        type: choice
+        options:
+        - list-projects
+        - list-project-items
+        - create-project-item
+      project_number:
+        description: 'Project number (for project-specific actions)'
+        required: false
+        type: string
+      item_title:
+        description: 'Item title (for create-project-item)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  projects-pat-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: List Projects v2 with PAT
+      if: github.event.inputs.action == 'list-projects'
+      run: |
+        echo "Listing Projects v2 for user using PAT..."
+        gh api graphql -f query='
+        {
+          viewer {
+            login
+            projectsV2(first: 10) {
+              totalCount
+              nodes {
+                id
+                number
+                title
+                url
+                shortDescription
+                public
+                closed
+                createdAt
+                updatedAt
+              }
+            }
+          }
+        }' --jq '.'
+
+        echo ""
+        echo "Formatted list:"
+        gh api graphql -f query='
+        {
+          viewer {
+            projectsV2(first: 10) {
+              nodes {
+                id
+                number
+                title
+                url
+                shortDescription
+                public
+                closed
+              }
+            }
+          }
+        }' --jq '.data.viewer.projectsV2.nodes[] | "Project #\(.number): \(.title) - \(.url) (Public: \(.public))"'
+      env:
+        GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+
+    - name: List Project Items with PAT
+      if: github.event.inputs.action == 'list-project-items' && github.event.inputs.project_number != ''
+      run: |
+        echo "Listing items for project #${{ github.event.inputs.project_number }} using PAT..."
+
+        # First get the project ID
+        PROJECT_ID=$(gh api graphql -f query='
+        {
+          viewer {
+            projectV2(number: ${{ github.event.inputs.project_number }}) {
+              id
+              title
+              url
+            }
+          }
+        }' --jq -r '.data.viewer.projectV2.id')
+
+        if [ "$PROJECT_ID" = "null" ] || [ -z "$PROJECT_ID" ]; then
+          echo "❌ Project #${{ github.event.inputs.project_number }} not found or not accessible"
+          echo "Available projects:"
+          gh api graphql -f query='
+          {
+            viewer {
+              projectsV2(first: 10) {
+                nodes {
+                  number
+                  title
+                  url
+                }
+              }
+            }
+          }' --jq '.data.viewer.projectsV2.nodes[] | "  - Project #\(.number): \(.title)"'
+          exit 1
+        fi
+
+        echo "✅ Found Project ID: $PROJECT_ID"
+
+        # Get project details and items
+        gh api graphql -f query="
+        {
+          node(id: \"$PROJECT_ID\") {
+            ... on ProjectV2 {
+              title
+              url
+              shortDescription
+              items(first: 20) {
+                totalCount
+                nodes {
+                  id
+                  type
+                  content {
+                    ... on Issue {
+                      title
+                      number
+                      url
+                      state
+                    }
+                    ... on PullRequest {
+                      title
+                      number
+                      url
+                      state
+                    }
+                    ... on DraftIssue {
+                      title
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }" --jq '.'
+      env:
+        GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+
+    - name: Create Project Item with PAT
+      if: github.event.inputs.action == 'create-project-item' && github.event.inputs.project_number != '' && github.event.inputs.item_title != ''
+      run: |
+        echo "Creating draft item '${{ github.event.inputs.item_title }}' in project #${{ github.event.inputs.project_number }} using PAT..."
+
+        # Get the project ID
+        PROJECT_ID=$(gh api graphql -f query='
+        {
+          viewer {
+            projectV2(number: ${{ github.event.inputs.project_number }}) {
+              id
+              title
+              url
+            }
+          }
+        }' --jq -r '.data.viewer.projectV2.id')
+
+        if [ "$PROJECT_ID" = "null" ] || [ -z "$PROJECT_ID" ]; then
+          echo "❌ Project #${{ github.event.inputs.project_number }} not found"
+          exit 1
+        fi
+
+        echo "✅ Project ID: $PROJECT_ID"
+
+        # Create a draft item
+        gh api graphql -f query="
+        mutation {
+          addProjectV2DraftIssue(input: {
+            projectId: \"$PROJECT_ID\"
+            title: \"${{ github.event.inputs.item_title }}\"
+          }) {
+            projectItem {
+              id
+              content {
+                ... on DraftIssue {
+                  title
+                  body
+                }
+              }
+            }
+          }
+        }" --jq '.data.addProjectV2DraftIssue.projectItem | "✅ Created item: \(.content.title) (ID: \(.id))"'
+      env:
+        GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+
+    - name: Display Results Summary
+      run: |
+        echo "## Projects v2 PAT Demo Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Action performed:** ${{ github.event.inputs.action }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Using:** Personal Access Token with project scopes" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "This workflow demonstrates accessing personal Projects v2 using a PAT with project scopes." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Key Differences from Built-in Token:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Can access personal Projects v2" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Full project read/write permissions" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Works with user-level projects" >> $GITHUB_STEP_SUMMARY
+        echo "- ⚠️ Requires PAT management and rotation" >> $GITHUB_STEP_SUMMARY
