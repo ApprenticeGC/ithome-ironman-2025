@@ -1,0 +1,119 @@
+name: Diagnose auto-merge blockers
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+permissions:
+  contents: read
+  pull-requests: write   # needed to post a comment
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gather blockers and post a report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER=${{ github.repository_owner }}
+          REPO=${{ github.event.repository.name }}
+          PR=${{ github.event.pull_request.number }}
+
+          # 1) Pull high-level PR state (reviews, draft, mergeability, unresolved threads)
+          pr_json=$(gh api graphql -f query='
+          query($o:String!,$n:String!,$num:Int!){
+            repository(owner:$o,name:$n){
+              pullRequest(number:$num){
+                id number isDraft state mergeable mergeStateStatus isInMergeQueue
+                baseRefName headRefName
+                reviewDecision                      # APPROVED | CHANGES_REQUESTED | REVIEW_REQUIRED
+                reviewThreads(first:100){
+                  nodes{ isResolved }
+                }
+                commits(last:1){
+                  nodes{
+                    commit{
+                      oid
+                      statusCheckRollup{
+                        state                     # SUCCESS | FAILURE | PENDING | ERROR
+                        contexts(first:50){
+                          nodes{
+                            __typename
+                            ... on CheckRun { name status conclusion detailsUrl }
+                            ... on StatusContext { context state targetUrl }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }' -F o="$OWNER" -F n="$REPO" -F num="$PR")
+
+          # tiny jq helpers
+          jqval() { echo "$pr_json" | jq -r "$1"; }
+
+          HEAD_SHA=$(jqval '.data.repository.pullRequest.commits.nodes[0].commit.oid')
+          PR_ID=$(jqval '.data.repository.pullRequest.id')
+          BASE=$(jqval '.data.repository.pullRequest.baseRefName')
+          HEAD=$(jqval '.data.repository.pullRequest.headRefName')
+          IS_DRAFT=$(jqval '.data.repository.pullRequest.isDraft')
+          MERGEABLE=$(jqval '.data.repository.pullRequest.mergeable')
+          MERGE_STATE=$(jqval '.data.repository.pullRequest.mergeStateStatus')
+          REVIEW_DECISION=$(jqval '.data.repository.pullRequest.reviewDecision')
+          CHECK_STATE=$(jqval '.data.repository.pullRequest.commits.nodes[0].commit.statusCheckRollup.state')
+
+          # Unresolved review threads
+          UNRESOLVED=$(echo "$pr_json" | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved==false)] | length')
+
+          # 2) Detailed checks: list pending/failing check-runs + status contexts (REST v3)
+          checks_json=$(gh api repos/$OWNER/$REPO/commits/$HEAD_SHA/check-runs -H "Accept: application/vnd.github+json")
+          pending_checks=$(echo "$checks_json" | jq -r '[.check_runs[] | select(.status!="completed" or .conclusion=="failure" or .conclusion=="cancelled" or .conclusion=="timed_out")] | length')
+          checks_list=$(echo "$checks_json" | jq -r '.check_runs[] | select(.status!="completed" or .conclusion!="success") | "- \(.name): status=\(.status), conclusion=\(.conclusion // "n/a")"')
+
+          # Old "commit status" API (required contexts sometimes live here)
+          status_json=$(gh api repos/$OWNER/$REPO/statuses/$HEAD_SHA)
+          failing_status=$(echo "$status_json" | jq -r '[.[] | select(.state!="success")] | length')
+
+          # 3) Behind base? (compare)
+          compare_json=$(gh api repos/$OWNER/$REPO/compare/$BASE...$HEAD)
+          BEHIND_BY=$(echo "$compare_json" | jq -r '.behind_by')
+
+          # 4) Quick Code Owners hint: if reviewDecision != APPROVED but there are no failing checks,
+          # the blocker is often missing CODEOWNERS approvals (cannot read the rule directly without admin).
+          # We'll flag it heuristically.
+          maybe_codeowners="false"
+          if [[ "$REVIEW_DECISION" != "APPROVED" && "$UNRESOLVED" == "0" ]]; then
+            maybe_codeowners="true"
+          fi
+
+          # Build a report
+          REPORT=$(cat <<EOF
+          ### 🔎 Auto-merge diagnostics for PR #$PR
+          **mergeStateStatus:** \`$MERGE_STATE\`
+          **mergeable:** \`$MERGEABLE\` | **draft:** \`$IS_DRAFT\`
+          **reviewDecision:** \`$REVIEW_DECISION\` | **unresolved review threads:** $UNRESOLVED
+          **checks rollup:** \`$CHECK_STATE\` | **pending/failing check-runs:** $pending_checks | **failing commit statuses:** $failing_status
+          **behind base:** $BEHIND_BY commits
+
+          #### ✅ What to fix
+          $( [[ "$IS_DRAFT" == "true" ]] && echo "- [ ] PR is still **Draft** → mark Ready for review" )
+          $( [[ "$REVIEW_DECISION" == "CHANGES_REQUESTED" ]] && echo "- [ ] Reviewer requested changes → address and re-request review" )
+          $( [[ "$REVIEW_DECISION" == "REVIEW_REQUIRED" ]] && echo "- [ ] **Approvals missing** → get required reviewers/CODEOWNERS to approve" )
+          $( [[ "$UNRESOLVED" != "0" ]] && echo "- [ ] **Unresolved review threads:** $UNRESOLVED → resolve conversations" )
+          $( [[ "$pending_checks" != "0" || "$failing_status" != "0" || "$CHECK_STATE" =~ FAILURE|ERROR ]] && echo "- [ ] **Checks not green** → see list below" )
+          $( [[ "$BEHIND_BY" != "0" ]] && echo "- [ ] **Branch is behind base by $BEHIND_BY** → use \"Update branch\" or rebase/merge main" )
+          $( [[ "$maybe_codeowners" == "true" ]] && echo "- [ ] **Likely CODEOWNERS approval required** → ask listed code owners on touched paths" )
+
+          #### ⏱ Checks not completed/success
+          ${checks_list:-"(none)"}
+
+          _Tip_: you can still **schedule auto-merge** now; it will merge once the above items are cleared.
+          EOF
+          )
+
+          echo "$REPORT"
+
+          # Optional: post as a PR comment so it's visible to the team
+          gh api repos/$OWNER/$REPO/issues/$PR/comments -f body="$REPORT" >/dev/null || true

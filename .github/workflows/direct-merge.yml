@@ -1,0 +1,45 @@
+name: Direct Merge Eligible PRs
+
+on:
+  workflow_run:
+    workflows: ["auto-approve-merge"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  direct_merge:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Direct Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_PAT: ${{ secrets.AUTO_APPROVE_PAT }}
+          REPO: ${{ github.repository }}
+          GITHUB_EVENT: ${{ toJson(github.event) }}
+        run: |
+          python scripts/python/production/direct_merge_pr.py
+
+      - name: Comment on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Direct merge workflow failed. Check logs for details."

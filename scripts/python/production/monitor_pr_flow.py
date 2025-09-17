@@ -20,11 +20,21 @@ def run(cmd: List[str], check: bool = True, extra_env: Optional[dict] = None):
     env = os.environ.copy()
     if extra_env:
         env.update(extra_env)
-    return subprocess.run(cmd, check=check, text=True, capture_output=True, env=env)
+    return subprocess.run(
+        cmd,
+        check=check,
+        text=True,
+        capture_output=True,
+        env=env,
+        encoding="utf-8",
+        errors="replace",
+    )
 
 
 def gh_json(cmd: List[str], extra_env: Optional[dict] = None):
     res = run(cmd, extra_env=extra_env)
+    if not res.stdout or not res.stdout.strip():
+        raise ValueError(f"Empty response from command: {' '.join(cmd)}")
     return json.loads(res.stdout)
 
 
@@ -35,13 +45,9 @@ def list_open_copilot_prs(repo: str):
     while True:
         try:
             # Correct pulls list endpoint with query params
-            prs = gh_json(
-                ["gh", "api", f"repos/{repo}/pulls?state=open&per_page=100&page={page}"]
-            )
+            prs = gh_json(["gh", "api", f"repos/{repo}/pulls?state=open&per_page=100&page={page}"])
         except subprocess.CalledProcessError as e:
-            sys.stderr.write(
-                f"list_open_copilot_prs error: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
-            )
+            sys.stderr.write(f"list_open_copilot_prs error: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
             break
         if not isinstance(prs, list) or not prs:
             break
@@ -49,7 +55,6 @@ def list_open_copilot_prs(repo: str):
             head = (pr.get("head") or {}).get("ref", "")
             base_repo = (pr.get("base") or {}).get("repo") or {}
             base_full = base_repo.get("full_name", "")
-            title = pr.get("title", "")
             # Target Copilot-authored branches in this repo; do not hard-require RFC token
             if head.startswith("copilot/") and base_full == repo:
                 found.append(
@@ -67,34 +72,119 @@ def list_open_copilot_prs(repo: str):
 def has_success_ci(repo: str, branch: str) -> bool:
     """Return True if either 'ci' or 'ci-dispatch' has a successful run on branch."""
     try:
-        wfs = gh_json(["gh", "workflow", "list", "--repo", repo, "--json", "name,id"])
-        names_to_check = {"ci", "ci-dispatch"}
-        ids = [str(wf["id"]) for wf in wfs if wf.get("name") in names_to_check]
-        if not ids:
-            return False
-        for wf_id in ids:
-            data = gh_json(
+        # Use check-runs API to look for successful build_test runs
+        try:
+            result = run(
                 [
                     "gh",
                     "api",
-                    f"repos/{repo}/actions/workflows/{wf_id}/runs?branch={branch}&per_page=20",
+                    f"repos/{repo}/commits/{branch}/check-runs",
+                    "--jq",
+                    '.check_runs[] | select(.name == "build_test" and .conclusion == "success") | .id',
                 ]
             )
-            for run in data.get("workflow_runs", []) or []:
-                if (
-                    run.get("head_branch") == branch
-                    and run.get("conclusion") == "success"
-                ):
-                    return True
+
+            # If we got any successful build_test check runs, CI is good
+            if result.stdout and result.stdout.strip():
+                return True
+        except subprocess.CalledProcessError:
+            pass  # Fall through to workflow runs check
+
+        # Fallback: check recent workflow runs
+        for workflow_name in ["ci", "ci-dispatch"]:
+            try:
+                result = run(
+                    [
+                        "gh",
+                        "run",
+                        "list",
+                        "--repo",
+                        repo,
+                        "--workflow",
+                        workflow_name,
+                        "--branch",
+                        branch,
+                        "--limit",
+                        "5",
+                        "--json",
+                        "conclusion,headSha",
+                    ]
+                )
+
+                if result.stdout and result.stdout.strip():
+                    import json
+
+                    runs = json.loads(result.stdout)
+                    for run_item in runs:
+                        if run_item.get("conclusion") == "success":
+                            return True
+            except subprocess.CalledProcessError:
+                continue  # Try next workflow
+
         return False
+
     except subprocess.CalledProcessError as e:
         sys.stderr.write(
-            f"has_success_ci error for {branch}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
+            f"has_success_ci error for {branch}: {e}\n"
+            f"STDOUT: {getattr(e, 'stdout', 'N/A')}\n"
+            f"STDERR: {getattr(e, 'stderr', 'N/A')}\n"
         )
         return False
 
 
+def has_recent_ci_activity(repo: str, branch: str) -> bool:
+    """Check if there are recent CI runs (pending, running, or successful) to avoid duplicate dispatches."""
+    try:
+        from datetime import datetime, timedelta
+
+        cutoff_time = datetime.utcnow() - timedelta(minutes=10)  # Look back 10 minutes
+
+        for workflow_name in ["ci", "ci-dispatch"]:
+            try:
+                result = run(
+                    [
+                        "gh",
+                        "run",
+                        "list",
+                        "--repo",
+                        repo,
+                        "--workflow",
+                        workflow_name,
+                        "--branch",
+                        branch,
+                        "--limit",
+                        "5",
+                        "--json",
+                        "conclusion,status,createdAt",
+                    ]
+                )
+
+                if result.stdout.strip():
+                    import json
+
+                    runs = json.loads(result.stdout)
+                    for run_item in runs:
+                        created_at = datetime.fromisoformat(run_item.get("createdAt", "").replace("Z", "+00:00"))
+                        if created_at > cutoff_time:
+                            status = run_item.get("status")
+                            conclusion = run_item.get("conclusion")
+                            # If there's a recent run that's pending, in progress, or successful, don't dispatch
+                            if status in ["pending", "in_progress"] or conclusion == "success":
+                                return True
+            except (subprocess.CalledProcessError, ValueError):
+                continue
+
+        return False
+    except Exception:
+        return False  # If we can't determine, err on the side of not dispatching
+
+
 def dispatch_ci(repo: str, branch: str) -> bool:
+    # Check if there's already recent CI activity to avoid duplicates
+    if has_recent_ci_activity(repo, branch):
+        print(f"Skipping CI dispatch for {branch} - recent CI activity detected")
+        return True  # Treat as success since CI is already handled
+
     # Prefer PAT if available
     env_pat = {}
     pat = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN")
@@ -109,7 +199,9 @@ def dispatch_ci(repo: str, branch: str) -> bool:
         return True
     except subprocess.CalledProcessError as e1:
         sys.stderr.write(
-            f"dispatch_ci name error for {branch}: {e1}\nSTDOUT: {e1.stdout}\nSTDERR: {e1.stderr}\n"
+            f"dispatch_ci name error for {branch}: {e1}\n"
+            f"STDOUT: {getattr(e1, 'stdout', 'N/A')}\n"
+            f"STDERR: {getattr(e1, 'stderr', 'N/A')}\n"
         )
         try:
             wfs = gh_json(
@@ -126,7 +218,9 @@ def dispatch_ci(repo: str, branch: str) -> bool:
                 return True
         except subprocess.CalledProcessError as e2:
             sys.stderr.write(
-                f"dispatch_ci id error for {branch}: {e2}\nSTDOUT: {e2.stdout}\nSTDERR: {e2.stderr}\n"
+                f"dispatch_ci id error for {branch}: {e2}\n"
+                f"STDOUT: {getattr(e2, 'stdout', 'N/A')}\n"
+                f"STDERR: {getattr(e2, 'stderr', 'N/A')}\n"
             )
     # Fallback to generic dispatcher with input
     try:
@@ -138,7 +232,9 @@ def dispatch_ci(repo: str, branch: str) -> bool:
         return True
     except subprocess.CalledProcessError as e3:
         sys.stderr.write(
-            f"dispatch_ci fallback error for {branch}: {e3}\nSTDOUT: {e3.stdout}\nSTDERR: {e3.stderr}\n"
+            f"dispatch_ci fallback error for {branch}: {e3}\n"
+            f"STDOUT: {getattr(e3, 'stdout', 'N/A')}\n"
+            f"STDERR: {getattr(e3, 'stderr', 'N/A')}\n"
         )
     return False
 
@@ -170,7 +266,9 @@ def mark_ready(repo: str, pr_number: int) -> bool:
                 "api",
                 "graphql",
                 "-f",
-                "query=mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) { clientMutationId } }",
+                "query=mutation($id: ID!) { "
+                "markPullRequestReadyForReview(input: {pullRequestId: $id}) "
+                "{ clientMutationId } }",
                 "-F",
                 f"id={pr_id}",
             ],
@@ -179,9 +277,7 @@ def mark_ready(repo: str, pr_number: int) -> bool:
         )
         return True
     except subprocess.CalledProcessError as e:
-        sys.stderr.write(
-            f"mark_ready error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
-        )
+        sys.stderr.write(f"mark_ready error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
         return False
 
 
@@ -227,9 +323,7 @@ def enable_automerge(repo: str, pr_number: int) -> bool:
         )
         return True
     except subprocess.CalledProcessError as e:
-        sys.stderr.write(
-            f"enable_automerge error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
-        )
+        sys.stderr.write(f"enable_automerge error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
         return False
 
 
@@ -240,7 +334,7 @@ def try_merge_now(repo: str, pr_number: int) -> bool:
         pat = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN")
         if pat:
             env_pat["GH_TOKEN"] = pat
-        # Merge immediately with squash; --yes to skip prompt; delete branch after merge
+        # Merge immediately with squash; delete branch after merge
         run(
             [
                 "gh",
@@ -251,16 +345,13 @@ def try_merge_now(repo: str, pr_number: int) -> bool:
                 repo,
                 "--squash",
                 "--delete-branch",
-                "--yes",
             ],
             check=True,
             extra_env=env_pat,
         )
         return True
     except subprocess.CalledProcessError as e:
-        sys.stderr.write(
-            f"try_merge_now error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
-        )
+        sys.stderr.write(f"try_merge_now error for PR #{pr_number}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
         return False
 
 
@@ -295,7 +386,8 @@ def main():
                 if enable_automerge(REPO, number):
                     print(f"Enabled auto-merge for PR #{number}")
                 else:
-                    # Fallback: try to merge immediately when auto-merge cannot be enabled (e.g., no branch protection rules)
+                    # Fallback: try to merge immediately when auto-merge
+                    # cannot be enabled (e.g., no branch protection rules)
                     if try_merge_now(REPO, number):
                         print(f"Merged PR #{number} directly (fallback)")
                     else:

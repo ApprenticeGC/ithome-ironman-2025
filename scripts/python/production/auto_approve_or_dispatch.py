@@ -17,11 +17,21 @@ def run(
     env = os.environ.copy()
     if extra_env:
         env.update(extra_env)
-    return subprocess.run(cmd, check=check, text=True, capture_output=capture, env=env)
+    return subprocess.run(
+        cmd,
+        check=check,
+        text=True,
+        capture_output=capture,
+        env=env,
+        encoding="utf-8",
+        errors="replace",  # Handle Unicode decode errors gracefully
+    )
 
 
 def gh_json(cmd: List[str], extra_env: dict | None = None):
     res = run(cmd, extra_env=extra_env)
+    if not res.stdout or not res.stdout.strip():
+        raise ValueError(f"Empty response from command: {' '.join(cmd)}")
     return json.loads(res.stdout)
 
 
@@ -45,13 +55,9 @@ def list_action_required_runs(repo: str):
     max_pages = 3  # Limit to recent runs to avoid excessive processing
     while page <= max_pages:
         try:
-            data = gh_json(
-                ["gh", "api", f"repos/{repo}/actions/runs?per_page=100&page={page}"]
-            )
+            data = gh_json(["gh", "api", f"repos/{repo}/actions/runs?per_page=100&page={page}"])
         except subprocess.CalledProcessError as e:
-            sys.stderr.write(
-                f"list_action_required_runs error: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
-            )
+            sys.stderr.write(f"list_action_required_runs error: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
             break
         page_runs = data.get("workflow_runs", [])
         if not page_runs:
@@ -61,10 +67,9 @@ def list_action_required_runs(repo: str):
             conclusion = wr.get("conclusion")
             head = wr.get("head_branch", "")
             # Include both explicit action_required as well as "waiting" (often environment approval)
-            if (
-                status in ("action_required", "waiting")
-                or conclusion == "action_required"
-            ) and head.startswith("copilot/"):
+            if (status in ("action_required", "waiting") or conclusion == "action_required") and head.startswith(
+                "copilot/"
+            ):
                 # Only process runs from existing branches
                 if branch_exists(repo, head):
                     runs.append(wr)
@@ -78,9 +83,7 @@ def list_open_copilot_pr_branches(repo: str) -> Set[str]:
     branches: Set[str] = set()
     page = 1
     while True:
-        prs = gh_json(
-            ["gh", "api", f"repos/{repo}/pulls?state=open&per_page=100&page={page}"]
-        )
+        prs = gh_json(["gh", "api", f"repos/{repo}/pulls?state=open&per_page=100&page={page}"])
         if not isinstance(prs, list) or not prs:
             break
         for pr in prs:
@@ -94,11 +97,7 @@ def list_open_copilot_pr_branches(repo: str) -> Set[str]:
 def approve_run(repo: str, run_id: int) -> bool:
     try:
         # Prefer PAT for approvals; fall back to default token
-        token = (
-            os.environ.get("AUTO_APPROVE_PAT")
-            or os.environ.get("GH_TOKEN")
-            or os.environ.get("GITHUB_TOKEN", "")
-        )
+        token = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
         run(
             [
                 "gh",
@@ -118,20 +117,14 @@ def approve_run(repo: str, run_id: int) -> bool:
         if "This run is not from a fork pull request" in str(e.stdout):
             # This is expected for non-fork runs, don't log as error
             return False
-        sys.stderr.write(
-            f"approve_run error for {run_id}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n"
-        )
+        sys.stderr.write(f"approve_run error for {run_id}: {e}\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}\n")
         return False
 
 
 def approve_pending_deployments(repo: str, run_id: int) -> bool:
     """Approve pending environment deployments for a workflow run (environment protection)."""
     try:
-        token = (
-            os.environ.get("AUTO_APPROVE_PAT")
-            or os.environ.get("GH_TOKEN")
-            or os.environ.get("GITHUB_TOKEN", "")
-        )
+        token = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
         # List pending deployments to collect environment IDs
         resp = gh_json(
             ["gh", "api", f"repos/{repo}/actions/runs/{run_id}/pending_deployments"],
@@ -199,16 +192,10 @@ def dispatch_ci(repo: str, branch: str) -> bool:
         )
         return True
     except subprocess.CalledProcessError as e1:
-        sys.stderr.write(
-            f"dispatch_ci name error for {branch}: {e1}\nSTDOUT: {e1.stdout}\nSTDERR: {e1.stderr}\n"
-        )
+        sys.stderr.write(f"dispatch_ci name error for {branch}: {e1}\nSTDOUT: {e1.stdout}\nSTDERR: {e1.stderr}\n")
         try:
-            wf_list = gh_json(
-                ["gh", "workflow", "list", "--json", "name,id"], extra_env=env_pat
-            )
-            ci_id = next(
-                (str(wf["id"]) for wf in wf_list if wf.get("name") == "ci"), None
-            )
+            wf_list = gh_json(["gh", "workflow", "list", "--json", "name,id"], extra_env=env_pat)
+            ci_id = next((str(wf["id"]) for wf in wf_list if wf.get("name") == "ci"), None)
             if ci_id:
                 run(
                     ["gh", "workflow", "run", ci_id, "--ref", branch],
@@ -217,9 +204,7 @@ def dispatch_ci(repo: str, branch: str) -> bool:
                 )
                 return True
         except subprocess.CalledProcessError as e2:
-            sys.stderr.write(
-                f"dispatch_ci id error for {branch}: {e2}\nSTDOUT: {e2.stdout}\nSTDERR: {e2.stderr}\n"
-            )
+            sys.stderr.write(f"dispatch_ci id error for {branch}: {e2}\nSTDOUT: {e2.stdout}\nSTDERR: {e2.stderr}\n")
     # Fallback: use ci-dispatch workflow with explicit input
     try:
         run(
@@ -229,9 +214,7 @@ def dispatch_ci(repo: str, branch: str) -> bool:
         )
         return True
     except subprocess.CalledProcessError as e3:
-        sys.stderr.write(
-            f"dispatch_ci fallback error for {branch}: {e3}\nSTDOUT: {e3.stdout}\nSTDERR: {e3.stderr}\n"
-        )
+        sys.stderr.write(f"dispatch_ci fallback error for {branch}: {e3}\nSTDOUT: {e3.stdout}\nSTDERR: {e3.stderr}\n")
     return False
 
 
@@ -250,9 +233,7 @@ def main():
             print(f"Found open Copilot PR branches: {', '.join(sorted(pr_branches))}")
             dispatched_any = False
             for br in sorted(pr_branches):
-                print(
-                    f"Dispatching CI for {br} via workflow_dispatch fallback (no pending runs)..."
-                )
+                print(f"Dispatching CI for {br} via workflow_dispatch fallback (no pending runs)...")
                 if dispatch_ci(REPO, br):
                     print(f"Dispatched CI for {br}")
                     dispatched_any = True
