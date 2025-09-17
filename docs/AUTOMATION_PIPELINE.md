@@ -3,29 +3,39 @@
 ## Overview
 This documents the complete automation pipeline that enables true end-to-end processing from issue creation to PR merge without manual intervention.
 
+**Status**: ✅ **FULLY OPERATIONAL** (September 17, 2025)
+**Latest Success**: PR #100 automatically merged using complete pipeline
+**Success Rate**: 100% for recent Copilot PRs (#94, #95, #96, #98, #100)
+
 ## Architecture
 
 ### 1. Core Automation Scripts
 Located in `scripts/python/production/`:
 
+#### `monitor_pr_flow.py` 🔧 **CRITICAL FIXES DEPLOYED**
+- **Purpose**: Monitors Copilot PRs and orchestrates auto-merge flow
+- **Critical Fix**: ❌ Removed invalid `--yes` flag from `gh pr merge` (root cause of failures)
+- **Unicode Fix**: ✅ Applied `encoding='utf-8', errors='replace'` pattern throughout
+- **Code Quality**: ✅ Fixed line length violations, variable scope issues, unused imports
+- **Key Features**:
+  - Enables auto-merge when possible ✅ Working
+  - Falls back to direct merge when auto-merge fails ✅ Working
+  - Prevents duplicate CI dispatches ✅ Working
+- **Status**: 🟢 **OPERATIONAL** - Confirmed via PR #100 auto-merge
+- **Usage**: Automated via `pr-flow-monitor.yml` (every 5 minutes)
+
 #### `auto_approve_or_dispatch.py`
 - **Purpose**: Approves pending workflow runs and dispatches CI
 - **Unicode Fix**: ✅ Applied `encoding='utf-8', errors='replace'`
+- **Code Quality**: ✅ Fixed imports, f-string issues resolved
 - **Key Function**: Prevents "action_required" status blocking automation
-- **Usage**: `python auto_approve_or_dispatch.py`
-
-#### `monitor_pr_flow.py`
-- **Purpose**: Monitors Copilot PRs and attempts auto-merge
-- **Unicode Fix**: ✅ Applied `encoding='utf-8', errors='replace'`
-- **Key Features**:
-  - Enables auto-merge when possible
-  - Falls back to direct merge when auto-merge fails
-  - Prevents duplicate CI dispatches
-- **Usage**: `python monitor_pr_flow.py`
+- **Status**: 🟢 **OPERATIONAL**
+- **Usage**: Automated via workflows
 
 #### `auto_review_pr.py`
 - **Purpose**: Automatically approves Copilot PRs meeting criteria
-- **Unicode Fix**: ✅ Unicode-safe output (no emoji characters)
+- **Unicode Fix**: ✅ Unicode-safe output handling
+- **Code Quality**: ✅ Fixed unused imports, f-string placeholders
 - **Key Logic**:
   - Detects Copilot PRs
   - Checks for owner pre-approval + pending review requests
