@@ -83,20 +83,26 @@ jobs:
       run: |
         echo "Listing items for project #${{ github.event.inputs.project_number }} using PAT..."
 
-        # First get the project ID
-        PROJECT_ID=$(gh api graphql -f query='
+        # Get the project details and items directly using the project ID from our list query
+        echo "Finding project #${{ github.event.inputs.project_number }} in user projects..."
+
+        # First, get all projects and find the one with matching number
+        PROJECT_DATA=$(gh api graphql -f query='
         {
           viewer {
-            projectV2(number: ${{ github.event.inputs.project_number }}) {
-              id
-              title
-              url
+            projectsV2(first: 10) {
+              nodes {
+                id
+                number
+                title
+                url
+              }
             }
           }
-        }' --jq -r '.data.viewer.projectV2.id')
+        }' --jq '.data.viewer.projectsV2.nodes[] | select(.number == ${{ github.event.inputs.project_number }})')
 
-        if [ "$PROJECT_ID" = "null" ] || [ -z "$PROJECT_ID" ]; then
-          echo "❌ Project #${{ github.event.inputs.project_number }} not found or not accessible"
+        if [ -z "$PROJECT_DATA" ]; then
+          echo "❌ Project #${{ github.event.inputs.project_number }} not found"
           echo "Available projects:"
           gh api graphql -f query='
           {
@@ -113,9 +119,17 @@ jobs:
           exit 1
         fi
 
-        echo "✅ Found Project ID: $PROJECT_ID"
+        PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.id')
+        PROJECT_TITLE=$(echo "$PROJECT_DATA" | jq -r '.title')
+        PROJECT_URL=$(echo "$PROJECT_DATA" | jq -r '.url')
 
-        # Get project details and items
+        echo "✅ Found Project: $PROJECT_TITLE"
+        echo "✅ Project ID: $PROJECT_ID"
+        echo "✅ Project URL: $PROJECT_URL"
+
+        # Now get project items using the node query method
+        echo ""
+        echo "Fetching project items..."
         gh api graphql -f query="
         {
           node(id: \"$PROJECT_ID\") {
@@ -129,6 +143,7 @@ jobs:
                   id
                   type
                   content {
+                    __typename
                     ... on Issue {
                       title
                       number
@@ -149,7 +164,7 @@ jobs:
               }
             }
           }
-        }" --jq '.'
+        }" --jq '.data.node | "Project: \(.title)\nURL: \(.url)\nTotal Items: \(.items.totalCount)\n\nItems:" + (.items.nodes | map("- \(.content.title // "Draft Item") (\(.type))") | join("\n"))'
       env:
         GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
 
@@ -158,23 +173,30 @@ jobs:
       run: |
         echo "Creating draft item '${{ github.event.inputs.item_title }}' in project #${{ github.event.inputs.project_number }} using PAT..."
 
-        # Get the project ID
-        PROJECT_ID=$(gh api graphql -f query='
+        # Find the project ID using the same method as above
+        PROJECT_DATA=$(gh api graphql -f query='
         {
           viewer {
-            projectV2(number: ${{ github.event.inputs.project_number }}) {
-              id
-              title
-              url
+            projectsV2(first: 10) {
+              nodes {
+                id
+                number
+                title
+                url
+              }
             }
           }
-        }' --jq -r '.data.viewer.projectV2.id')
+        }' --jq '.data.viewer.projectsV2.nodes[] | select(.number == ${{ github.event.inputs.project_number }})')
 
-        if [ "$PROJECT_ID" = "null" ] || [ -z "$PROJECT_ID" ]; then
+        if [ -z "$PROJECT_DATA" ]; then
           echo "❌ Project #${{ github.event.inputs.project_number }} not found"
           exit 1
         fi
 
+        PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.id')
+        PROJECT_TITLE=$(echo "$PROJECT_DATA" | jq -r '.title')
+
+        echo "✅ Target Project: $PROJECT_TITLE"
         echo "✅ Project ID: $PROJECT_ID"
 
         # Create a draft item
