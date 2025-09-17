@@ -12,183 +12,24 @@ jobs:
   update-project-status:
     runs-on: ubuntu-latest
     steps:
-      - name: Update Project Item Status
-        uses: actions/github-script@v7
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
         with:
-          github-token: ${{ secrets.USE_PROJECT_V2_TOKEN }}
-          script: |
-            const { owner, repo } = context.repo;
-            const issueNumber = context.payload.issue.number;
-            const action = context.payload.action;
-            const assignees = context.payload.issue.assignees;
+          python-version: '3.11'
+          cache: 'pip'
 
-            console.log(`🔍 Processing ${action} event for issue #${issueNumber}`);
-            console.log(`📋 Current assignees: ${assignees.map(a => a.login).join(', ') || 'none'}`);
+      - name: Install Python dependencies
+        run: |
+          pip install -r scripts/python/production/requirements.txt
 
-            // Determine target status based on assignment
-            let targetStatus;
-            if (action === 'assigned' && assignees.length > 0) {
-              targetStatus = 'Ready';
-            } else if (action === 'unassigned' && assignees.length === 0) {
-              targetStatus = 'Backlog';
-            } else {
-              console.log('ℹ️ No status change needed');
-              return;
-            }
-
-            console.log(`🎯 Target status: ${targetStatus}`);
-
-            try {
-              // First, find the project ID and get issue node ID
-              const issueQuery = `
-                query($owner: String!, $repo: String!, $number: Int!) {
-                  repository(owner: $owner, name: $repo) {
-                    issue(number: $number) {
-                      id
-                      title
-                      projectItems(first: 10) {
-                        nodes {
-                          id
-                          project {
-                            id
-                            title
-                            number
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              `;
-
-              const issueResponse = await github.graphql(issueQuery, {
-                owner,
-                repo,
-                number: issueNumber
-              });
-
-              const issue = issueResponse.repository.issue;
-              console.log(`✅ Found issue: ${issue.title}`);
-
-              if (!issue.projectItems.nodes.length) {
-                console.log('ℹ️ Issue is not in any projects, skipping status update');
-                return;
-              }
-
-              // Process each project the issue is in
-              for (const projectItem of issue.projectItems.nodes) {
-                const project = projectItem.project;
-                console.log(`📊 Processing project: ${project.title} (#${project.number})`);
-
-                // Get project fields to find the Status field
-                const fieldsQuery = `
-                  query($projectId: ID!) {
-                    node(id: $projectId) {
-                      ... on ProjectV2 {
-                        fields(first: 20) {
-                          nodes {
-                            ... on ProjectV2SingleSelectField {
-                              id
-                              name
-                              options {
-                                id
-                                name
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                `;
-
-                const fieldsResponse = await github.graphql(fieldsQuery, {
-                  projectId: project.id
-                });
-
-                // Find Status field
-                const statusField = fieldsResponse.node.fields.nodes.find(
-                  field => field.name === 'Status'
-                );
-
-                if (!statusField) {
-                  console.log(`⚠️ No Status field found in project ${project.title}`);
-                  continue;
-                }
-
-                // Find the target status option
-                const statusOption = statusField.options.find(
-                  option => option.name === targetStatus
-                );
-
-                if (!statusOption) {
-                  console.log(`⚠️ Status option "${targetStatus}" not found in project ${project.title}`);
-                  console.log(`Available options: ${statusField.options.map(o => o.name).join(', ')}`);
-                  continue;
-                }
-
-                console.log(`🎯 Found status option: ${statusOption.name} (${statusOption.id})`);
-
-                // Update the project item status
-                const updateMutation = `
-                  mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-                    updateProjectV2ItemFieldValue(
-                      input: {
-                        projectId: $projectId
-                        itemId: $itemId
-                        fieldId: $fieldId
-                        value: {
-                          singleSelectOptionId: $optionId
-                        }
-                      }
-                    ) {
-                      projectV2Item {
-                        id
-                      }
-                    }
-                  }
-                `;
-
-                await github.graphql(updateMutation, {
-                  projectId: project.id,
-                  itemId: projectItem.id,
-                  fieldId: statusField.id,
-                  optionId: statusOption.id
-                });
-
-                console.log(`✅ Updated project ${project.title}: Status set to "${targetStatus}"`);
-
-                // Add a comment to the issue
-                const comment = `🤖 **Project Status Update**\n\n` +
-                  `📊 **Project**: ${project.title}\n` +
-                  `🔄 **Status**: ${targetStatus}\n` +
-                  `⚡ **Trigger**: Issue ${action}\n\n` +
-                  `_Automated by GitHub Actions workflow._`;
-
-                await github.rest.issues.createComment({
-                  owner,
-                  repo,
-                  issue_number: issueNumber,
-                  body: comment
-                });
-
-                console.log(`💬 Added status update comment to issue #${issueNumber}`);
-              }
-
-            } catch (error) {
-              console.error('❌ Error updating project status:', error);
-
-              // Add error comment to issue
-              const errorComment = `❌ **Project Status Update Failed**\n\n` +
-                `**Error**: ${error.message}\n` +
-                `**Issue**: #${issueNumber}\n` +
-                `**Action**: ${action}\n\n` +
-                `_Please check the workflow logs for details._`;
-
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                body: errorComment
-              });
-            }
+      - name: Update Project Item Status
+        env:
+          GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+        run: |
+          python scripts/python/production/update_project_status.py \
+            --issue-number "${{ github.event.issue.number }}" \
+            --action "${{ github.event.action }}" \
+            --assignees ${{ join(github.event.issue.assignees.*.login, ' ') }}

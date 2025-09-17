@@ -1,0 +1,2 @@
+# Python dependencies for GitHub Projects automation scripts
+requests>=2.31.0
