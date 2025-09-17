@@ -189,16 +189,18 @@ class GitHubProjectUpdater:
         self.execute_graphql(mutation, variables)
 
     def determine_target_status(self, action: str, assignees: List[str]) -> Optional[str]:
-        """Determine target status based on assignment action.
+        """Determine target status based on issue action.
 
         Args:
-            action: Assignment action ('assigned' or 'unassigned')
+            action: Issue action ('assigned', 'unassigned', or 'opened')
             assignees: List of assignee logins
 
         Returns:
             Target status or None if no change needed
         """
-        if action == "assigned" and len(assignees) > 0:
+        if action == "opened":
+            return "Backlog"
+        elif action == "assigned" and len(assignees) > 0:
             return "Ready"
         elif action == "unassigned" and len(assignees) == 0:
             return "Backlog"
@@ -299,7 +301,7 @@ def main():
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(description="Update GitHub Project status based on issue assignment")
     parser.add_argument("--issue-number", type=int, required=True, help="Issue number")
-    parser.add_argument("--action", choices=["assigned", "unassigned"], required=True, help="Assignment action")
+    parser.add_argument("--action", choices=["assigned", "unassigned", "opened"], required=True, help="Issue action")
     parser.add_argument("--assignees", nargs="*", default=[], help="List of assignee logins")
     parser.add_argument("--owner", help="Repository owner (default: from GITHUB_REPOSITORY)")
     parser.add_argument("--repo", help="Repository name (default: from GITHUB_REPOSITORY)")

@@ -2,7 +2,7 @@ name: Update Project Status on Assignment
 
 on:
   issues:
-    types: [assigned, unassigned]
+    types: [assigned, unassigned, opened]
 
 permissions:
   contents: read
