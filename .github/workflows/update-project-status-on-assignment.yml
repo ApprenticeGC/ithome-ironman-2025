@@ -28,9 +28,9 @@ jobs:
             // Determine target status based on assignment
             let targetStatus;
             if (action === 'assigned' && assignees.length > 0) {
-              targetStatus = 'In Progress';
+              targetStatus = 'In progress';
             } else if (action === 'unassigned' && assignees.length === 0) {
-              targetStatus = 'Todo';
+              targetStatus = 'Backlog';
             } else {
               console.log('ℹ️ No status change needed');
               return;
