@@ -22,6 +22,8 @@ Concise repo for notes, demos, and artifacts related to the 2025 iThome Ironman 
 
 ## Getting started
 
+This is a test change to verify Gemini Code Assist integration.
+
 Prerequisites depend on what you want to run. For .NET examples:
 
 - Install .NET SDK 8.0+
