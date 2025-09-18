@@ -1,0 +1,179 @@
+# RFC Automation Workflow
+# Automatically processes Notion Implementation RFCs and creates GitHub issues
+
+name: RFC Issue Generation
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC
+    - cron: '0 9 * * *'
+
+  workflow_dispatch:
+    inputs:
+      force_process:
+        description: 'Force process all pages (skip duplicate detection)'
+        required: false
+        default: 'false'
+        type: boolean
+      dry_run:
+        description: 'Dry run (show what would be processed)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  process-rfc-changes:
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Download previous tracking database
+        uses: actions/download-artifact@v4
+        with:
+          name: rfc-tracking-db
+          path: .
+        continue-on-error: true
+
+      - name: Detect changes in Implementation RFCs
+        id: detect-changes
+        run: |
+          python scripts/python/production/generate_micro_issues_collection.py \
+            --notion-collection 2722b68ae8008115b215cfa0c4aa3908 \
+            --output-format json > changes.json
+
+          # Check if there are any ready pages
+          READY_COUNT=$(python -c "
+          import json
+          with open('changes.json') as f:
+              data = json.load(f)
+          ready_pages = [p for p in data.get('processed_pages', []) if p.get('status') == 'ready']
+          print(len(ready_pages))
+          ")
+
+          echo "ready_pages=$READY_COUNT" >> $GITHUB_OUTPUT
+
+          if [ "$READY_COUNT" -gt 0 ]; then
+            echo "Found $READY_COUNT pages ready for processing"
+            cat changes.json
+          else
+            echo "No new pages to process"
+          fi
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+
+      - name: Process ready implementation pages
+        if: steps.detect-changes.outputs.ready_pages > 0 || github.event.inputs.force_process == 'true'
+        run: |
+          # Get list of ready page IDs
+          READY_PAGES=$(python -c "
+          import json
+          with open('changes.json') as f:
+              data = json.load(f)
+          ready_pages = [p['page_id'] for p in data.get('processed_pages', []) if p.get('status') == 'ready']
+          print(' '.join(ready_pages))
+          ")
+
+          if [ -n "$READY_PAGES" ]; then
+            echo "Processing pages: $READY_PAGES"
+
+            # Process each page individually for better error handling
+            for page_id in $READY_PAGES; do
+              echo "Processing page: $page_id"
+
+              python scripts/python/production/generate_micro_issues_from_rfc.py \
+                --notion-page-id "$page_id" \
+                --owner ${{ github.repository_owner }} \
+                --repo ${{ github.event.repository.name }} \
+                --assign-mode bot \
+                ${{ github.event.inputs.force_process == 'true' && '--force' || '' }} \
+                ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
+                --db-path ./rfc_tracking.db
+            done
+          else
+            echo "No pages to process"
+          fi
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate processing report
+        if: always()
+        run: |
+          echo "## RFC Processing Report" >> $GITHUB_STEP_SUMMARY
+          echo "**Date**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f changes.json ]; then
+            TOTAL_PAGES=$(python -c "
+            import json
+            with open('changes.json') as f:
+                data = json.load(f)
+            print(data.get('total_pages', 0))
+            ")
+
+            READY_PAGES=$(python -c "
+            import json
+            with open('changes.json') as f:
+                data = json.load(f)
+            ready_pages = [p for p in data.get('processed_pages', []) if p.get('status') == 'ready']
+            print(len(ready_pages))
+            ")
+
+            DUPLICATE_PAGES=$(python -c "
+            import json
+            with open('changes.json') as f:
+                data = json.load(f)
+            duplicate_pages = [p for p in data.get('processed_pages', []) if p.get('status') == 'duplicate']
+            print(len(duplicate_pages))
+            ")
+
+            echo "### Summary" >> $GITHUB_STEP_SUMMARY
+            echo "- **Total Pages**: $TOTAL_PAGES" >> $GITHUB_STEP_SUMMARY
+            echo "- **Ready for Processing**: $READY_PAGES" >> $GITHUB_STEP_SUMMARY
+            echo "- **Duplicates Skipped**: $DUPLICATE_PAGES" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$READY_PAGES" -gt 0 ]; then
+              echo "### Processed Pages" >> $GITHUB_STEP_SUMMARY
+              python -c "
+              import json
+              with open('changes.json') as f:
+                  data = json.load(f)
+              ready_pages = [p for p in data.get('processed_pages', []) if p.get('status') == 'ready']
+              for page in ready_pages:
+                  print(f\"- {page.get('title', 'Unknown')}\")
+              " >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "No processing results available" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload tracking database
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rfc-tracking-db
+          path: ./rfc_tracking.db
+          retention-days: 90
+
+      - name: Upload processing results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rfc-processing-results-${{ github.run_number }}
+          path: |
+            changes.json
+            *.log
+          retention-days: 30

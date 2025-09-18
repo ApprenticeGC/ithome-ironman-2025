@@ -1,0 +1,145 @@
+{
+  "timestamp": 1758209380.2698557,
+  "summary": {
+    "total": 22,
+    "passed": 22,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "success": true
+  },
+  "tests": [
+    {
+      "test": "test_detect_changes_modified_page (test_rfc_automation.TestCollectionProcessor.test_detect_changes_modified_page)",
+      "status": "PASS",
+      "duration": 0.012058496475219727,
+      "error": null
+    },
+    {
+      "test": "test_detect_changes_new_page (test_rfc_automation.TestCollectionProcessor.test_detect_changes_new_page)",
+      "status": "PASS",
+      "duration": 0.012853622436523438,
+      "error": null
+    },
+    {
+      "test": "test_process_file_collection_success (test_rfc_automation.TestCollectionProcessor.test_process_file_collection_success)",
+      "status": "PASS",
+      "duration": 0.013592004776000977,
+      "error": null
+    },
+    {
+      "test": "test_process_notion_collection_success (test_rfc_automation.TestCollectionProcessor.test_process_notion_collection_success)",
+      "status": "PASS",
+      "duration": 0.013198614120483398,
+      "error": null
+    },
+    {
+      "test": "test_generate_content_hash (test_rfc_automation.TestContentParsing.test_generate_content_hash)",
+      "status": "PASS",
+      "duration": 6.318092346191406e-05,
+      "error": null
+    },
+    {
+      "test": "test_parse_game_rfc_sections (test_rfc_automation.TestContentParsing.test_parse_game_rfc_sections)",
+      "status": "PASS",
+      "duration": 3.981590270996094e-05,
+      "error": null
+    },
+    {
+      "test": "test_parse_micro_table_format (test_rfc_automation.TestContentParsing.test_parse_micro_table_format)",
+      "status": "PASS",
+      "duration": 0.000156402587890625,
+      "error": null
+    },
+    {
+      "test": "test_parse_old_rfc_format (test_rfc_automation.TestContentParsing.test_parse_old_rfc_format)",
+      "status": "PASS",
+      "duration": 2.3126602172851562e-05,
+      "error": null
+    },
+    {
+      "test": "test_complete_file_processing_workflow (test_rfc_automation.TestIntegration.test_complete_file_processing_workflow)",
+      "status": "PASS",
+      "duration": 0.009990692138671875,
+      "error": null
+    },
+    {
+      "test": "test_duplicate_detection_workflow (test_rfc_automation.TestIntegration.test_duplicate_detection_workflow)",
+      "status": "PASS",
+      "duration": 0.014305591583251953,
+      "error": null
+    },
+    {
+      "test": "test_block_to_text_conversion (test_rfc_automation.TestNotionClient.test_block_to_text_conversion)",
+      "status": "PASS",
+      "duration": 3.7670135498046875e-05,
+      "error": null
+    },
+    {
+      "test": "test_extract_rich_text (test_rfc_automation.TestNotionClient.test_extract_rich_text)",
+      "status": "PASS",
+      "duration": 1.5020370483398438e-05,
+      "error": null
+    },
+    {
+      "test": "test_get_page_content_success (test_rfc_automation.TestNotionClient.test_get_page_content_success)",
+      "status": "PASS",
+      "duration": 0.0005807876586914062,
+      "error": null
+    },
+    {
+      "test": "test_get_page_success (test_rfc_automation.TestNotionClient.test_get_page_success)",
+      "status": "PASS",
+      "duration": 0.0003333091735839844,
+      "error": null
+    },
+    {
+      "test": "test_discover_implementation_pages (test_rfc_automation.TestNotionPageDiscovery.test_discover_implementation_pages)",
+      "status": "PASS",
+      "duration": 0.00024390220642089844,
+      "error": null
+    },
+    {
+      "test": "test_get_child_pages_success (test_rfc_automation.TestNotionPageDiscovery.test_get_child_pages_success)",
+      "status": "PASS",
+      "duration": 0.00019168853759765625,
+      "error": null
+    },
+    {
+      "test": "test_parse_notion_page_invalid_title (test_rfc_automation.TestNotionPageParsing.test_parse_notion_page_invalid_title)",
+      "status": "PASS",
+      "duration": 0.0003485679626464844,
+      "error": null
+    },
+    {
+      "test": "test_parse_notion_page_success (test_rfc_automation.TestNotionPageParsing.test_parse_notion_page_success)",
+      "status": "PASS",
+      "duration": 0.0002205371856689453,
+      "error": null
+    },
+    {
+      "test": "test_database_initialization (test_rfc_automation.TestTrackingDatabase.test_database_initialization)",
+      "status": "PASS",
+      "duration": 0.0074939727783203125,
+      "error": null
+    },
+    {
+      "test": "test_no_duplicate_issue_detection (test_rfc_automation.TestTrackingDatabase.test_no_duplicate_issue_detection)",
+      "status": "PASS",
+      "duration": 0.007666587829589844,
+      "error": null
+    },
+    {
+      "test": "test_record_and_check_issue_creation (test_rfc_automation.TestTrackingDatabase.test_record_and_check_issue_creation)",
+      "status": "PASS",
+      "duration": 0.011505603790283203,
+      "error": null
+    },
+    {
+      "test": "test_record_and_retrieve_page_state (test_rfc_automation.TestTrackingDatabase.test_record_and_retrieve_page_state)",
+      "status": "PASS",
+      "duration": 0.009592056274414062,
+      "error": null
+    }
+  ]
+}

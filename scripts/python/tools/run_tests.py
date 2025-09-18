@@ -124,7 +124,20 @@ def main():
     ):
         tests_passed += 1
 
-    # Test 7: Run comprehensive unit tests
+    # Test 7: Syntax check RFC automation scripts
+    rfc_scripts = [
+        "scripts/python/production/generate_micro_issues_from_rfc.py",
+        "scripts/python/production/generate_micro_issues_collection.py",
+        "scripts/python/production/notion_page_discovery.py",
+    ]
+
+    for script in rfc_scripts:
+        if os.path.exists(script):
+            total_tests += 1
+            if run_command([sys.executable, "-m", "py_compile", script], f"Syntax check: {os.path.basename(script)}"):
+                tests_passed += 1
+
+    # Test 8: Run comprehensive unit tests
     total_tests += 1
     if run_command(
         [
@@ -139,7 +152,15 @@ def main():
     ):
         tests_passed += 1
 
-    # Test 7: Import test (ensure all modules can be imported)
+    # Test 9: Run RFC automation unit tests
+    total_tests += 1
+    if run_command(
+        [sys.executable, "scripts/python/tests/test_rfc_runner.py"],
+        "RFC automation tests: comprehensive test suite",
+    ):
+        tests_passed += 1
+
+    # Test 10: Import test (ensure all modules can be imported)
     total_tests += 1
     if run_command(
         [
@@ -155,7 +176,16 @@ try:
     import auto_approve_or_dispatch
     import test_pr_creation
     import runner_usage
-    print("All modules imported successfully")
+
+    # Import RFC automation modules if they exist
+    import os
+    if os.path.exists("scripts/python/production/generate_micro_issues_from_rfc.py"):
+        import generate_micro_issues_from_rfc
+        import generate_micro_issues_collection
+        import notion_page_discovery
+        print("All modules (including RFC automation) imported successfully")
+    else:
+        print("All base modules imported successfully")
 except ImportError as e:
     print(f"Import error: {e}")
     sys.exit(1)
@@ -179,7 +209,7 @@ except ImportError as e:
         print("All tests passed! Ready for GitHub deployment.")
         return 0
     else:
-        print("⚠️  Some tests failed. Please fix before deploying to GitHub.")
+        print("WARNING: Some tests failed. Please fix before deploying to GitHub.")
         return 1
 
 
