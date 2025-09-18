@@ -11,11 +11,11 @@ from pathlib import Path
 
 import pytest
 
-# Add the scripts directory to Python path for all tests
-PROJECT_ROOT = Path(__file__).parent.parent
-SCRIPTS_DIR = PROJECT_ROOT / "scripts" / "python" / "production"
+# Add the production directory to Python path for all tests
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+PRODUCTION_DIR = Path(__file__).parent.parent / "production"
 
-sys.path.insert(0, str(SCRIPTS_DIR))
+sys.path.insert(0, str(PRODUCTION_DIR))
 
 
 @pytest.fixture(scope="session")
@@ -25,9 +25,9 @@ def project_root():
 
 
 @pytest.fixture(scope="session")
-def scripts_dir():
-    """Provide the scripts directory."""
-    return SCRIPTS_DIR
+def production_dir():
+    """Provide the production directory."""
+    return PRODUCTION_DIR
 
 
 @pytest.fixture
