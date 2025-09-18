@@ -87,8 +87,18 @@ public sealed class ServiceDescriptor
 
         for (int i = 0; i < parameters.Length; i++)
         {
-            args[i] = serviceProvider.GetService(parameters[i].ParameterType) 
-                     ?? throw new InvalidOperationException($"Unable to resolve service for type {parameters[i].ParameterType}");
+            var service = serviceProvider.GetService(parameters[i].ParameterType) 
+                         ?? throw new InvalidOperationException($"Unable to resolve service for type {parameters[i].ParameterType}");
+            
+            // Initialize IService dependencies asynchronously if needed
+            if (service is IService serviceLifecycle && !serviceLifecycle.IsRunning)
+            {
+                // Run initialization synchronously for constructor dependencies
+                serviceLifecycle.InitializeAsync().GetAwaiter().GetResult();
+                serviceLifecycle.StartAsync().GetAwaiter().GetResult();
+            }
+            
+            args[i] = service;
         }
 
         return Activator.CreateInstance(implementationType, args) 
