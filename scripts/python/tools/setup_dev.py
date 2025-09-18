@@ -4,16 +4,13 @@ Setup script for pre-commit hooks and development environment.
 """
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_command(cmd, description):
     """Run a command and return success status."""
     print(f"🔧 {description}...")
     try:
-        result = subprocess.run(
-            cmd, shell=True, check=True, capture_output=True, text=True
-        )
+        subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
         print(f"✅ {description} completed")
         return True
     except subprocess.CalledProcessError as e:
@@ -38,9 +35,7 @@ def main():
 
     # Run pre-commit on all files to validate setup
     print("\n🔍 Running pre-commit validation...")
-    result = subprocess.run(
-        "pre-commit run --all-files", shell=True, capture_output=True, text=True
-    )
+    result = subprocess.run("pre-commit run --all-files", shell=True, capture_output=True, text=True)
 
     if result.returncode == 0:
         print("✅ Pre-commit setup successful!")

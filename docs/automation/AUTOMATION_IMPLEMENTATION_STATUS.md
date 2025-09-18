@@ -137,12 +137,12 @@ gh pr list --author=app/github-copilot --state=open → [] ✅ (no stuck PRs)
 ## 📚 **Documentation Created**
 
 ### **Technical Analysis**
-- **`docs/AUTOMATION_FLOW_ANALYSIS.md`**: Comprehensive technical investigation
-- **`docs/AUTOMATION_TROUBLESHOOTING.md`**: Quick reference for future agents
+- **`docs/automation/AUTOMATION_FLOW_ANALYSIS.md`**: Comprehensive technical investigation
+- **`docs/automation/AUTOMATION_TROUBLESHOOTING.md`**: Quick reference for future agents
 - **Current file**: Implementation status and operational summary
 
 ### **Test Validation**
-- **`test-automation-validation.md`**: Simple validation test file
+- **`docs/validation/test-automation-validation.md`**: Simple validation test file
 - **`docs/game-rfcs/RFC-096-automation-flow-validation.md`**: RFC for test process
 
 ## 🎉 **Final Status: MISSION ACCOMPLISHED**

@@ -1,19 +1,25 @@
-# Tools Directory
+# Python Tools Directory
 
-This directory contains development and utility scripts for the project.
+This directory contains all development and utility scripts for the project.
 
 ## Files:
-- `run_tests.py` - Main test runner for GitHub automation scripts
-- `setup_dev.py` - Development environment setup script
+- `setup_dev.py` - Complete development environment setup for the entire project
+- `run_tests.py` - Test runner for Python automation scripts
 
 ## Usage:
 ```bash
-# Run the test suite
+# Setup entire development environment
+python scripts/python/tools/setup_dev.py
+
+# Run the Python test suite
 python scripts/python/tools/run_tests.py
 
 # Run tests with pre-commit validation
 python scripts/python/tools/run_tests.py --include-precommit
-
-# Setup development environment
-python scripts/python/tools/setup_dev.py
 ```
+
+## What setup_dev.py does:
+- Validates Python installation
+- Installs project dependencies
+- Sets up pre-commit hooks  
+- Configures development environment
