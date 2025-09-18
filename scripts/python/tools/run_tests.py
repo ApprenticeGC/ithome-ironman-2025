@@ -40,9 +40,7 @@ def main():
     print("=" * 50)
 
     # Change to the repository root
-    repo_root = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    )
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     os.chdir(repo_root)
 
     tests_passed = 0
@@ -113,7 +111,20 @@ def main():
     ):
         tests_passed += 1
 
-    # Test 6: Run comprehensive unit tests
+    # Test 6: Syntax check runner_usage.py
+    total_tests += 1
+    if run_command(
+        [
+            sys.executable,
+            "-m",
+            "py_compile",
+            "scripts/python/production/runner_usage.py",
+        ],
+        "Syntax check: runner_usage.py",
+    ):
+        tests_passed += 1
+
+    # Test 7: Run comprehensive unit tests
     total_tests += 1
     if run_command(
         [
@@ -143,6 +154,7 @@ try:
     import ensure_closes_link
     import auto_approve_or_dispatch
     import test_pr_creation
+    import runner_usage
     print("All modules imported successfully")
 except ImportError as e:
     print(f"Import error: {e}")
@@ -156,9 +168,7 @@ except ImportError as e:
     # Test 8: Pre-commit validation (optional)
     if args.include_precommit:
         total_tests += 1
-        if run_command(
-            ["pre-commit", "run", "--all-files"], "Pre-commit validation: All files"
-        ):
+        if run_command(["pre-commit", "run", "--all-files"], "Pre-commit validation: All files"):
             tests_passed += 1
 
     # Summary
