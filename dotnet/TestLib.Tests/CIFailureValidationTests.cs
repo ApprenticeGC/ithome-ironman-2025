@@ -14,7 +14,7 @@ public class CIFailureValidationTests
     public void CI_Should_Detect_When_This_Test_Fails()
     {
         // This test would fail if enabled, validating that CI doesn't report false success
-        Assert.True(false, "This test intentionally fails to validate CI failure detection");
+        Assert.Fail("This test intentionally fails to validate CI failure detection");
     }
 
     /// <summary>
@@ -25,10 +25,10 @@ public class CIFailureValidationTests
     {
         // Arrange
         var validator = new CIValidationHelper();
-        
+
         // Act
         var status = validator.GetValidationStatus();
-        
+
         // Assert - This should pass and not be confused with the skipped test above
         Assert.Equal("CI_VALIDATION_ACTIVE", status);
     }
@@ -43,10 +43,10 @@ public class CIFailureValidationTests
     {
         // Arrange
         var validator = new CIValidationHelper();
-        
+
         // Act
         var result = validator.CanDetectFailures(simulateFailure);
-        
+
         // Assert
         Assert.Equal(expectedResult, result);
     }
@@ -60,13 +60,13 @@ public class CIFailureValidationTests
     {
         // Arrange
         var validator = new CIValidationHelper();
-        
+
         // Act - Test multiple aspects of CI validation
         var systemActive = validator.GetValidationStatus() == "CI_VALIDATION_ACTIVE";
         var canValidateSuccess = validator.ValidateTestExecution();
         var canDetectFailures = !validator.CanDetectFailures(shouldFail: true); // Should return false when failure expected
         var canDetectSuccess = validator.CanDetectFailures(shouldFail: false);  // Should return true when success expected
-        
+
         // Assert - All validation aspects should work correctly
         Assert.True(systemActive, "CI validation system should be active");
         Assert.True(canValidateSuccess, "Should validate successful test execution");
