@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Core.Registry.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Engine.Core", "GameConsole.Engine.Core\GameConsole.Engine.Core.csproj", "{08061595-573C-41AB-996A-1C464786713C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Local", "GameConsole.AI.Local\GameConsole.AI.Local.csproj", "{96D67CD0-4E28-447A-B80F-F21674B49A2E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Local.Tests", "GameConsole.AI.Local.Tests\GameConsole.AI.Local.Tests.csproj", "{49FFFBC4-F8D3-40DE-9BBC-83E2A5DD46A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,5 +58,13 @@ Global
 		{08061595-573C-41AB-996A-1C464786713C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08061595-573C-41AB-996A-1C464786713C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{08061595-573C-41AB-996A-1C464786713C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96D67CD0-4E28-447A-B80F-F21674B49A2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96D67CD0-4E28-447A-B80F-F21674B49A2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96D67CD0-4E28-447A-B80F-F21674B49A2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96D67CD0-4E28-447A-B80F-F21674B49A2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49FFFBC4-F8D3-40DE-9BBC-83E2A5DD46A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49FFFBC4-F8D3-40DE-9BBC-83E2A5DD46A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49FFFBC4-F8D3-40DE-9BBC-83E2A5DD46A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49FFFBC4-F8D3-40DE-9BBC-83E2A5DD46A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
