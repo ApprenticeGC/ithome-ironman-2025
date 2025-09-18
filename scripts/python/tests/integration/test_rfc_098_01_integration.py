@@ -106,7 +106,8 @@ def test_rfc_098_01_scenarios():
     print(f"   ❌ Failed: {failed}")
     print(f"   📈 Success Rate: {passed/(passed+failed)*100:.1f}%")
 
-    return failed == 0
+    # Use assertion instead of return
+    assert failed == 0, f"Test failed: {failed} out of {passed + failed} scenarios failed"
 
 
 def test_workflow_integration():
@@ -133,7 +134,8 @@ def test_workflow_integration():
         print(f"   📝 Handles: {', '.join(workflow['scenarios'])}")
 
     print("\n✅ Workflow integration analysis complete!")
-    return True
+    # Use assertion instead of return
+    assert len(workflow_scenarios) == 2, "Expected exactly 2 workflow scenarios to be tested"
 
 
 def main():

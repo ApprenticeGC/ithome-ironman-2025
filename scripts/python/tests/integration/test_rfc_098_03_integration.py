@@ -67,7 +67,8 @@ def test_rfc_098_03_pr_workflow_scenarios():
     print(f"   📊 Total Scenarios: {total}")
     print(f"   📈 Completion Rate: {passed/total*100:.1f}%")
 
-    return passed == total
+    # Use assertion instead of return
+    assert passed == total, f"Expected all {total} scenarios to be defined, but only {passed} were processed"
 
 
 def test_complete_rfc_098_workflow_integration():
@@ -115,7 +116,8 @@ def test_complete_rfc_098_workflow_integration():
 
     print(f"\n✅ Complete workflow integration analysis complete!")
     print(f"🎉 RFC-098 provides end-to-end project automation from issue to completion!")
-    return True
+    # Use assertion instead of return
+    assert len(complete_workflow) > 0, "Expected workflow integration stages to be defined"
 
 
 def main():
