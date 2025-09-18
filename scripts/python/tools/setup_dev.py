@@ -24,7 +24,7 @@ def main():
 
     # Install Python dependencies
     if not run_command(
-        "pip install -r requirements/test-requirements.txt",
+        "pip install -r scripts/python/requirements/test-requirements.txt",
         "Installing Python dependencies",
     ):
         return False
