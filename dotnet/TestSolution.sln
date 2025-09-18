@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Core.Abstractio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Core.Abstractions.Tests", "GameConsole.Core.Abstractions.Tests\GameConsole.Core.Abstractions.Tests.csproj", "{25B1F89C-6AC0-4B3D-A828-95E696EC2249}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core", "GameConsole.Audio.Core\GameConsole.Audio.Core.csproj", "{26F0929A-A001-43E8-8026-6DA7AD3AFB33}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core.Tests", "GameConsole.Audio.Core.Tests\GameConsole.Audio.Core.Tests.csproj", "{0C8E4CBF-3520-490F-94B5-886CD96BC41F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +40,13 @@ Global
 		{25B1F89C-6AC0-4B3D-A828-95E696EC2249}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{25B1F89C-6AC0-4B3D-A828-95E696EC2249}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25B1F89C-6AC0-4B3D-A828-95E696EC2249}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26F0929A-A001-43E8-8026-6DA7AD3AFB33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26F0929A-A001-43E8-8026-6DA7AD3AFB33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26F0929A-A001-43E8-8026-6DA7AD3AFB33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26F0929A-A001-43E8-8026-6DA7AD3AFB33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C8E4CBF-3520-490F-94B5-886CD96BC41F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C8E4CBF-3520-490F-94B5-886CD96BC41F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C8E4CBF-3520-490F-94B5-886CD96BC41F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C8E4CBF-3520-490F-94B5-886CD96BC41F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
