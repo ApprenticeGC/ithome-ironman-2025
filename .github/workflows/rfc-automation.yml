@@ -116,28 +116,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -f changes.json ]; then
-            TOTAL_PAGES=$(python -c "
-            import json
-            with open('changes.json') as f:
-                data = json.load(f)
-            print(data.get('total_pages', 0))
-            ")
+            TOTAL_PAGES=$(python -c "import json; data=json.load(open('changes.json')); print(data.get('total_pages', 0))")
 
-            READY_PAGES=$(python -c "
-            import json
-            with open('changes.json') as f:
-                data = json.load(f)
-            ready_pages = [p for p in data.get('processed_pages', []) if p.get('status') == 'ready']
-            print(len(ready_pages))
-            ")
+            READY_PAGES=$(python -c "import json; data=json.load(open('changes.json')); ready_pages=[p for p in data.get('processed_pages', []) if p.get('status') == 'ready']; print(len(ready_pages))")
 
-            DUPLICATE_PAGES=$(python -c "
-            import json
-            with open('changes.json') as f:
-                data = json.load(f)
-            duplicate_pages = [p for p in data.get('processed_pages', []) if p.get('status') == 'duplicate']
-            print(len(duplicate_pages))
-            ")
+            DUPLICATE_PAGES=$(python -c "import json; data=json.load(open('changes.json')); duplicate_pages=[p for p in data.get('processed_pages', []) if p.get('status') == 'duplicate']; print(len(duplicate_pages))")
 
             echo "### Summary" >> $GITHUB_STEP_SUMMARY
             echo "- **Total Pages**: $TOTAL_PAGES" >> $GITHUB_STEP_SUMMARY
@@ -147,14 +130,7 @@ jobs:
 
             if [ "$READY_PAGES" -gt 0 ]; then
               echo "### Processed Pages" >> $GITHUB_STEP_SUMMARY
-              python -c "
-              import json
-              with open('changes.json') as f:
-                  data = json.load(f)
-              ready_pages = [p for p in data.get('processed_pages', []) if p.get('status') == 'ready']
-              for page in ready_pages:
-                  print(f\"- {page.get('title', 'Unknown')}\")
-              " >> $GITHUB_STEP_SUMMARY
+              python -c "import json; data=json.load(open('changes.json')); ready_pages=[p for p in data.get('processed_pages', []) if p.get('status') == 'ready']; [print(f\"- {page.get('title', 'Unknown')}\") for page in ready_pages]" >> $GITHUB_STEP_SUMMARY
             fi
           else
             echo "No processing results available" >> $GITHUB_STEP_SUMMARY
