@@ -8,7 +8,7 @@ import os
 import sys
 
 # Add the production directory to the path
-production_dir = os.path.join(os.path.dirname(__file__), "..", "scripts", "python", "production")
+production_dir = os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "python", "production")
 sys.path.insert(0, production_dir)
 
 # flake8: noqa: E402
