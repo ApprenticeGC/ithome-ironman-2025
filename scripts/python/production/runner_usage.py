@@ -69,7 +69,7 @@ def write_badge(path: str, minutes: float) -> None:
     rounded = int(round(minutes))
     badge = {
         "schemaVersion": 1,
-        "label": "runner time (total)",
+        "label": "runner time",
         "message": f"{rounded} min",
         "color": pick_color(minutes),
         "cacheSeconds": 3600,
