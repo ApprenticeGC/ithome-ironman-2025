@@ -37,7 +37,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          python scripts/python/production/runner_usage.py
+          # Try billing API first, fallback to workflow runs approach if it fails
+          python scripts/python/production/runner_usage.py || python scripts/python/production/runner_usage_alternative.py
 
       - name: Commit badge if changed
         run: |
