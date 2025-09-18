@@ -1,0 +1,314 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="041965b6-32b4-4fa4-a1b7-74a75aa4e6a4" name="@runnervmf4ws1 2025-09-18 17:19:57" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-09-18T17:19:57.3747660+00:00" queuing="2025-09-18T17:19:57.3747661+00:00" start="2025-09-18T17:19:56.2931810+00:00" finish="2025-09-18T17:19:58.3308556+00:00" />
+  <TestSettings name="default" id="8d38dbfa-8e87-4959-96ff-bdf98be7043f">
+    <Deployment runDeploymentRoot="_runnervmf4ws1_2025-09-18_17_19_57" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="938cfdab-6d8d-48bc-a327-117112365ba0" testId="fa64f5be-28b5-0a00-7373-7a7f405a68f0" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentStreamChunk_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0007047" startTime="2025-09-18T17:19:57.3419640+00:00" endTime="2025-09-18T17:19:57.3419641+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="938cfdab-6d8d-48bc-a327-117112365ba0" />
+    <UnitTestResult executionId="09743ce0-fc7e-4804-b61f-f6815e2ec9b3" testId="7adec675-33e4-d2d2-2a6d-4afaed9e20f6" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.StreamAgent_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0005071" startTime="2025-09-18T17:19:57.3425807+00:00" endTime="2025-09-18T17:19:57.3425808+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="09743ce0-fc7e-4804-b61f-f6815e2ec9b3" />
+    <UnitTestResult executionId="8e914b0d-84bc-4109-a774-a4918f831055" testId="1af63ba2-42c5-2325-b0ee-7113a603401b" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.ContextMessage_Should_Be_AI_Message_Subtype" computerName="runnervmf4ws1" duration="00:00:00.0001751" startTime="2025-09-18T17:19:57.3451574+00:00" endTime="2025-09-18T17:19:57.3451575+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8e914b0d-84bc-4109-a774-a4918f831055" />
+    <UnitTestResult executionId="b39279e7-a9b2-417c-9db1-346d117f796f" testId="a068386e-19a8-3cc9-d288-46429c20f676" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentResponse_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0005575" startTime="2025-09-18T17:19:57.3426405+00:00" endTime="2025-09-18T17:19:57.3426405+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b39279e7-a9b2-417c-9db1-346d117f796f" />
+    <UnitTestResult executionId="6738e432-0b04-417f-b675-36555ee78ec8" testId="9fd0c474-9c91-2634-93c7-8446d83b68b2" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.InvokeAgent_Should_Allow_Null_ConversationId" computerName="runnervmf4ws1" duration="00:00:00.0002269" startTime="2025-09-18T17:19:57.2991733+00:00" endTime="2025-09-18T17:19:57.2991742+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6738e432-0b04-417f-b675-36555ee78ec8" />
+    <UnitTestResult executionId="04ce36f5-5d21-4cc0-b30a-18903b1dfc08" testId="2a05765b-0509-185b-ab76-4c5f07d4e4eb" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.StopAgent_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0003322" startTime="2025-09-18T17:19:57.3422960+00:00" endTime="2025-09-18T17:19:57.3422961+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="04ce36f5-5d21-4cc0-b30a-18903b1dfc08" />
+    <UnitTestResult executionId="0fde505b-0855-4a56-91eb-614cc1e12171" testId="93b6224f-b390-fc92-53c7-bfcb6a57a4b8" testName="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.ActorSystemConfiguration_Should_Build_Valid_Config" computerName="runnervmf4ws1" duration="00:00:00.0186469" startTime="2025-09-18T17:19:58.0535765+00:00" endTime="2025-09-18T17:19:58.0535767+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0fde505b-0855-4a56-91eb-614cc1e12171" />
+    <UnitTestResult executionId="bf716cb4-be99-4cae-ba86-44c9d59c29b0" testId="3faa35f6-c562-b83a-8591-5899da1fa2c7" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Initialize_With_Configuration" computerName="runnervmf4ws1" duration="00:00:00.0207112" startTime="2025-09-18T17:19:57.7898304+00:00" endTime="2025-09-18T17:19:57.7898305+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bf716cb4-be99-4cae-ba86-44c9d59c29b0" />
+    <UnitTestResult executionId="b22d47dc-ecf1-4a41-85ac-7e014c50e33a" testId="536aaef9-c12e-df3e-e58d-41b79155639b" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_StreamAgent" computerName="runnervmf4ws1" duration="00:00:00.0307501" startTime="2025-09-18T17:19:57.7067354+00:00" endTime="2025-09-18T17:19:57.7067356+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b22d47dc-ecf1-4a41-85ac-7e014c50e33a">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure: Strings differ
+           ↓ (pos 0)
+Expected: "Test stream for: test input"
+Actual:   "No implementation provided"
+           ↑ (pos 0)</Message>
+          <StackTrace>   at GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_StreamAgent() in /home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/BaseAIActorTests.cs:line 148
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="9cf4c137-3803-4de0-a488-022639f22856" testId="221423b2-487b-423d-2d7e-40f188eecb10" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Track_LastActivity" computerName="runnervmf4ws1" duration="00:00:00.0296315" startTime="2025-09-18T17:19:57.6578509+00:00" endTime="2025-09-18T17:19:57.6578511+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9cf4c137-3803-4de0-a488-022639f22856" />
+    <UnitTestResult executionId="293b7b4e-48b0-49f9-b938-4c8839321625" testId="985e8619-e292-90e8-ae5f-6b1faa4f67eb" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentMessage_Should_Be_AI_Message_Subtype" computerName="runnervmf4ws1" duration="00:00:00.0003221" startTime="2025-09-18T17:19:57.3450808+00:00" endTime="2025-09-18T17:19:57.3450809+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="293b7b4e-48b0-49f9-b938-4c8839321625" />
+    <UnitTestResult executionId="c6e3ebaf-1695-4f65-bed0-61e17faf0382" testId="a829fc46-80db-7673-68c4-c6f12137d8b2" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_InvokeAgent" computerName="runnervmf4ws1" duration="00:00:00.0236578" startTime="2025-09-18T17:19:57.7237893+00:00" endTime="2025-09-18T17:19:57.7237895+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c6e3ebaf-1695-4f65-bed0-61e17faf0382">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure: Strings differ
+           ↓ (pos 0)
+Expected: "Test response for: test input"
+Actual:   "No implementation provided"
+           ↑ (pos 0)</Message>
+          <StackTrace>   at GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_InvokeAgent() in /home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/BaseAIActorTests.cs:line 131
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e11cc7b9-ad41-4527-b820-5f3afea777ba" testId="2ce1ef46-24e4-6bd8-8b78-618c5c049a56" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.InvokeAgent_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0009878" startTime="2025-09-18T17:19:57.2980743+00:00" endTime="2025-09-18T17:19:57.2980744+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e11cc7b9-ad41-4527-b820-5f3afea777ba" />
+    <UnitTestResult executionId="02a4e2ed-6daf-4b17-9a63-e0745be762d1" testId="e50278de-39f0-bf57-32cb-05146604f5f7" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AIMessage_Should_Be_Base_Type" computerName="runnervmf4ws1" duration="00:00:00.0002753" startTime="2025-09-18T17:19:57.3453021+00:00" endTime="2025-09-18T17:19:57.3453022+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="02a4e2ed-6daf-4b17-9a63-e0745be762d1" />
+    <UnitTestResult executionId="a4a02ee5-9c40-4701-8386-b73ee8777d5f" testId="edd562ce-ddea-0676-88c3-142771568a61" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.GetSystemHealth_Should_Be_Singleton_Message" computerName="runnervmf4ws1" duration="00:00:00.0002115" startTime="2025-09-18T17:19:57.2988720+00:00" endTime="2025-09-18T17:19:57.2988720+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4a02ee5-9c40-4701-8386-b73ee8777d5f" />
+    <UnitTestResult executionId="6e213657-9c55-4344-8320-7fe87ef84395" testId="4246e549-981b-db77-d2c5-8a5163b4b65d" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.GetAgentStatus_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0002521" startTime="2025-09-18T17:19:57.3453772+00:00" endTime="2025-09-18T17:19:57.3453773+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6e213657-9c55-4344-8320-7fe87ef84395" />
+    <UnitTestResult executionId="89c55c51-c304-428e-86a1-dad5385640cc" testId="669abed9-dc38-9962-c9ce-85717b4e196c" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AIProcessingMessage_Should_Be_AI_Message_Subtype" computerName="runnervmf4ws1" duration="00:00:00.0002340" startTime="2025-09-18T17:19:57.3423673+00:00" endTime="2025-09-18T17:19:57.3423673+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="89c55c51-c304-428e-86a1-dad5385640cc" />
+    <UnitTestResult executionId="9bce66ca-f5b9-48e6-b0e4-c921e9ac2410" testId="108beea8-a39c-ea18-bcc0-8950ec576b39" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.EndConversation_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0002706" startTime="2025-09-18T17:19:57.3452308+00:00" endTime="2025-09-18T17:19:57.3452309+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9bce66ca-f5b9-48e6-b0e4-c921e9ac2410" />
+    <UnitTestResult executionId="28af4495-2ad5-4911-af2e-3b55d1794665" testId="785e5cc7-43f5-c2dc-acb5-b83347728025" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_EndConversation" computerName="runnervmf4ws1" duration="00:00:00.0237571" startTime="2025-09-18T17:19:57.8142399+00:00" endTime="2025-09-18T17:19:57.8142401+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="28af4495-2ad5-4911-af2e-3b55d1794665" />
+    <UnitTestResult executionId="cd816c66-70a7-425d-ad7d-4c6baf25bc20" testId="b1448a03-3703-94a4-c6ce-886d1a0049bf" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentStreamChunk_Should_Default_To_Incomplete" computerName="runnervmf4ws1" duration="00:00:00.0001514" startTime="2025-09-18T17:19:57.3427038+00:00" endTime="2025-09-18T17:19:57.3427039+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cd816c66-70a7-425d-ad7d-4c6baf25bc20" />
+    <UnitTestResult executionId="918af7c8-05b4-459b-ad65-6d336bf4cd20" testId="0ed5e6ab-a75d-c45e-e9b4-e527d57a1913" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.CreateAgent_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0006786" startTime="2025-09-18T17:19:57.3424308+00:00" endTime="2025-09-18T17:19:57.3424309+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="918af7c8-05b4-459b-ad65-6d336bf4cd20" />
+    <UnitTestResult executionId="cf0971b9-def3-4ec8-b12e-6b06a63e2cae" testId="03de63da-1eb9-cae4-8f90-7338a7d46773" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentStatus_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0007400" startTime="2025-09-18T17:19:57.3425056+00:00" endTime="2025-09-18T17:19:57.3425057+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cf0971b9-def3-4ec8-b12e-6b06a63e2cae" />
+    <UnitTestResult executionId="b3097053-9de4-4152-9bc1-3e23c5363a55" testId="322f0a77-3c4d-2fd0-db4f-2a600939ff91" testName="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Handle_Stopping_Nonexistent_Agent" computerName="runnervmf4ws1" duration="00:00:00.6047738" startTime="2025-09-18T17:19:57.8891945+00:00" endTime="2025-09-18T17:19:57.8891947+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b3097053-9de4-4152-9bc1-3e23c5363a55" />
+    <UnitTestResult executionId="7e6acbac-f1cb-47d5-b4d8-96a2558a451d" testId="9e7d11bf-278a-d171-25f3-a92bd0f7b077" testName="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Initialize_Successfully" computerName="runnervmf4ws1" duration="00:00:00.0406339" startTime="2025-09-18T17:19:58.1460551+00:00" endTime="2025-09-18T17:19:58.1460553+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7e6acbac-f1cb-47d5-b4d8-96a2558a451d" />
+    <UnitTestResult executionId="c43ecc0e-cc76-41c8-8d0e-119ceac57ee5" testId="2526ac2f-5bad-205a-1067-b98ebcc6a3e1" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.StopSystem_Should_Be_Singleton_Message" computerName="runnervmf4ws1" duration="00:00:00.0030945" startTime="2025-09-18T17:19:57.2905975+00:00" endTime="2025-09-18T17:19:57.2906533+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c43ecc0e-cc76-41c8-8d0e-119ceac57ee5" />
+    <UnitTestResult executionId="9bd2a2ed-9d80-49e5-8b7b-ecd7d896620d" testId="6b546d2f-dcc6-dba1-479c-aeb1ca8dcd1f" testName="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Handle_Duplicate_Agent_Creation" computerName="runnervmf4ws1" duration="00:00:00.0408114" startTime="2025-09-18T17:19:58.0346701+00:00" endTime="2025-09-18T17:19:58.0346703+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9bd2a2ed-9d80-49e5-8b7b-ecd7d896620d" />
+    <UnitTestResult executionId="78d1771e-0ad0-4385-a9ff-68d17faebcd4" testId="d71884c7-0d71-433d-226f-f03e6acc08b0" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_CreateConversation" computerName="runnervmf4ws1" duration="00:00:00.0261297" startTime="2025-09-18T17:19:57.6277719+00:00" endTime="2025-09-18T17:19:57.6277719+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="78d1771e-0ad0-4385-a9ff-68d17faebcd4" />
+    <UnitTestResult executionId="9d0309c8-bff7-423c-8d29-ce3ee3e4c045" testId="4f9a023c-c21e-f257-72dc-94680b625f96" testName="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Get_System_Health" computerName="runnervmf4ws1" duration="00:00:00.0533910" startTime="2025-09-18T17:19:57.9933793+00:00" endTime="2025-09-18T17:19:57.9933795+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9d0309c8-bff7-423c-8d29-ce3ee3e4c045" />
+    <UnitTestResult executionId="141e7f4e-ac50-48f4-a6d8-54eddd6450ce" testId="1cc7bb24-fe36-4741-8f52-2e31713c904d" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_GetAgentStatus" computerName="runnervmf4ws1" duration="00:00:00.3208446" startTime="2025-09-18T17:19:57.6014603+00:00" endTime="2025-09-18T17:19:57.6014605+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="141e7f4e-ac50-48f4-a6d8-54eddd6450ce" />
+    <UnitTestResult executionId="73c5da55-46de-418e-a412-bedadba58814" testId="44f6ecac-5e57-ee2f-7a34-12bca84d56bf" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentResponse_Should_Default_To_Success" computerName="runnervmf4ws1" duration="00:00:00.0003062" startTime="2025-09-18T17:19:57.3450064+00:00" endTime="2025-09-18T17:19:57.3450064+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="73c5da55-46de-418e-a412-bedadba58814" />
+    <UnitTestResult executionId="5222eb9b-a029-481b-a6a3-4c837132ec95" testId="4915fda7-37a1-3335-d85a-ab0a3100b863" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.StartSystem_Should_Be_Singleton_Message" computerName="runnervmf4ws1" duration="00:00:00.0001800" startTime="2025-09-18T17:19:57.2985979+00:00" endTime="2025-09-18T17:19:57.2985980+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5222eb9b-a029-481b-a6a3-4c837132ec95" />
+    <UnitTestResult executionId="e98fc36b-6012-408f-8d71-102687d9a139" testId="15cef35c-8904-d593-546c-a89016d707af" testName="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Create_And_Stop_Agents" computerName="runnervmf4ws1" duration="00:00:00.0515523" startTime="2025-09-18T17:19:58.1052744+00:00" endTime="2025-09-18T17:19:58.1052746+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e98fc36b-6012-408f-8d71-102687d9a139" />
+    <UnitTestResult executionId="18cc3886-4f95-4f3f-afe3-6da165fa3097" testId="39e90df2-ca24-9802-ceea-5ed28aed0f61" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.SystemMessage_Should_Be_AI_Message_Subtype" computerName="runnervmf4ws1" duration="00:00:00.0002014" startTime="2025-09-18T17:19:57.2983419+00:00" endTime="2025-09-18T17:19:57.2983420+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="18cc3886-4f95-4f3f-afe3-6da165fa3097" />
+    <UnitTestResult executionId="21062238-ade3-4c08-b9bd-53432cd21ec5" testId="8462ac3b-5f4f-813f-1a18-6b41c9bf870c" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.CreateConversation_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0005235" startTime="2025-09-18T17:19:57.3427749+00:00" endTime="2025-09-18T17:19:57.3427749+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="21062238-ade3-4c08-b9bd-53432cd21ec5" />
+    <UnitTestResult executionId="da337883-b96e-4793-ae59-a2e88c5861e1" testId="858078b6-d5b4-9edf-8dc5-ee50b1cc5cdd" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_EndNonexistentConversation" computerName="runnervmf4ws1" duration="00:00:00.0254144" startTime="2025-09-18T17:19:57.7482507+00:00" endTime="2025-09-18T17:19:57.7482509+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="da337883-b96e-4793-ae59-a2e88c5861e1" />
+    <UnitTestResult executionId="8cc1f649-3d40-43f0-9033-7dd5e2ef7864" testId="d5cedef6-9041-5068-e869-c72cbf29af9a" testName="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Start_And_Stop_Successfully" computerName="runnervmf4ws1" duration="00:00:00.0475817" startTime="2025-09-18T17:19:57.9398757+00:00" endTime="2025-09-18T17:19:57.9398759+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8cc1f649-3d40-43f0-9033-7dd5e2ef7864" />
+    <UnitTestResult executionId="1b35b51d-b50a-4e0a-9d02-4d06766ab6ef" testId="28d63c79-ba68-76c8-9ab5-83301d9ca8d0" testName="GameConsole.AI.Actors.Tests.AIMessagesTests.SystemHealth_Should_Initialize_Correctly" computerName="runnervmf4ws1" duration="00:00:00.0069492" startTime="2025-09-18T17:19:57.2970672+00:00" endTime="2025-09-18T17:19:57.2970673+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1b35b51d-b50a-4e0a-9d02-4d06766ab6ef" />
+    <UnitTestResult executionId="514bbbc9-727a-4d1b-b890-e840ea01675e" testId="1907565c-a5d2-447a-18d9-5325aa151c67" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_StopAgent" computerName="runnervmf4ws1" duration="00:00:00.0205212" startTime="2025-09-18T17:19:57.7692346+00:00" endTime="2025-09-18T17:19:57.7692348+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="514bbbc9-727a-4d1b-b890-e840ea01675e" />
+    <UnitTestResult executionId="42890336-01ce-4ea2-993d-86bca40cabf1" testId="36fa7700-b720-3b11-66e8-af9c67b9870f" testName="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_Duplicate_CreateConversation" computerName="runnervmf4ws1" duration="00:00:00.0367084" startTime="2025-09-18T17:19:57.8509400+00:00" endTime="2025-09-18T17:19:57.8509402+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="42890336-01ce-4ea2-993d-86bca40cabf1" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.GetSystemHealth_Should_Be_Singleton_Message" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="edd562ce-ddea-0676-88c3-142771568a61">
+      <Execution id="a4a02ee5-9c40-4701-8386-b73ee8777d5f" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="GetSystemHealth_Should_Be_Singleton_Message" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.InvokeAgent_Should_Allow_Null_ConversationId" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="9fd0c474-9c91-2634-93c7-8446d83b68b2">
+      <Execution id="6738e432-0b04-417f-b675-36555ee78ec8" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="InvokeAgent_Should_Allow_Null_ConversationId" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.StartSystem_Should_Be_Singleton_Message" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="4915fda7-37a1-3335-d85a-ab0a3100b863">
+      <Execution id="5222eb9b-a029-481b-a6a3-4c837132ec95" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="StartSystem_Should_Be_Singleton_Message" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AIProcessingMessage_Should_Be_AI_Message_Subtype" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="669abed9-dc38-9962-c9ce-85717b4e196c">
+      <Execution id="89c55c51-c304-428e-86a1-dad5385640cc" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AIProcessingMessage_Should_Be_AI_Message_Subtype" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Start_And_Stop_Successfully" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="d5cedef6-9041-5068-e869-c72cbf29af9a">
+      <Execution id="8cc1f649-3d40-43f0-9033-7dd5e2ef7864" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests" name="AIActorSystem_Should_Start_And_Stop_Successfully" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentStatus_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="03de63da-1eb9-cae4-8f90-7338a7d46773">
+      <Execution id="cf0971b9-def3-4ec8-b12e-6b06a63e2cae" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AgentStatus_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_InvokeAgent" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="a829fc46-80db-7673-68c4-c6f12137d8b2">
+      <Execution id="c6e3ebaf-1695-4f65-bed0-61e17faf0382" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_InvokeAgent" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentStreamChunk_Should_Default_To_Incomplete" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="b1448a03-3703-94a4-c6ce-886d1a0049bf">
+      <Execution id="cd816c66-70a7-425d-ad7d-4c6baf25bc20" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AgentStreamChunk_Should_Default_To_Incomplete" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_GetAgentStatus" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="1cc7bb24-fe36-4741-8f52-2e31713c904d">
+      <Execution id="141e7f4e-ac50-48f4-a6d8-54eddd6450ce" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_GetAgentStatus" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Track_LastActivity" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="221423b2-487b-423d-2d7e-40f188eecb10">
+      <Execution id="9cf4c137-3803-4de0-a488-022639f22856" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Track_LastActivity" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentResponse_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="a068386e-19a8-3cc9-d288-46429c20f676">
+      <Execution id="b39279e7-a9b2-417c-9db1-346d117f796f" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AgentResponse_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_StopAgent" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="1907565c-a5d2-447a-18d9-5325aa151c67">
+      <Execution id="514bbbc9-727a-4d1b-b890-e840ea01675e" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_StopAgent" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.StreamAgent_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="7adec675-33e4-d2d2-2a6d-4afaed9e20f6">
+      <Execution id="09743ce0-fc7e-4804-b61f-f6815e2ec9b3" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="StreamAgent_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_CreateConversation" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="d71884c7-0d71-433d-226f-f03e6acc08b0">
+      <Execution id="78d1771e-0ad0-4385-a9ff-68d17faebcd4" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_CreateConversation" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.StopSystem_Should_Be_Singleton_Message" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="2526ac2f-5bad-205a-1067-b98ebcc6a3e1">
+      <Execution id="c43ecc0e-cc76-41c8-8d0e-119ceac57ee5" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="StopSystem_Should_Be_Singleton_Message" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_EndConversation" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="785e5cc7-43f5-c2dc-acb5-b83347728025">
+      <Execution id="28af4495-2ad5-4911-af2e-3b55d1794665" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_EndConversation" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.ActorSystemConfiguration_Should_Build_Valid_Config" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="93b6224f-b390-fc92-53c7-bfcb6a57a4b8">
+      <Execution id="0fde505b-0855-4a56-91eb-614cc1e12171" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests" name="ActorSystemConfiguration_Should_Build_Valid_Config" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.CreateConversation_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="8462ac3b-5f4f-813f-1a18-6b41c9bf870c">
+      <Execution id="21062238-ade3-4c08-b9bd-53432cd21ec5" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="CreateConversation_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Initialize_Successfully" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="9e7d11bf-278a-d171-25f3-a92bd0f7b077">
+      <Execution id="7e6acbac-f1cb-47d5-b4d8-96a2558a451d" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests" name="AIActorSystem_Should_Initialize_Successfully" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_EndNonexistentConversation" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="858078b6-d5b4-9edf-8dc5-ee50b1cc5cdd">
+      <Execution id="da337883-b96e-4793-ae59-a2e88c5861e1" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_EndNonexistentConversation" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Handle_Stopping_Nonexistent_Agent" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="322f0a77-3c4d-2fd0-db4f-2a600939ff91">
+      <Execution id="b3097053-9de4-4152-9bc1-3e23c5363a55" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests" name="AIActorSystem_Should_Handle_Stopping_Nonexistent_Agent" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentResponse_Should_Default_To_Success" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="44f6ecac-5e57-ee2f-7a34-12bca84d56bf">
+      <Execution id="73c5da55-46de-418e-a412-bedadba58814" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AgentResponse_Should_Default_To_Success" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.EndConversation_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="108beea8-a39c-ea18-bcc0-8950ec576b39">
+      <Execution id="9bce66ca-f5b9-48e6-b0e4-c921e9ac2410" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="EndConversation_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.GetAgentStatus_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="4246e549-981b-db77-d2c5-8a5163b4b65d">
+      <Execution id="6e213657-9c55-4344-8320-7fe87ef84395" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="GetAgentStatus_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.ContextMessage_Should_Be_AI_Message_Subtype" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="1af63ba2-42c5-2325-b0ee-7113a603401b">
+      <Execution id="8e914b0d-84bc-4109-a774-a4918f831055" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="ContextMessage_Should_Be_AI_Message_Subtype" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AIMessage_Should_Be_Base_Type" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="e50278de-39f0-bf57-32cb-05146604f5f7">
+      <Execution id="02a4e2ed-6daf-4b17-9a63-e0745be762d1" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AIMessage_Should_Be_Base_Type" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentMessage_Should_Be_AI_Message_Subtype" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="985e8619-e292-90e8-ae5f-6b1faa4f67eb">
+      <Execution id="293b7b4e-48b0-49f9-b938-4c8839321625" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AgentMessage_Should_Be_AI_Message_Subtype" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.StopAgent_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="2a05765b-0509-185b-ab76-4c5f07d4e4eb">
+      <Execution id="04ce36f5-5d21-4cc0-b30a-18903b1dfc08" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="StopAgent_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.InvokeAgent_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="2ce1ef46-24e4-6bd8-8b78-618c5c049a56">
+      <Execution id="e11cc7b9-ad41-4527-b820-5f3afea777ba" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="InvokeAgent_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Initialize_With_Configuration" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="3faa35f6-c562-b83a-8591-5899da1fa2c7">
+      <Execution id="bf716cb4-be99-4cae-ba86-44c9d59c29b0" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Initialize_With_Configuration" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.SystemMessage_Should_Be_AI_Message_Subtype" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="39e90df2-ca24-9802-ceea-5ed28aed0f61">
+      <Execution id="18cc3886-4f95-4f3f-afe3-6da165fa3097" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="SystemMessage_Should_Be_AI_Message_Subtype" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.AgentStreamChunk_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="fa64f5be-28b5-0a00-7373-7a7f405a68f0">
+      <Execution id="938cfdab-6d8d-48bc-a327-117112365ba0" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="AgentStreamChunk_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Get_System_Health" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="4f9a023c-c21e-f257-72dc-94680b625f96">
+      <Execution id="9d0309c8-bff7-423c-8d29-ce3ee3e4c045" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests" name="AIActorSystem_Should_Get_System_Health" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Handle_Duplicate_Agent_Creation" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="6b546d2f-dcc6-dba1-479c-aeb1ca8dcd1f">
+      <Execution id="9bd2a2ed-9d80-49e5-8b7b-ecd7d896620d" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests" name="AIActorSystem_Should_Handle_Duplicate_Agent_Creation" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.SystemHealth_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="28d63c79-ba68-76c8-9ab5-83301d9ca8d0">
+      <Execution id="1b35b51d-b50a-4e0a-9d02-4d06766ab6ef" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="SystemHealth_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_Duplicate_CreateConversation" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="36fa7700-b720-3b11-66e8-af9c67b9870f">
+      <Execution id="42890336-01ce-4ea2-993d-86bca40cabf1" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_Duplicate_CreateConversation" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIMessagesTests.CreateAgent_Should_Initialize_Correctly" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="0ed5e6ab-a75d-c45e-e9b4-e527d57a1913">
+      <Execution id="918af7c8-05b4-459b-ad65-6d336bf4cd20" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIMessagesTests" name="CreateAgent_Should_Initialize_Correctly" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_StreamAgent" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="536aaef9-c12e-df3e-e58d-41b79155639b">
+      <Execution id="b22d47dc-ecf1-4a41-85ac-7e014c50e33a" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.BaseAIActorTests" name="BaseAIActor_Should_Handle_StreamAgent" />
+    </UnitTest>
+    <UnitTest name="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests.AIActorSystem_Should_Create_And_Stop_Agents" storage="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/gameconsole.ai.actors.tests/bin/debug/net8.0/gameconsole.ai.actors.tests.dll" id="15cef35c-8904-d593-546c-a89016d707af">
+      <Execution id="e98fc36b-6012-408f-8d71-102687d9a139" />
+      <TestMethod codeBase="/home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/bin/Debug/net8.0/GameConsole.AI.Actors.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="GameConsole.AI.Actors.Tests.AIActorSystemIntegrationTests" name="AIActorSystem_Should_Create_And_Stop_Agents" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="fa64f5be-28b5-0a00-7373-7a7f405a68f0" executionId="938cfdab-6d8d-48bc-a327-117112365ba0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7adec675-33e4-d2d2-2a6d-4afaed9e20f6" executionId="09743ce0-fc7e-4804-b61f-f6815e2ec9b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1af63ba2-42c5-2325-b0ee-7113a603401b" executionId="8e914b0d-84bc-4109-a774-a4918f831055" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a068386e-19a8-3cc9-d288-46429c20f676" executionId="b39279e7-a9b2-417c-9db1-346d117f796f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9fd0c474-9c91-2634-93c7-8446d83b68b2" executionId="6738e432-0b04-417f-b675-36555ee78ec8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2a05765b-0509-185b-ab76-4c5f07d4e4eb" executionId="04ce36f5-5d21-4cc0-b30a-18903b1dfc08" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="93b6224f-b390-fc92-53c7-bfcb6a57a4b8" executionId="0fde505b-0855-4a56-91eb-614cc1e12171" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3faa35f6-c562-b83a-8591-5899da1fa2c7" executionId="bf716cb4-be99-4cae-ba86-44c9d59c29b0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="536aaef9-c12e-df3e-e58d-41b79155639b" executionId="b22d47dc-ecf1-4a41-85ac-7e014c50e33a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="221423b2-487b-423d-2d7e-40f188eecb10" executionId="9cf4c137-3803-4de0-a488-022639f22856" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="985e8619-e292-90e8-ae5f-6b1faa4f67eb" executionId="293b7b4e-48b0-49f9-b938-4c8839321625" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a829fc46-80db-7673-68c4-c6f12137d8b2" executionId="c6e3ebaf-1695-4f65-bed0-61e17faf0382" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2ce1ef46-24e4-6bd8-8b78-618c5c049a56" executionId="e11cc7b9-ad41-4527-b820-5f3afea777ba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e50278de-39f0-bf57-32cb-05146604f5f7" executionId="02a4e2ed-6daf-4b17-9a63-e0745be762d1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="edd562ce-ddea-0676-88c3-142771568a61" executionId="a4a02ee5-9c40-4701-8386-b73ee8777d5f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4246e549-981b-db77-d2c5-8a5163b4b65d" executionId="6e213657-9c55-4344-8320-7fe87ef84395" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="669abed9-dc38-9962-c9ce-85717b4e196c" executionId="89c55c51-c304-428e-86a1-dad5385640cc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="108beea8-a39c-ea18-bcc0-8950ec576b39" executionId="9bce66ca-f5b9-48e6-b0e4-c921e9ac2410" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="785e5cc7-43f5-c2dc-acb5-b83347728025" executionId="28af4495-2ad5-4911-af2e-3b55d1794665" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b1448a03-3703-94a4-c6ce-886d1a0049bf" executionId="cd816c66-70a7-425d-ad7d-4c6baf25bc20" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0ed5e6ab-a75d-c45e-e9b4-e527d57a1913" executionId="918af7c8-05b4-459b-ad65-6d336bf4cd20" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="03de63da-1eb9-cae4-8f90-7338a7d46773" executionId="cf0971b9-def3-4ec8-b12e-6b06a63e2cae" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="322f0a77-3c4d-2fd0-db4f-2a600939ff91" executionId="b3097053-9de4-4152-9bc1-3e23c5363a55" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9e7d11bf-278a-d171-25f3-a92bd0f7b077" executionId="7e6acbac-f1cb-47d5-b4d8-96a2558a451d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2526ac2f-5bad-205a-1067-b98ebcc6a3e1" executionId="c43ecc0e-cc76-41c8-8d0e-119ceac57ee5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6b546d2f-dcc6-dba1-479c-aeb1ca8dcd1f" executionId="9bd2a2ed-9d80-49e5-8b7b-ecd7d896620d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d71884c7-0d71-433d-226f-f03e6acc08b0" executionId="78d1771e-0ad0-4385-a9ff-68d17faebcd4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4f9a023c-c21e-f257-72dc-94680b625f96" executionId="9d0309c8-bff7-423c-8d29-ce3ee3e4c045" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1cc7bb24-fe36-4741-8f52-2e31713c904d" executionId="141e7f4e-ac50-48f4-a6d8-54eddd6450ce" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="44f6ecac-5e57-ee2f-7a34-12bca84d56bf" executionId="73c5da55-46de-418e-a412-bedadba58814" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4915fda7-37a1-3335-d85a-ab0a3100b863" executionId="5222eb9b-a029-481b-a6a3-4c837132ec95" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15cef35c-8904-d593-546c-a89016d707af" executionId="e98fc36b-6012-408f-8d71-102687d9a139" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="39e90df2-ca24-9802-ceea-5ed28aed0f61" executionId="18cc3886-4f95-4f3f-afe3-6da165fa3097" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8462ac3b-5f4f-813f-1a18-6b41c9bf870c" executionId="21062238-ade3-4c08-b9bd-53432cd21ec5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="858078b6-d5b4-9edf-8dc5-ee50b1cc5cdd" executionId="da337883-b96e-4793-ae59-a2e88c5861e1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d5cedef6-9041-5068-e869-c72cbf29af9a" executionId="8cc1f649-3d40-43f0-9033-7dd5e2ef7864" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="28d63c79-ba68-76c8-9ab5-83301d9ca8d0" executionId="1b35b51d-b50a-4e0a-9d02-4d06766ab6ef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1907565c-a5d2-447a-18d9-5325aa151c67" executionId="514bbbc9-727a-4d1b-b890-e840ea01675e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="36fa7700-b720-3b11-66e8-af9c67b9870f" executionId="42890336-01ce-4ea2-993d-86bca40cabf1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="39" executed="39" passed="37" failed="2" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.4.5+1caef2f33e (64-bit .NET 8.0.19)
+[xUnit.net 00:00:00.49]   Discovering: GameConsole.AI.Actors.Tests
+[xUnit.net 00:00:00.53]   Discovered:  GameConsole.AI.Actors.Tests
+[xUnit.net 00:00:00.53]   Starting:    GameConsole.AI.Actors.Tests
+[xUnit.net 00:00:01.00]       Assert.Equal() Failure: Strings differ
+[xUnit.net 00:00:01.00]                  ↓ (pos 0)
+[xUnit.net 00:00:01.00]       Expected: "Test stream for: test input"
+[xUnit.net 00:00:01.00]       Actual:   "No implementation provided"
+[xUnit.net 00:00:01.00]                  ↑ (pos 0)
+[xUnit.net 00:00:01.00]       Stack Trace:
+[xUnit.net 00:00:01.00]         /home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/BaseAIActorTests.cs(148,0): at GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_StreamAgent()
+[xUnit.net 00:00:01.00]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:01.00]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.02]       Assert.Equal() Failure: Strings differ
+[xUnit.net 00:00:01.02]                  ↓ (pos 0)
+[xUnit.net 00:00:01.02]       Expected: "Test response for: test input"
+[xUnit.net 00:00:01.02]       Actual:   "No implementation provided"
+[xUnit.net 00:00:01.02]                  ↑ (pos 0)
+[xUnit.net 00:00:01.02]       Stack Trace:
+[xUnit.net 00:00:01.02]         /home/runner/work/ithome-ironman-2025/ithome-ironman-2025/dotnet/GameConsole.AI.Actors.Tests/BaseAIActorTests.cs(131,0): at GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_InvokeAgent()
+[xUnit.net 00:00:01.02]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:01.02]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.45]   Finished:    GameConsole.AI.Actors.Tests
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="runnervmf4ws1" outcome="Error" timestamp="2025-09-18T17:19:57.7032370+00:00">
+        <Text>[xUnit.net 00:00:01.00]     GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_StreamAgent [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="runnervmf4ws1" outcome="Error" timestamp="2025-09-18T17:19:57.7241171+00:00">
+        <Text>[xUnit.net 00:00:01.02]     GameConsole.AI.Actors.Tests.BaseAIActorTests.BaseAIActor_Should_Handle_InvokeAgent [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
