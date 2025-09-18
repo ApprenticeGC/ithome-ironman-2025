@@ -194,12 +194,13 @@ class TrackingDatabase:
         self.conn.commit()
 
     def check_existing_issue(self, rfc_identifier: str) -> Optional[Dict[str, Any]]:
-        """Check if issue already exists for RFC identifier"""
+        """Check if issue already exists for RFC identifier (including closed issues)"""
         cursor = self.conn.execute(
             """
             SELECT gi.* FROM github_issues gi
             JOIN notion_pages np ON gi.notion_page_id = np.page_id
-            WHERE UPPER(np.rfc_identifier) = UPPER(?) AND gi.issue_state = 'open'
+            WHERE UPPER(np.rfc_identifier) = UPPER(?)
+            ORDER BY gi.created_at DESC LIMIT 1
         """,
             (rfc_identifier,),
         )
