@@ -14,23 +14,23 @@ public class InterfaceUsageExampleTests
     {
         // Arrange
         var service = new TestService();
-        
+
         // Act & Assert - Initial state
         Assert.False(service.IsRunning);
-        
+
         // Initialize
         await service.InitializeAsync();
         Assert.False(service.IsRunning);
         Assert.True(service.IsInitialized);
-        
+
         // Start
         await service.StartAsync();
         Assert.True(service.IsRunning);
-        
+
         // Stop
         await service.StopAsync();
         Assert.False(service.IsRunning);
-        
+
         // Dispose
         await service.DisposeAsync();
         Assert.True(service.IsDisposed);
@@ -41,23 +41,23 @@ public class InterfaceUsageExampleTests
     {
         // Arrange
         var provider = new TestCapabilityProvider();
-        
+
         // Act & Assert
         var capabilities = await provider.GetCapabilitiesAsync();
         Assert.Contains(typeof(string), capabilities);
         Assert.Contains(typeof(StringBuilder), capabilities);
-        
+
         Assert.True(await provider.HasCapabilityAsync<string>());
         Assert.True(await provider.HasCapabilityAsync<StringBuilder>());
         Assert.False(await provider.HasCapabilityAsync<List<string>>());
-        
+
         var stringCapability = await provider.GetCapabilityAsync<string>();
         Assert.Equal("Test String Capability", stringCapability);
-        
+
         var stringBuilderCapability = await provider.GetCapabilityAsync<StringBuilder>();
         Assert.NotNull(stringBuilderCapability);
         Assert.Equal("Test StringBuilder", stringBuilderCapability.ToString());
-        
+
         var nullCapability = await provider.GetCapabilityAsync<List<string>>();
         Assert.Null(nullCapability);
     }
@@ -67,7 +67,7 @@ public class InterfaceUsageExampleTests
     {
         // Arrange & Act
         var metadata = new TestServiceMetadata();
-        
+
         // Assert
         Assert.Equal("Test Service", metadata.Name);
         Assert.Equal("1.0.0", metadata.Version);
@@ -82,12 +82,12 @@ public class InterfaceUsageExampleTests
     {
         // Arrange
         var serviceType = typeof(AttributedTestService);
-        
+
         // Act
         var attribute = serviceType.GetCustomAttributes(typeof(ServiceAttribute), false)
             .Cast<ServiceAttribute>()
             .FirstOrDefault();
-        
+
         // Assert
         Assert.NotNull(attribute);
         Assert.Equal("Attributed Test Service", attribute.Name);
