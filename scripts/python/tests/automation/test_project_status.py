@@ -27,6 +27,8 @@ def test_determine_target_status():
         ("assigned", ["user1"], "Ready"),
         ("assigned", ["user1", "user2"], "Ready"),
         ("unassigned", [], "Backlog"),
+        ("opened", [], "Backlog"),
+        ("opened", ["user1"], "Backlog"),  # Should still be Backlog even with assignees on creation
         ("assigned", [], None),
         ("unassigned", ["user1"], None),
     ]
