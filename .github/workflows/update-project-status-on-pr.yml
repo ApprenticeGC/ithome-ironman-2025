@@ -15,6 +15,8 @@ permissions:
 jobs:
   update-project-status:
     runs-on: ubuntu-latest
+    # Skip for Dependabot PRs since they don't have access to USE_PROJECT_V2_TOKEN
+    if: github.actor != 'dependabot[bot]'
     steps:
       - name: Update Project Item Status for PR Events
         uses: actions/github-script@v7
