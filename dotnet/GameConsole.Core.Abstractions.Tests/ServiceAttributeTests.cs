@@ -23,10 +23,10 @@ public class ServiceAttributeTests
         const string name = "TestService";
         const string version = "2.0.0";
         const string description = "Test service description";
-        
+
         // Act
         var attribute = new ServiceAttribute(name, version, description);
-        
+
         // Assert
         Assert.Equal(name, attribute.Name);
         Assert.Equal(version, attribute.Version);
@@ -38,10 +38,10 @@ public class ServiceAttributeTests
     {
         // Arrange
         const string name = "TestService";
-        
+
         // Act
         var attribute = new ServiceAttribute(name);
-        
+
         // Assert
         Assert.Equal(name, attribute.Name);
         Assert.Equal("1.0.0", attribute.Version);
@@ -53,10 +53,10 @@ public class ServiceAttributeTests
     {
         // Arrange
         const string name = "TestService";
-        
+
         // Act
         var attribute = new ServiceAttribute(name);
-        
+
         // Assert
         Assert.NotNull(attribute.Categories);
         Assert.Empty(attribute.Categories);
@@ -67,10 +67,10 @@ public class ServiceAttributeTests
     {
         // Arrange
         const string name = "TestService";
-        
+
         // Act
         var attribute = new ServiceAttribute(name);
-        
+
         // Assert
         Assert.Equal(ServiceLifetime.Scoped, attribute.Lifetime);
     }
@@ -81,13 +81,13 @@ public class ServiceAttributeTests
         // Arrange
         const string name = "TestService";
         var categories = new[] { "Audio", "Core", "System" };
-        
+
         // Act
         var attribute = new ServiceAttribute(name)
         {
             Categories = categories
         };
-        
+
         // Assert
         Assert.Equal(categories, attribute.Categories);
     }
@@ -97,13 +97,13 @@ public class ServiceAttributeTests
     {
         // Arrange
         const string name = "TestService";
-        
+
         // Act
         var attribute = new ServiceAttribute(name)
         {
             Lifetime = ServiceLifetime.Singleton
         };
-        
+
         // Assert
         Assert.Equal(ServiceLifetime.Singleton, attribute.Lifetime);
     }
@@ -119,7 +119,7 @@ public class ServiceAttributeTests
         {
             Lifetime = lifetime
         };
-        
+
         // Assert
         Assert.Equal(lifetime, attribute.Lifetime);
     }
@@ -129,12 +129,12 @@ public class ServiceAttributeTests
     {
         // Arrange
         var attributeType = typeof(ServiceAttribute);
-        
+
         // Act
         var attributeUsage = attributeType.GetCustomAttributes(typeof(AttributeUsageAttribute), false)
             .Cast<AttributeUsageAttribute>()
             .First();
-        
+
         // Assert
         Assert.Equal(AttributeTargets.Class, attributeUsage.ValidOn);
         Assert.False(attributeUsage.AllowMultiple);
