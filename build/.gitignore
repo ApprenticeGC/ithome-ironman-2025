@@ -1,0 +1,6 @@
+# .NET Build
+**/bin/
+**/obj/
+*.user
+*.suo
+*.nupkg

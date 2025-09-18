@@ -2,28 +2,11 @@
 .DS_Store
 Thumbs.db
 
-# Node
+# Node (for any future Node.js directories)
 node_modules/
 npm-debug.log*
 yarn.lock
 pnpm-lock.yaml
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-.pytest_cache/
-*.egg-info/
-
-# .NET
-**/bin/
-**/obj/
-*.user
-*.suo
-*.nupkg
-
-# Build
-# build/
 
 # Logs
 *.log
