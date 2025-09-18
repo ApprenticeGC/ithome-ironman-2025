@@ -23,7 +23,7 @@ __pycache__/
 *.nupkg
 
 # Build
-build/
+# build/
 
 # Logs
 *.log
