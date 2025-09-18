@@ -40,9 +40,17 @@ def http_get(url: str, token: str) -> dict:
 
 
 def get_actions_billing(owner: str, token: str) -> dict:
-    """Get GitHub Actions billing information for an organization."""
-    url = f"{API_BASE}/orgs/{owner}/settings/billing/actions"
-    return http_get(url, token)
+    """Get GitHub Actions billing information for a user or organization."""
+    # Try organization endpoint first, fallback to user endpoint
+    try:
+        url = f"{API_BASE}/orgs/{owner}/settings/billing/actions"
+        return http_get(url, token)
+    except RuntimeError as e:
+        if "404" in str(e):
+            # Fallback to user endpoint
+            url = f"{API_BASE}/users/{owner}/settings/billing/actions"
+            return http_get(url, token)
+        raise
 
 
 def pick_color(minutes: float) -> str:
