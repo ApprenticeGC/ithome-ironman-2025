@@ -27,6 +27,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Input.Services"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Input.Services.Tests", "GameConsole.Input.Services.Tests\GameConsole.Input.Services.Tests.csproj", "{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Graphics.Core", "GameConsole.Graphics.Core\GameConsole.Graphics.Core.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Graphics.Services", "GameConsole.Graphics.Services\GameConsole.Graphics.Services.csproj", "{B2C3D4E5-F678-90AB-CDEF-1234567890AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Graphics.Services.Tests", "GameConsole.Graphics.Services.Tests\GameConsole.Graphics.Services.Tests.csproj", "{C3D4E5F6-G789-01BC-DEFG-234567890BCD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,5 +90,17 @@ Global
 		{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F678-90AB-CDEF-1234567890AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F678-90AB-CDEF-1234567890AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F678-90AB-CDEF-1234567890AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F678-90AB-CDEF-1234567890AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D4E5F6-G789-01BC-DEFG-234567890BCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D4E5F6-G789-01BC-DEFG-234567890BCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D4E5F6-G789-01BC-DEFG-234567890BCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D4E5F6-G789-01BC-DEFG-234567890BCD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
