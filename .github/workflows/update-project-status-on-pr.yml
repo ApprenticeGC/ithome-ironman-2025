@@ -4,8 +4,8 @@ on:
   pull_request:
     types: [opened, closed]
   workflow_run:
-    workflows: ["*"]
-    types: [requested, completed]
+    workflows: ["ci"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -85,16 +85,13 @@ jobs:
                   linkedIssues.push(parseInt(match[1]));
                 }
 
-                if (action === 'requested') {
-                  targetStatus = 'In progress';
-                  console.log(`⚡ Workflow started → Moving linked issues to "In progress"`);
-                } else if (action === 'completed' && workflow.conclusion === 'success') {
-                  targetStatus = 'In review';
-                  console.log(`✅ Workflow completed successfully → Moving linked issues to "In review"`);
-                } else {
-                  console.log('ℹ️ No status change needed for this workflow action');
+                if (workflow.conclusion !== 'success') {
+                  console.log(`ℹ️ Workflow conclusion "${workflow.conclusion}" is not "success", skipping status update`);
                   return;
                 }
+
+                targetStatus = 'In review';
+                console.log(`✅ Workflow completed successfully → Moving linked issues to "In review"`);
               } else {
                 console.log('ℹ️ No linked PRs found for this workflow run');
                 return;
