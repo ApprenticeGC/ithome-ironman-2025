@@ -156,7 +156,7 @@ public class PluginVersionInfo
     /// <summary>
     /// Gets whether this is the currently active version.
     /// </summary>
-    public bool IsActive { get; init; }
+    public bool IsActive { get; set; }
 }
 
 /// <summary>
