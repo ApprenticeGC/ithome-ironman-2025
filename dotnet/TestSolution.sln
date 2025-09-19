@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Input.Core", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Input.Services", "GameConsole.Input.Services\GameConsole.Input.Services.csproj", "{E5B4C3G2-9F6D-5G8B-AC7E-3F4D2B1CA0G9F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Input.Services.Tests", "GameConsole.Input.Services.Tests\GameConsole.Input.Services.Tests.csproj", "{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,5 +80,9 @@ Global
 		{E5B4C3G2-9F6D-5G8B-AC7E-3F4D2B1CA0G9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5B4C3G2-9F6D-5G8B-AC7E-3F4D2B1CA0G9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5B4C3G2-9F6D-5G8B-AC7E-3F4D2B1CA0G9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6C5D4H3-AG7E-6H9C-BD8F-4G5E3C2DB1HAG}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
