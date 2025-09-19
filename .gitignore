@@ -2,6 +2,9 @@
 .DS_Store
 Thumbs.db
 
+# Environment variables
+.env
+
 # Node (for any future Node.js directories)
 node_modules/
 npm-debug.log*

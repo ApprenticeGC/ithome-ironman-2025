@@ -34,11 +34,13 @@ jobs:
 
       - name: Generate monthly usage badge JSON
         env:
-          GITHUB_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+          USE_PROJECT_V2_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          # Try billing API first, fallback to workflow runs approach if it fails
-          python scripts/python/production/runner_usage.py || python scripts/python/production/runner_usage_alternative.py
+          # Try enhanced calculation first (gets job-level data and current month)
+          # Fall back to billing API, then basic workflow runs if needed
+          python scripts/python/production/runner_usage_enhanced.py || python scripts/python/production/runner_usage.py || python scripts/python/production/runner_usage_alternative.py
 
       - name: Commit badge if changed
         run: |

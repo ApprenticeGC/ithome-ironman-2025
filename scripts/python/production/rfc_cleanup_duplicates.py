@@ -45,7 +45,7 @@ class GitHubAPI:
         result = subprocess.run(cmd, capture_output=capture_output, text=True, env=env)
 
         if result.returncode != 0:
-            print(f"❌ Command failed: {' '.join(cmd)}")
+            print(f"[ERROR] Command failed: {' '.join(cmd)}")
             if result.stderr:
                 print(f"Error: {result.stderr}")
             return ""
@@ -64,8 +64,113 @@ class GitHubAPI:
         try:
             return json.loads(output)
         except json.JSONDecodeError:
-            print("❌ Failed to parse PR list")
+            print("[ERROR] Failed to parse PR list")
             return []
+
+    def get_issues_and_prs_for_broken_chain_detection(self) -> Dict[str, Any]:
+        """Get issues assigned to Copilot and all PRs in one GraphQL query for broken chain detection."""
+        query = """
+        query($owner: String!, $name: String!, $cursor: String) {
+          repository(owner: $owner, name: $name) {
+            issues(first: 100, states: OPEN, after: $cursor) {
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              nodes {
+                number
+                title
+                createdAt
+                updatedAt
+                assignees(first: 10) {
+                  nodes {
+                    login
+                  }
+                }
+                timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT]) {
+                  nodes {
+                    ... on CrossReferencedEvent {
+                      source {
+                        ... on PullRequest {
+                          number
+                          title
+                          state
+                          closedAt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+
+        owner, name = self.repo.split("/")
+
+        # Use direct command without --repo for GraphQL
+        cmd = ["gh", "api", "graphql",
+               "-f", f"query={query}",
+               "-F", f"owner={owner}",
+               "-F", f"name={name}"]
+
+        env = os.environ.copy()
+        if self.token:
+            env["GH_TOKEN"] = self.token
+
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+
+        if result.returncode != 0:
+            print(f"[ERROR] GraphQL command failed: {' '.join(cmd)}")
+            if result.stderr:
+                print(f"Error: {result.stderr}")
+            return ""
+
+        output = result.stdout.strip()
+
+        if not output:
+            return {"issues": []}
+
+        try:
+            data = json.loads(output)
+            issues_data = data.get("data", {}).get("repository", {}).get("issues", {})
+
+            # Filter to only Copilot-assigned issues and process timeline
+            copilot_issues = []
+            for issue in issues_data.get("nodes", []):
+                # Check if assigned to Copilot
+                assignees = issue.get("assignees", {}).get("nodes", [])
+                is_copilot_assigned = any(assignee.get("login") == "Copilot" for assignee in assignees)
+
+                if is_copilot_assigned:
+                    # Extract PR references from timeline
+                    timeline_items = issue.get("timelineItems", {}).get("nodes", [])
+                    referenced_prs = []
+
+                    for item in timeline_items:
+                        source = item.get("source", {})
+                        if source and "number" in source:  # It's a PR reference
+                            referenced_prs.append({
+                                "number": source.get("number"),
+                                "title": source.get("title"),
+                                "state": source.get("state"),
+                                "closedAt": source.get("closedAt")
+                            })
+
+                    copilot_issues.append({
+                        "number": issue.get("number"),
+                        "title": issue.get("title"),
+                        "createdAt": issue.get("createdAt"),
+                        "updatedAt": issue.get("updatedAt"),
+                        "referenced_prs": referenced_prs
+                    })
+
+            return {"issues": copilot_issues}
+
+        except json.JSONDecodeError:
+            print("[ERROR] Failed to parse GraphQL response")
+            return {"issues": []}
 
     def close_pr(self, pr_number: int, comment: str) -> bool:
         """Close a PR with a comment."""
@@ -77,7 +182,7 @@ class GitHubAPI:
     def delete_branch(self, branch_name: str) -> bool:
         """Delete a branch."""
         if branch_name in ["main", "master"]:
-            print(f"⚠️  Skipping deletion of protected branch: {branch_name}")
+            print(f"[WARNING] Skipping deletion of protected branch: {branch_name}")
             return True
 
         self.run_gh_command(
@@ -103,7 +208,7 @@ class GitHubAPI:
         try:
             return json.loads(output)
         except json.JSONDecodeError:
-            print("❌ Failed to parse issue list")
+            print("[ERROR] Failed to parse issue list")
             return []
 
     def close_issue(self, issue_number: int, comment: str) -> bool:
@@ -185,6 +290,61 @@ class RFCCleanupLogic:
         return duplicates
 
     @staticmethod
+    def find_broken_issues(issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Find issues assigned to Copilot that have closed PRs but no open PRs (broken chains).
+
+        Returns a list of broken issue data.
+        """
+        broken_issues = []
+
+        for issue in issues:
+            referenced_prs = issue.get("referenced_prs", [])
+
+            if not referenced_prs:
+                # No PRs ever created - this is orphaned, not broken
+                continue
+
+            # Check PR states
+            open_prs = [pr for pr in referenced_prs if pr.get("state") == "OPEN"]
+            closed_prs = [pr for pr in referenced_prs if pr.get("state") == "CLOSED"]
+
+            if not open_prs and closed_prs:
+                # Had PRs but they're all closed = broken chain
+                broken_issues.append({
+                    "number": issue["number"],
+                    "title": issue["title"],
+                    "createdAt": issue["createdAt"],
+                    "updatedAt": issue["updatedAt"],
+                    "closed_prs": closed_prs
+                })
+
+        return broken_issues
+
+    @staticmethod
+    def generate_broken_issue_cleanup_actions(
+        broken_issues: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate cleanup actions for broken issues.
+
+        For each broken issue, we recreate it fresh.
+        """
+        actions = []
+
+        for broken_issue in broken_issues:
+            # Close and recreate the broken issue
+            closed_prs_list = ', '.join(f'#{pr["number"]}' for pr in broken_issue['closed_prs'])
+            actions.append({
+                "action": "recreate_broken_issue",
+                "issue_number": broken_issue["number"],
+                "title": broken_issue["title"],
+                "comment": f"Recreating broken chain - original PR(s) closed. Closed PRs: {closed_prs_list}"
+            })
+
+        return actions
+
+    @staticmethod
     def generate_cleanup_actions(
         duplicates: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
@@ -219,7 +379,8 @@ class RFCCleanupLogic:
                             "action": "close_pr",
                             "pr_number": pr["number"],
                             "title": pr["title"],
-                            "comment": "Closed due to duplicate RFC work. Only one micro-issue per RFC series should be active at a time.",
+                            "comment": "Closed due to duplicate RFC work. "
+                            "Only one micro-issue per RFC series should be active at a time.",
                         },
                         {
                             "action": "delete_branch",
@@ -277,12 +438,27 @@ class RFCCleanupRunner:
         duplicates = self.logic.find_duplicate_rfcs(prs)
         print(f"Found {len(duplicates)} RFC series with duplicates")
 
-        if not duplicates:
-            print("✅ No duplicate RFCs found")
-            return True
+        # Check for broken issues (Copilot-assigned issues with closed PRs but no open PRs)
+        print("\n🔍 Checking for broken issue chains...")
+        issues_data = self.gh.get_issues_and_prs_for_broken_chain_detection()
+        copilot_issues = issues_data.get("issues", [])
+        broken_issues = self.logic.find_broken_issues(copilot_issues)
+        print(f"Found {len(broken_issues)} broken issue chains")
 
         # Generate cleanup actions
-        actions = self.logic.generate_cleanup_actions(duplicates)
+        actions = []
+
+        if duplicates:
+            duplicate_actions = self.logic.generate_cleanup_actions(duplicates)
+            actions.extend(duplicate_actions)
+
+        if broken_issues:
+            broken_actions = self.logic.generate_broken_issue_cleanup_actions(broken_issues)
+            actions.extend(broken_actions)
+
+        if not actions:
+            print("✅ No cleanup actions needed")
+            return True
 
         print(f"\n📝 Generated {len(actions)} cleanup actions")
 
@@ -291,6 +467,46 @@ class RFCCleanupRunner:
 
         print("🎉 Cleanup process completed!")
         return success
+
+    def _recreate_broken_issue(self, issue_number: int, title: str) -> bool:
+        """Recreate a broken issue using the cleanup_recreate_issue.py script."""
+        try:
+            import subprocess
+            import sys
+            import os
+
+            # Get the script path relative to this script
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            cleanup_script = os.path.join(script_dir, "cleanup_recreate_issue.py")
+
+            owner, name = self.repo.split("/")
+
+            cmd = [
+                sys.executable, cleanup_script,
+                "--owner", owner,
+                "--repo", name,
+                "--issue-number", str(issue_number),
+                "--title", f"Recreated broken chain: {title}",
+                "--assign-mode", "bot"
+            ]
+
+            # Set up environment with token
+            env = os.environ.copy()
+            if self.gh.token:
+                env["GH_TOKEN"] = self.gh.token
+
+            result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+
+            if result.returncode == 0:
+                print(f"[SUCCESS] Successfully recreated issue #{issue_number}")
+                return True
+            else:
+                print(f"[ERROR] Failed to recreate issue #{issue_number}: {result.stderr}")
+                return False
+
+        except Exception as e:
+            print(f"[ERROR] Exception while recreating issue #{issue_number}: {e}")
+            return False
 
     def _execute_actions(self, actions: List[Dict[str, Any]]) -> bool:
         """Execute the cleanup actions."""
@@ -301,34 +517,45 @@ class RFCCleanupRunner:
 
             try:
                 if action_type == "keep_pr":
-                    print(f"✅ Keeping PR #{action['pr_number']}: {action['title']}")
+                    print(f"[SUCCESS] Keeping PR #{action['pr_number']}: {action['title']}")
 
                 elif action_type == "close_pr":
                     if self.dry_run:
                         print(
-                            f"🔍 Would close PR #{action['pr_number']}: {action['title']}"
+                            f"[DRY_RUN] Would close PR #{action['pr_number']}: {action['title']}"
                         )
                     else:
                         print(
-                            f"📝 Closing PR #{action['pr_number']}: {action['title']}"
+                            f"[INFO] Closing PR #{action['pr_number']}: {action['title']}"
                         )
                         if not self.gh.close_pr(action["pr_number"], action["comment"]):
-                            print(f"❌ Failed to close PR #{action['pr_number']}")
+                            print(f"[ERROR] Failed to close PR #{action['pr_number']}")
                             success = False
 
                 elif action_type == "delete_branch":
                     branch_name = action["branch_name"]
                     if self.dry_run:
-                        print(f"🔍 Would delete branch: {branch_name}")
+                        print(f"[DRY_RUN] Would delete branch: {branch_name}")
                     else:
-                        print(f"🗑️  Deleting branch: {branch_name}")
+                        print(f"[INFO]  Deleting branch: {branch_name}")
                         if not self.gh.delete_branch(branch_name):
-                            print(f"❌ Failed to delete branch: {branch_name}")
+                            print(f"[ERROR] Failed to delete branch: {branch_name}")
+                            success = False
+
+                elif action_type == "recreate_broken_issue":
+                    issue_number = action["issue_number"]
+                    title = action["title"]
+                    if self.dry_run:
+                        print(f"[DRY_RUN] Would recreate broken issue #{issue_number}: {title}")
+                    else:
+                        print(f"[INFO] Recreating broken issue #{issue_number}: {title}")
+                        if not self._recreate_broken_issue(issue_number, title):
+                            print(f"[ERROR] Failed to recreate broken issue #{issue_number}")
                             success = False
 
                 elif action_type == "close_issue":
                     if self.dry_run:
-                        print(f"🔍 Would close issue for PR #{action['pr_number']}")
+                        print(f"[DRY_RUN] Would close issue for PR #{action['pr_number']}")
                     else:
                         # Find the corresponding issue
                         issues = self.gh.get_open_issues()
@@ -340,30 +567,30 @@ class RFCCleanupRunner:
 
                         if issue_number:
                             print(
-                                f"📝 Closing issue #{issue_number}: {action['title']}"
+                                f"[INFO] Closing issue #{issue_number}: {action['title']}"
                             )
                             if not self.gh.close_issue(issue_number, action["comment"]):
-                                print(f"❌ Failed to close issue #{issue_number}")
+                                print(f"[ERROR] Failed to close issue #{issue_number}")
                                 success = False
                         else:
                             print(
-                                f"⚠️  Could not find issue for PR #{action['pr_number']}"
+                                f"[WARNING]  Could not find issue for PR #{action['pr_number']}"
                             )
 
                 elif action_type == "recreate_issue":
                     if self.dry_run:
-                        print(f"🔍 Would recreate issue: {action['title']}")
+                        print(f"[DRY_RUN] Would recreate issue: {action['title']}")
                     else:
-                        print(f"🔄 Recreating issue: {action['title']}")
+                        print(f"[INFO] Recreating issue: {action['title']}")
                         labels = [f'rfc-{action["rfc_number"]}']
                         if not self.gh.create_issue(
                             action["title"], action["body"], labels
                         ):
-                            print(f"❌ Failed to recreate issue: {action['title']}")
+                            print(f"[ERROR] Failed to recreate issue: {action['title']}")
                             success = False
 
             except Exception as e:
-                print(f"❌ Error executing action {action_type}: {e}")
+                print(f"[ERROR] Error executing action {action_type}: {e}")
                 success = False
 
         return success
@@ -387,7 +614,7 @@ def main():
 
     if not args.repo:
         print(
-            "❌ Repository not specified. Use --repo or set GITHUB_REPOSITORY environment variable"
+            "[ERROR] Repository not specified. Use --repo or set GITHUB_REPOSITORY environment variable"
         )
         return 1
 
