@@ -1,5 +1,6 @@
 using GameConsole.Core.Abstractions;
 using GameConsole.Core.Registry;
+using GameConsole.Graphics.Core;
 using GameConsole.Graphics.Services;
 using Microsoft.Extensions.Logging;
 using Xunit;

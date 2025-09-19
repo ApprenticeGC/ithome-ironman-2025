@@ -1,6 +1,5 @@
 using GameConsole.Core.Abstractions;
 using GameConsole.Graphics.Core;
-using GameConsole.Graphics.Services;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
 
@@ -9,7 +8,7 @@ namespace GameConsole.Graphics.Services;
 /// <summary>
 /// Base implementation for graphics services providing common functionality.
 /// </summary>
-public abstract class BaseGraphicsService : GameConsole.Graphics.Services.IService
+public abstract class BaseGraphicsService : GameConsole.Graphics.Core.IService
 {
     protected readonly ILogger _logger;
     private bool _isRunning;

@@ -1,7 +1,7 @@
 using GameConsole.Core.Abstractions;
 using System.Numerics;
 
-namespace GameConsole.Graphics.Services;
+namespace GameConsole.Graphics.Core;
 
 /// <summary>
 /// Core graphics service interface for rendering abstraction.
