@@ -9,6 +9,7 @@ Exits 0 always to avoid flapping; logs actions for observability.
 """
 import json
 import os
+import re
 import subprocess
 import sys
 from typing import List, Optional
@@ -36,6 +37,62 @@ def gh_json(cmd: List[str], extra_env: Optional[dict] = None):
     if not res.stdout or not res.stdout.strip():
         raise ValueError(f"Empty response from command: {' '.join(cmd)}")
     return json.loads(res.stdout)
+
+
+def resolve_commit_sha(repo: str, ref: str, extra_env: Optional[dict] = None) -> Optional[str]:
+    """Resolve a branch, tag, or SHA to a commit OID."""
+    if not ref:
+        return None
+    ref = ref.strip()
+    if not ref:
+        return None
+    if "/" not in repo:
+        return None
+    owner, name = repo.split("/", 1)
+    candidates = [ref]
+    if ref.startswith("refs/"):
+        heads = ref.removeprefix("refs/heads/")
+        tags = ref.removeprefix("refs/tags/")
+        if heads != ref:
+            candidates.append(heads)
+        if tags != ref:
+            candidates.append(tags)
+    else:
+        candidates.extend([f"refs/heads/{ref}", f"refs/tags/{ref}"])
+
+    env_for_gh = extra_env or None
+    for candidate in candidates:
+        if not candidate:
+            continue
+        result = run(
+            [
+                "gh",
+                "api",
+                "graphql",
+                "-F",
+                f"owner={owner}",
+                "-F",
+                f"name={name}",
+                "-F",
+                f"expression={candidate}",
+                "-f",
+                (
+                    "query=query($owner:String!,$name:String!,$expression:String!)"
+                    "{repository(owner:$owner,name:$name){object(expression:$expression){... on Commit { oid }}}}"
+                ),
+                "--jq",
+                ".data.repository.object.oid // empty",
+            ],
+            check=False,
+            extra_env=env_for_gh,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+
+    if re.fullmatch(r"[0-9a-f]{40}", ref):
+        return ref
+
+    return None
 
 
 def list_open_copilot_prs(repo: str):
@@ -190,9 +247,15 @@ def dispatch_ci(repo: str, branch: str) -> bool:
     pat = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN")
     if pat:
         env_pat["GH_TOKEN"] = pat
+
+    resolved_sha = resolve_commit_sha(repo, branch, env_pat if env_pat else None)
+    if not resolved_sha:
+        sys.stderr.write(f"dispatch_ci: unable to resolve {branch} to a commit; skipping CI dispatch.\n")
+        return False
+
     try:
         run(
-            ["gh", "workflow", "run", "ci", "--ref", branch],
+            ["gh", "workflow", "run", "ci", "--ref", resolved_sha],
             check=True,
             extra_env=env_pat,
         )
@@ -211,7 +274,7 @@ def dispatch_ci(repo: str, branch: str) -> bool:
             ci_id = next((str(wf["id"]) for wf in wfs if wf.get("name") == "ci"), None)
             if ci_id:
                 run(
-                    ["gh", "workflow", "run", ci_id, "--ref", branch],
+                    ["gh", "workflow", "run", ci_id, "--ref", resolved_sha],
                     check=True,
                     extra_env=env_pat,
                 )
@@ -222,6 +285,7 @@ def dispatch_ci(repo: str, branch: str) -> bool:
                 f"STDOUT: {getattr(e2, 'stdout', 'N/A')}\n"
                 f"STDERR: {getattr(e2, 'stderr', 'N/A')}\n"
             )
+
     # Fallback to generic dispatcher with input
     try:
         run(

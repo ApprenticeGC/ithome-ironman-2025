@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import re
 import subprocess
 import sys
 from typing import List, Set
@@ -35,17 +36,65 @@ def gh_json(cmd: List[str], extra_env: dict | None = None):
     return json.loads(res.stdout)
 
 
-def branch_exists(repo: str, branch: str) -> bool:
-    """Check if a branch exists in the repository."""
-    try:
-        run(
-            ["gh", "api", f"repos/{repo}/branches/{branch}"],
-            check=True,
-            capture=True,
+def resolve_commit_sha(repo: str, ref: str, extra_env: dict | None = None) -> str | None:
+    """Resolve a branch, tag, or commit SHA via GraphQL."""
+    if not ref:
+        return None
+    ref = ref.strip()
+    if not ref:
+        return None
+    if "/" not in repo:
+        return None
+    owner, name = repo.split("/", 1)
+    candidates = [ref]
+    if ref.startswith("refs/"):
+        heads = ref.removeprefix("refs/heads/")
+        tags = ref.removeprefix("refs/tags/")
+        if heads != ref:
+            candidates.append(heads)
+        if tags != ref:
+            candidates.append(tags)
+    else:
+        candidates.extend([f"refs/heads/{ref}", f"refs/tags/{ref}"])
+
+    env_for_gh = extra_env or None
+    for candidate in candidates:
+        if not candidate:
+            continue
+        result = run(
+            [
+                "gh",
+                "api",
+                "graphql",
+                "-F",
+                f"owner={owner}",
+                "-F",
+                f"name={name}",
+                "-F",
+                f"expression={candidate}",
+                "-f",
+                (
+                    "query=query($owner:String!,$name:String!,$expression:String!)"
+                    "{repository(owner:$owner,name:$name){object(expression:$expression){... on Commit { oid }}}}"
+                ),
+                "--jq",
+                ".data.repository.object.oid // empty",
+            ],
+            check=False,
+            extra_env=env_for_gh,
         )
-        return True
-    except subprocess.CalledProcessError:
-        return False
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+
+    if re.fullmatch(r"[0-9a-f]{40}", ref):
+        return ref
+
+    return None
+
+
+def branch_exists(repo: str, branch: str, extra_env: dict | None = None) -> bool:
+    """Check if a branch or ref resolves to a commit."""
+    return resolve_commit_sha(repo, branch, extra_env) is not None
 
 
 def list_action_required_runs(repo: str):
@@ -173,42 +222,48 @@ def rerun(repo: str, run_id: int) -> bool:
 
 
 def dispatch_ci(repo: str, branch: str) -> bool:
-    # Check if branch exists first
-    if not branch_exists(repo, branch):
-        print(f"Branch {branch} does not exist, skipping CI dispatch")
-        return False
-
-    # Try by workflow name, fall back to id
-    # Use PAT if available to bypass approval gate
+    # Prefer PAT if available for ref resolution and dispatch
     env_pat = {}
     pat = os.environ.get("AUTO_APPROVE_PAT") or os.environ.get("GH_TOKEN")
     if pat:
         env_pat["GH_TOKEN"] = pat
+
+    resolved_sha = resolve_commit_sha(repo, branch, env_pat if env_pat else None)
+    if not resolved_sha:
+        print(f"Branch {branch} does not resolve to a commit, skipping CI dispatch")
+        return False
+
+    # Try by workflow name, fall back to id
     try:
         run(
-            ["gh", "workflow", "run", "ci", "--ref", branch],
+            ["gh", "workflow", "run", "ci", "--ref", resolved_sha],
             check=True,
             extra_env=env_pat,
         )
         return True
     except subprocess.CalledProcessError as e1:
-        sys.stderr.write(f"dispatch_ci name error for {branch}: {e1}\nSTDOUT: {e1.stdout}\nSTDERR: {e1.stderr}\n")
+        sys.stderr.write(
+            f"dispatch_ci name error for {branch}: {e1}\n" f"STDOUT: {e1.stdout}\n" f"STDERR: {e1.stderr}\n"
+        )
         try:
             wf_list = gh_json(["gh", "workflow", "list", "--json", "name,id"], extra_env=env_pat)
             ci_id = next((str(wf["id"]) for wf in wf_list if wf.get("name") == "ci"), None)
             if ci_id:
                 run(
-                    ["gh", "workflow", "run", ci_id, "--ref", branch],
+                    ["gh", "workflow", "run", ci_id, "--ref", resolved_sha],
                     check=True,
                     extra_env=env_pat,
                 )
                 return True
         except subprocess.CalledProcessError as e2:
-            sys.stderr.write(f"dispatch_ci id error for {branch}: {e2}\nSTDOUT: {e2.stdout}\nSTDERR: {e2.stderr}\n")
+            sys.stderr.write(
+                f"dispatch_ci id error for {branch}: {e2}\n" f"STDOUT: {e2.stdout}\n" f"STDERR: {e2.stderr}\n"
+            )
+
     # Fallback: use ci-dispatch workflow with explicit input
     try:
         run(
-            ["gh", "workflow", "run", "ci-dispatch", "-f", f"target_ref={branch}"],
+            ["gh", "workflow", "run", "ci-dispatch", "-f", f"target_ref={resolved_sha}"],
             check=True,
             extra_env=env_pat,
         )
