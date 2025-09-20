@@ -1,0 +1,43 @@
+name: reusable-pr-merge
+
+on:
+  workflow_call:
+    inputs:
+      repo:
+        description: Repository owner/name override
+        required: false
+        type: string
+      pr_number:
+        description: Explicit PR number to process
+        required: false
+        type: string
+      event_json:
+        description: Serialized event payload for context
+        required: false
+        type: string
+
+jobs:
+  ensure_automerge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Ensure auto-merge state
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          AUTO_APPROVE_PAT: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          TARGET_REPO: ${{ inputs.repo || github.repository }}
+          PR_NUMBER_INPUT: ${{ inputs.pr_number || '' }}
+          EVENT_JSON_INPUT: ${{ inputs.event_json || '' }}
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="scripts/python/production:$PYTHONPATH"
+          cmd=(python3 scripts/python/production/orchestrator_cli.py monitor --target auto-merge --repo "$TARGET_REPO")
+          if [ -n "$PR_NUMBER_INPUT" ]; then
+            cmd+=(--pr-number "$PR_NUMBER_INPUT")
+          fi
+          if [ -n "$EVENT_JSON_INPUT" ]; then
+            cmd+=(--event-json "$EVENT_JSON_INPUT")
+          fi
+          "${cmd[@]}"

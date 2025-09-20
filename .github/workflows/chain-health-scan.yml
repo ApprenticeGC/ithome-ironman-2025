@@ -36,11 +36,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cmd=(python scripts/python/production/chain_consistency_manager.py
-               --repo "${{ github.repository }}"
-               --output chain_reset_plan.json
-               --max-runs "${CHAIN_MAX_RUNS}"
-               --emit-events
+          cmd=(python scripts/python/production/orchestrator_cli.py cleanup \
+               --repo "${{ github.repository }}" \
+               --output chain_reset_plan.json \
+               --max-runs "${CHAIN_MAX_RUNS}" \
+               --emit-events \
                --event-source workflow:chain-health-scan)
           if [ "${CHAIN_DESTRUCTIVE}" = "true" ]; then
             cmd+=("--destructive")

@@ -15,30 +15,26 @@ permissions:
 
 jobs:
   ensure_automerge:
-    if: >-
-      ${{
-        (github.event_name == 'pull_request' && github.event.pull_request.draft == false) ||
-        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-      }}
-    environment: copilot
+    uses: ./.github/workflows/reusable-pr-merge.yml
+    secrets: inherit  # pragma: allowlist secret
+    with:
+      repo: ${{ github.repository }}
+      pr_number: ${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || "" }}
+      event_json: ${{ toJson(github.event) }}
+
+  run_diagnostic_workflow:
+    needs: ensure_automerge
+    if: ${{ contains(github.event.pull_request.title || github.event.workflow_run.head_branch || "", "RFC-099") }}
     runs-on: ubuntu-latest
+    environment: copilot
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Ensure auto-merge or comment diagnostics
-        env:
-          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          GITHUB_EVENT: ${{ toJson(github.event) }}
-          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
-        run: python3 scripts/python/production/ensure_automerge_or_comment.py
-        
       - name: Run diagnostic workflow analysis for RFC-099
-        if: contains(github.event.pull_request.title || github.event.workflow_run.head_branch, 'RFC-099')
         env:
-          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}  # pragma: allowlist secret
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}  # pragma: allowlist secret
           REPO: ${{ github.repository }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          echo "🔍 Running diagnostic workflow analysis for RFC-099..."
-          python3 scripts/python/production/test_diagnostic_workflow.py || echo "Diagnostic test completed with warnings/errors"
+          export PYTHONPATH="scripts/python/production:$PYTHONPATH"
+          python3 scripts/python/production/orchestrator_cli.py diagnose --repo "$REPO"
