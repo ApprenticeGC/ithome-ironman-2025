@@ -68,4 +68,9 @@ Phase 3: cutover + archive legacy.
 - Introduced `scripts/python/production/orchestrator_cli.py` with `monitor`, `approve`, `diagnose`, and `cleanup` subcommands; legacy workflows now route through the CLI for consistent execution paths.
 - Updated monitors (`pr-flow-monitor.yml`, `auto-approve-workflows.yml`, `chain-health-scan.yml`) to call the orchestrator CLI, setting the stage for future consolidation into a single `flow-monitor.yml`.
 
-**Next**: shadow legacy monitors behind the orchestrator and collapse redundant schedules before deprecating the original workflows.
+## Implementation (Phase 2)
+- Added `--shadow` support to the orchestrator CLI monitor command so workflows can execute in log-only mode without mutating repo state.
+- Introduced `.github/workflows/flow-monitor-shadow.yml`, scheduled alongside the existing monitors to exercise the unified orchestrator in shadow mode for PR-flow and auto-merge scenarios.
+- Shadow runs rely on the same secrets/environment wiring as production monitors, providing signal coverage ahead of the full cutover while keeping legacy automation active.
+
+**Next**: compare shadow logs against legacy automation for a full week, then retire the standalone monitor workflows in favour of a consolidated `flow-monitor.yml`.

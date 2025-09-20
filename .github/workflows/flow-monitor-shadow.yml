@@ -1,0 +1,37 @@
+name: flow-monitor-shadow
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    environment: copilot
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Shadow PR flow monitor
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}  # pragma: allowlist secret
+          AUTO_APPROVE_PAT: ${{ secrets.AUTO_APPROVE_TOKEN }}  # pragma: allowlist secret
+          REPO: ${{ github.repository }}
+        run: |
+          export PYTHONPATH="scripts/python/production:$PYTHONPATH"
+          python3 scripts/python/production/orchestrator_cli.py monitor --target pr-flow --repo "$REPO" --shadow
+
+      - name: Shadow auto-merge monitor
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}  # pragma: allowlist secret
+          AUTO_APPROVE_PAT: ${{ secrets.AUTO_APPROVE_TOKEN }}  # pragma: allowlist secret
+          REPO: ${{ github.repository }}
+        run: |
+          export PYTHONPATH="scripts/python/production:$PYTHONPATH"
+          python3 scripts/python/production/orchestrator_cli.py monitor --target auto-merge --repo "$REPO" --shadow

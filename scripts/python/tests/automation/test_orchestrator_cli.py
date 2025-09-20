@@ -30,12 +30,21 @@ def test_monitor_auto_merge_sets_pr_and_event(monkeypatch):
     monkeypatch.delenv("GITHUB_EVENT", raising=False)
 
     with mock.patch("ensure_automerge_or_comment.main") as auto_merge_mock:
-        orchestrator_cli.run_monitor("auto-merge", "target/repo", 42, "{" "key" ": " "value" "}")
+        orchestrator_cli.run_monitor("auto-merge", "target/repo", 42, '{"key": "value"}')
         auto_merge_mock.assert_called_once()
 
     assert os.environ["REPO"] == "existing/repo"
     assert "PR_NUMBER" not in os.environ
     assert "GITHUB_EVENT" not in os.environ
+
+
+def test_monitor_shadow_skips_execution(monkeypatch):
+    monkeypatch.delenv("REPO", raising=False)
+
+    with mock.patch("monitor_pr_flow.main") as monitor_mock:
+        result = orchestrator_cli.run_monitor("pr-flow", "org/repo", None, None, shadow=True)
+        monitor_mock.assert_not_called()
+        assert result == 0
 
 
 def test_cleanup_argument_build(monkeypatch):

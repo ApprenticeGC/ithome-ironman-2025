@@ -48,7 +48,19 @@ def _load_event_json(event_json: Optional[str]) -> Optional[str]:
     return json.dumps(parsed, separators=(",", ":"))
 
 
-def run_monitor(target: str, repo: Optional[str], pr_number: Optional[int], event_json: Optional[str]) -> int:
+def run_monitor(
+    target: str,
+    repo: Optional[str],
+    pr_number: Optional[int],
+    event_json: Optional[str],
+    *,
+    shadow: bool = False,
+) -> int:
+    if shadow:
+        descriptor = f"target={target} repo={repo or os.environ.get('REPO', '<unset>')}"
+        print(f"[shadow] monitor run skipped ({descriptor})")
+        return 0
+
     if target == "auto-merge":
         from ensure_automerge_or_comment import main as ensure_automerge_main
 
@@ -147,6 +159,7 @@ def create_parser() -> argparse.ArgumentParser:
     monitor_parser.add_argument("--repo", help="Override repository (owner/name)")
     monitor_parser.add_argument("--pr-number", type=int, help="Explicit PR number (auto-merge)")
     monitor_parser.add_argument("--event-json", help="Raw event payload to pass to the monitor")
+    monitor_parser.add_argument("--shadow", action="store_true", help="Run monitor in log-only shadow mode")
 
     approve_parser = subparsers.add_parser("approve", help="Auto-approve pending workflows")
     approve_parser.add_argument("--repo", help="Override repository (owner/name)")
@@ -169,7 +182,7 @@ def create_parser() -> argparse.ArgumentParser:
 
 def dispatch(args: argparse.Namespace) -> int:
     if args.command == "monitor":
-        return run_monitor(args.target, args.repo, args.pr_number, args.event_json)
+        return run_monitor(args.target, args.repo, args.pr_number, args.event_json, shadow=args.shadow)
     if args.command == "approve":
         return run_approve(args.repo)
     if args.command == "diagnose":
