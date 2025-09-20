@@ -55,3 +55,39 @@ jobs:
             --repo "$REPO_NAME" \
             --issue-number ${{ github.event.inputs.issue_number }} \
             --assign-mode bot
+
+      - name: Emit issue assignment event
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          ISSUE_NUMBER: ${{ github.event.inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          export PYTHONPATH=scripts/python/production:$PYTHONPATH
+          python <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+
+          from event_bus import EventBusError, emit_event
+
+          owner = os.environ['OWNER']
+          repo = os.environ['REPO_NAME']
+          issue_number = int(os.environ['ISSUE_NUMBER'])
+          result = subprocess.run(['gh', 'issue', 'view', str(issue_number), '--json', 'title'], capture_output=True, text=True, check=True)
+          issue_title = json.loads(result.stdout)['title']
+          match = re.search(r'(?:Game-)?RFC-(\d+)-(\d+)', issue_title)
+          if match:
+              series = f"RFC-{int(match.group(1)):03d}"
+              micro = f"{int(match.group(2)):02d}"
+              payload = {'issue': issue_number, 'series': series, 'micro': micro}
+              try:
+                  emit_event('rfc.issue.assigned', payload, repo=f"{owner}/{repo}", source='workflow:assign-copilot')
+              except EventBusError as exc:
+                  print(f'Warning: failed to emit rfc.issue.assigned event: {exc}', file=os.sys.stderr)
+          else:
+              print('Issue title did not contain RFC identifier; skipping event emission', file=os.sys.stderr)
+          PY

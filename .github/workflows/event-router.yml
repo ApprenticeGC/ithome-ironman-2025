@@ -1,0 +1,143 @@
+name: event-router
+
+on:
+  repository_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract event payload
+        id: prepare
+        run: |
+          python <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          event_path = Path(os.environ['GITHUB_EVENT_PATH'])
+          event = json.loads(event_path.read_text())
+          client_payload = event.get('client_payload') or {}
+          Path('artifacts').mkdir(exist_ok=True)
+          Path('artifacts/client_payload.json').write_text(json.dumps(client_payload, indent=2))
+          Path('artifacts/payload_only.json').write_text(json.dumps(client_payload.get('payload') or {}, indent=2))
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as gh:
+              gh.write(f"event_type={event.get('action','')}\n")
+          PY
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate event envelope schema
+        run: |
+          npm install -g ajv-cli@5
+          ajv validate -s docs/events/schema/repository-dispatch.schema.json -d artifacts/client_payload.json
+
+      - name: Validate issue-assigned payload schema
+        if: steps.prepare.outputs.event_type == 'rfc.issue.assigned'
+        run: ajv validate -s docs/events/schema/rfc.issue.assigned.json -d artifacts/payload_only.json
+
+      - name: Validate chain-broken payload schema
+        if: steps.prepare.outputs.event_type == 'rfc.chain.broken'
+        run: ajv validate -s docs/events/schema/rfc.chain.broken.json -d artifacts/payload_only.json
+
+      - name: Append event log
+        run: |
+          python <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          event_log = Path('event_log.jsonl')
+          client_payload = json.loads(Path('artifacts/client_payload.json').read_text())
+          record = {
+              'timestamp': datetime.now(timezone.utc).isoformat(),
+              'event_type': '${{ steps.prepare.outputs.event_type }}',
+              'payload': client_payload,
+          }
+          with event_log.open('a', encoding='utf-8') as fh:
+              fh.write(json.dumps(record) + '\n')
+          PY
+
+      - name: Route downstream workflows
+        env:
+          EVENT_TYPE: ${{ steps.prepare.outputs.event_type }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+          from typing import Dict, List, Any
+
+
+          def load_payload(path: str) -> Dict[str, Any]:
+              try:
+                  with open(path, "r", encoding="utf-8") as handle:
+                      return json.load(handle)
+              except FileNotFoundError:
+                  return {}
+              except json.JSONDecodeError as exc:  # Defensive; schema should prevent this.
+                  print(f"Invalid payload JSON: {exc}", file=sys.stderr)
+                  return {}
+
+
+          event_type = os.environ.get("EVENT_TYPE", "")
+          payload = load_payload("artifacts/payload_only.json")
+          routes: List[Dict[str, Any]] = []
+
+          if event_type == "rfc.issue.assigned":
+              routes.append({"workflow": "pr-flow-monitor.yml"})
+          elif event_type == "rfc.chain.broken":
+              states = set(payload.get("states") or [])
+              if states.intersection({"PR_CLOSED_CONFLICT", "DUPLICATE_PRS"}):
+                  routes.append({"workflow": "rfc-cleanup-duplicates.yml"})
+              if states.intersection({"BRANCH_ONLY", "CI_STUCK"}):
+                  routes.append({"workflow": "cleanup-stalled-prs.yml"})
+
+
+          def dispatch(route: Dict[str, Any]) -> None:
+              workflow = route["workflow"]
+              ref = route.get("ref", "main")
+              inputs = route.get("inputs", {}) or {}
+              print(f"Dispatching workflow '{workflow}' on ref '{ref}' with inputs {inputs}.")
+              cmd = [
+                  "gh",
+                  "workflow",
+                  "run",
+                  str(workflow),
+                  "--ref",
+                  str(ref),
+              ]
+              if isinstance(inputs, dict):
+                  for key, value in inputs.items():
+                      cmd.extend(["-f", f"{key}={value}"])
+              subprocess.run(cmd, check=True)
+
+
+          if not routes:
+              print(f"No downstream routing defined for event type '{event_type}'.")
+          else:
+              for route in routes:
+                  dispatch(route)
+          PY
+
+      - name: Upload event artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: event-router-${{ github.run_id }}
+          path: |
+            artifacts/client_payload.json
+            artifacts/payload_only.json
+            event_log.jsonl

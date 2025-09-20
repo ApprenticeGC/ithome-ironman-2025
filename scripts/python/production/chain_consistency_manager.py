@@ -447,6 +447,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--output", default="chain_reset_plan.json", help="Path to write remediation plan JSON")
     parser.add_argument("--max-runs", type=int, default=200, help="Maximum workflow runs to inspect")
     parser.add_argument("--destructive", action="store_true", help="Execute destructive cleanup (not yet implemented)")
+    parser.add_argument("--emit-events", action="store_true", help="Emit repository_dispatch events for flagged chains")
+    parser.add_argument(
+        "--event-source", default="workflow:chain-health-scan", help="Source identifier for emitted events"
+    )
     parser.add_argument("--print", action="store_true", help="Print plan JSON to stdout as well")
     return parser.parse_args(argv)
 
@@ -464,6 +468,25 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
 
     plan = generate_plan(repo, max_runs=args.max_runs)
+
+    if args.emit_events and plan["summary"]["chains_flagged"] > 0:
+        try:
+            from event_bus import EventBusError, emit_event  # type: ignore
+        except ImportError:
+            print("event_bus module not found; skipping event emission", file=sys.stderr)
+        else:
+            for chain in plan.get("chains", []):
+                states = chain.get("states", [])
+                payload = {
+                    "chain_id": chain.get("chain_id"),
+                    "reason": states[0] if states else "unknown",
+                    "states": states,
+                }
+                try:
+                    emit_event("rfc.chain.broken", payload, source=args.event_source, repo=repo)
+                except EventBusError as exc:
+                    print(f'Failed to emit event for {payload["chain_id"]}: {exc}', file=sys.stderr)
+
     output_path = os.path.abspath(args.output)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as fh:
