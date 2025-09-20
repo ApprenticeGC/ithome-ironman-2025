@@ -1,0 +1,52 @@
+name: chain-health-scan
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      destructive:
+        description: "Execute destructive remediation (not yet available)"
+        required: false
+        type: boolean
+      max_runs:
+        description: "Maximum workflow runs to inspect"
+        required: false
+        default: "200"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CHAIN_MAX_RUNS: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.max_runs) || '200' }}
+      CHAIN_DESTRUCTIVE: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.destructive) || 'false' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate chain consistency plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmd=(python scripts/python/production/chain_consistency_manager.py
+               --repo "${{ github.repository }}"
+               --output chain_reset_plan.json
+               --max-runs "${CHAIN_MAX_RUNS}")
+          if [ "${CHAIN_DESTRUCTIVE}" = "true" ]; then
+            cmd+=("--destructive")
+          fi
+          "${cmd[@]}"
+
+      - name: Upload chain plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-consistency-plan
+          path: chain_reset_plan.json
