@@ -34,6 +34,16 @@ jobs:
             exit 1
           fi
 
+      - name: Acquire RFC series lock
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          OWNER=${{ github.repository_owner }}
+          REPO_NAME=${{ github.event.repository.name }}
+          python3 scripts/python/production/rfc_assignment_mutex.py \
+            --owner "$OWNER" \
+            --repo "$REPO_NAME" \
+            --issue-number ${{ github.event.inputs.issue_number }}
       - name: Assign issue to Copilot
         env:
           GH_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
