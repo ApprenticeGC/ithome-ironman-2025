@@ -83,7 +83,7 @@ jobs:
           echo "Resolved $ref to commit $sha (via $resolved)"
 
       - name: Checkout target ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ steps.resolve_ref.outputs.checkout_ref }}
 

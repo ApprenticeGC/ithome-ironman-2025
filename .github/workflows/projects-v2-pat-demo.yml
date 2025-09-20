@@ -38,7 +38,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Auto-add new issue to project
       if: github.event_name == 'issues' && github.event.action == 'opened'
