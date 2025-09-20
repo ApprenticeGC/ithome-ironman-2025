@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Payload for rfc.issue.assigned",
+  "type": "object",
+  "required": ["issue", "series", "micro"],
+  "properties": {
+    "issue": { "type": "integer", "minimum": 1 },
+    "series": { "type": "string", "pattern": "^RFC-\d{3}$" },
+    "micro": { "type": "string", "pattern": "^\d{2}$" }
+  },
+  "additionalProperties": false
+}
