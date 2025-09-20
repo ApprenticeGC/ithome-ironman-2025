@@ -71,6 +71,31 @@ jobs:
           fi
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          RFC_DB_V2: "1"
+          NOTION_RELIABLE: "1"
+
+      - name: Bulk ingest pages with reliable client
+        if: steps.detect-changes.outputs.ready_pages > 0 || github.event.inputs.force_process == 'true'
+        run: |
+          READY_PAGES=$(python -c "
+          import json
+          with open('changes.json') as f:
+              data = json.load(f)
+          ready_pages = [p['page_id'] for p in data.get('processed_pages', []) if p.get('status') == 'ready']
+          print(' '.join(ready_pages))
+          ")
+
+          if [ -n "$READY_PAGES" ]; then
+            echo "Bulk ingesting pages: $READY_PAGES"
+            python scripts/python/production/notion_reliability.py \
+              --pages $READY_PAGES \
+              --db ./rfc_tracking.db \
+              --journal notion_ingestion_journal.log \
+              ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+          fi
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          RFC_DB_V2: "1"
 
       - name: Process ready implementation pages
         if: steps.detect-changes.outputs.ready_pages > 0 || github.event.inputs.force_process == 'true'
@@ -106,6 +131,8 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RFC_DB_V2: "1"
+          NOTION_RELIABLE: "1"
 
       - name: Generate processing report
         if: always()
@@ -151,5 +178,7 @@ jobs:
           name: rfc-processing-results-${{ github.run_number }}
           path: |
             changes.json
+            notion_ingestion_journal.log
+            notion_ingestion_metrics.json
             *.log
           retention-days: 30

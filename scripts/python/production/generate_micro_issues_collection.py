@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import sys
 from typing import Any, Dict, List
@@ -16,19 +17,50 @@ from generate_micro_issues_from_rfc import (
     NotionClient,
     TrackingDatabase,
     generate_content_hash,
-    notion_token,
+    get_notion_client,
     parse_micro_sections,
     parse_micro_table,
     parse_notion_page,
     read_text,
 )
 
+USE_DB_V2 = os.environ.get("RFC_DB_V2") == "1"
+if USE_DB_V2:
+    from rfc_db_v2 import PageRecord, open_db
+
 
 class CollectionProcessor:
     """Process multiple RFC pages as a collection"""
 
     def __init__(self, db_path: str):
-        self.db = TrackingDatabase(db_path)
+        if USE_DB_V2:
+            ctx = open_db(db_path)
+            inner = ctx.__enter__()
+
+            class V2Adapter:
+                def check_existing_issue(self, ident: str):
+                    return inner.latest_issue_for_identifier(ident)
+
+                def get_stored_page(self, page_id: str):
+                    # Simple query replicating legacy method
+                    return None  # minimal for now; change detection uses legacy path only when v1
+
+                def record_page_state(self, page_id: str, page_title: str, content_hash: str, rfc_identifier: str):
+                    rec = PageRecord(
+                        page_id=page_id or f"virtual:{rfc_identifier}",
+                        page_title=page_title,
+                        last_edited_time="",
+                        content_hash=content_hash,
+                        rfc_identifier=rfc_identifier,
+                    )
+                    inner.upsert_page(rec)
+
+                def close(self):
+                    ctx.__exit__(None, None, None)
+
+            self.db = V2Adapter()
+        else:
+            self.db = TrackingDatabase(db_path)
 
     def process_notion_collection(self, page_ids: List[str], notion_client: NotionClient) -> Dict[str, Any]:
         """Process a collection of Notion pages"""
@@ -133,7 +165,7 @@ class CollectionProcessor:
                 current_hash = generate_content_hash(micro_item["body"], micro_item.get("page_metadata", {}))
 
                 # Check against stored state
-                stored_page = self.db.get_stored_page(page_id)
+                stored_page = None if USE_DB_V2 else self.db.get_stored_page(page_id)
 
                 if not stored_page:
                     changes["new_pages"].append(
@@ -223,15 +255,13 @@ def main(argv: List[str]) -> int:
     try:
         if args.notion_pages:
             # Process specific Notion pages
-            notion_api_token = args.notion_token or notion_token()
-            notion_client = NotionClient(notion_api_token)
+            notion_client = get_notion_client(args.notion_token)
 
             results = processor.process_notion_collection(args.notion_pages, notion_client)
 
         elif args.notion_collection:
             # Auto-discover and process pages under a collection
-            notion_api_token = args.notion_token or notion_token()
-            notion_client = NotionClient(notion_api_token)
+            notion_client = get_notion_client(args.notion_token)
 
             from notion_page_discovery import NotionPageDiscovery
 
@@ -265,8 +295,7 @@ def main(argv: List[str]) -> int:
 
         elif args.detect_changes:
             # Detect changes in Notion pages
-            notion_api_token = args.notion_token or notion_token()
-            notion_client = NotionClient(notion_api_token)
+            notion_client = get_notion_client(args.notion_token)
 
             results = processor.detect_changes(args.detect_changes, notion_client)
 

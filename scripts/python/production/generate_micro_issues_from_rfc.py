@@ -115,6 +115,17 @@ class NotionClient:
         return "".join(item.get("plain_text", "") for item in rich_text_array)
 
 
+# Legacy TrackingDatabase (v1) retained for backward compatibility.
+USE_DB_V2 = os.environ.get("RFC_DB_V2") == "1"
+USE_RELIABLE_NOTION = os.environ.get("NOTION_RELIABLE") == "1"
+
+if USE_RELIABLE_NOTION:
+    try:
+        from notion_reliability import NotionReliableClient  # type: ignore
+    except ImportError:
+        NotionReliableClient = None  # type: ignore
+
+
 class TrackingDatabase:
     """SQLite database for tracking RFC pages and GitHub issues"""
 
@@ -268,6 +279,7 @@ def parse_micro_sections(md: str):
 
 
 def parse_notion_page(page_id: str, notion_client: NotionClient) -> Dict[str, Any]:
+    """Parse Notion page and extract micro-issue information"""
     """Parse a single Notion page into a micro-issue"""
     page_metadata = notion_client.get_page(page_id)
     content = notion_client.extract_content_as_markdown(page_id)
@@ -423,6 +435,13 @@ def pick_assignee(nodes: list[dict], mode: str) -> dict | None:
     return None
 
 
+def get_notion_client(api_token: Optional[str] = None):
+    token_value = api_token or notion_token()
+    if USE_RELIABLE_NOTION and NotionReliableClient:
+        return NotionReliableClient(token_value)
+    return NotionClient(token_value)
+
+
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(description="Generate micro issues from RFC file or Notion page")
 
@@ -444,8 +463,36 @@ def main(argv: list[str]) -> int:
 
     args = p.parse_args(argv)
 
-    # Initialize tracking database
-    db = TrackingDatabase(args.db_path)
+    # Initialize tracking database (v1 or v2 wrapper)
+    if USE_DB_V2:
+        from rfc_db_v2 import PageRecord, open_db
+
+        db_v2_context = open_db(args.db_path)
+        db_v2 = db_v2_context.__enter__()
+
+        class V2Adapter:
+            def check_existing_issue(self, ident: str):
+                return db_v2.latest_issue_for_identifier(ident)
+
+            def record_page_state(self, page_id: str, page_title: str, content_hash: str, rfc_identifier: str):
+                rec = PageRecord(
+                    page_id=page_id or f"virtual:{rfc_identifier}",
+                    page_title=page_title,
+                    last_edited_time=datetime.utcnow().isoformat(),
+                    content_hash=content_hash,
+                    rfc_identifier=rfc_identifier,
+                )
+                db_v2.upsert_page(rec)
+
+            def record_issue_creation(self, issue_number: int, issue_title: str, page_id: str, content_hash: str):
+                db_v2.record_issue(issue_number, issue_title, page_id or f"virtual:{issue_title}", content_hash)
+
+            def close(self):
+                db_v2_context.__exit__(None, None, None)
+
+        db = V2Adapter()
+    else:
+        db = TrackingDatabase(args.db_path)
 
     try:
         # Parse input content
@@ -476,8 +523,7 @@ def main(argv: list[str]) -> int:
 
         elif args.notion_page_id:
             # Notion-based processing
-            notion_api_token = args.notion_token or notion_token()
-            notion_client = NotionClient(notion_api_token)
+            notion_client = get_notion_client(args.notion_token)
 
             try:
                 micro_item = parse_notion_page(args.notion_page_id, notion_client)
@@ -578,6 +624,10 @@ def main(argv: list[str]) -> int:
             # Record in tracking database
             if it.get("page_id"):
                 db.record_page_state(it["page_id"], title, content_hash, it["ident"])
+            else:
+                # For file based items still persist a virtual page handle in v2
+                if USE_DB_V2:
+                    db.record_page_state(None, title, content_hash, it["ident"])
             db.record_issue_creation(issue["number"], title, it.get("page_id", ""), content_hash)
 
             results.append({"title": title, "number": issue["number"], "url": issue["url"], "action": "created"})

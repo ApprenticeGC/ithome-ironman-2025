@@ -34,8 +34,8 @@ jobs:
 
       - name: Generate monthly usage badge JSON
         env:
-          GITHUB_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
-          USE_PROJECT_V2_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.USE_PROJECT_V2_TOKEN }}
+          AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           # Try enhanced calculation first (gets job-level data and current month)
