@@ -1,0 +1,143 @@
+name: reusable-ci-dispatch
+
+on:
+  workflow_call:
+    inputs:
+      target_ref:
+        description: "Git ref (branch or SHA) to run CI against"
+        required: true
+        type: string
+      checkout-depth:
+        description: "Fetch depth for checkout"
+        required: false
+        default: 0
+        type: number
+    outputs:
+      sha:
+        description: "Resolved commit SHA"
+        value: ${{ jobs.dispatch.outputs.sha }}
+      resolved_ref:
+        description: "Ref candidate that matched the input"
+        value: ${{ jobs.dispatch.outputs.resolved_ref }}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_REF: ${{ inputs.target_ref }}
+    outputs:
+      sha: ${{ steps.resolve_ref.outputs.sha }}
+      resolved_ref: ${{ steps.resolve_ref.outputs.resolved_ref }}
+    steps:
+      - name: Resolve target ref
+        id: resolve_ref
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ref="${TARGET_REF//$'\r'/}"
+          ref="${ref//$'\n'/}"
+          if [[ -z "$ref" ]]; then
+            echo "::error::target_ref input is empty"
+            exit 1
+          fi
+
+          owner="${GITHUB_REPOSITORY%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+
+          declare -a candidates=("$ref")
+          if [[ "$ref" == refs/* ]]; then
+            heads="${ref#refs/heads/}"
+            tags="${ref#refs/tags/}"
+            if [[ "$heads" != "$ref" ]]; then
+              candidates+=("$heads")
+            fi
+            if [[ "$tags" != "$ref" ]]; then
+              candidates+=("$tags")
+            fi
+          else
+            candidates+=("refs/heads/$ref" "refs/tags/$ref")
+          fi
+
+          sha=""
+          resolved=""
+
+          for candidate in "${candidates[@]}"; do
+            [[ -z "$candidate" ]] && continue
+            result=$(gh api graphql \
+              -F owner="$owner" \
+              -F name="$repo" \
+              -F expression="$candidate" \
+              -f query='query($owner:String!,$name:String!,$expression:String!){repository(owner:$owner,name:$name){object(expression:$expression){... on Commit { oid }}}}' \
+              --jq '.data.repository.object.oid // empty' 2>/dev/null)
+            if [[ -n "$result" ]]; then
+              sha="$result"
+              resolved="$candidate"
+              break
+            fi
+          done
+
+          if [[ -z "$sha" && "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+            sha="$ref"
+            resolved="$ref"
+          fi
+
+          if [[ -z "$sha" ]]; then
+            echo "::error::Unable to resolve target_ref '$ref' to a commit in $GITHUB_REPOSITORY." >&2
+            echo "Candidates attempted: ${candidates[*]}" >&2
+            exit 1
+          fi
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "resolved_ref=$resolved" >> "$GITHUB_OUTPUT"
+          echo "checkout_ref=$sha" >> "$GITHUB_OUTPUT"
+          echo "Resolved $ref to commit $sha (via $resolved)"
+
+      - name: Checkout target ref
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.resolve_ref.outputs.checkout_ref }}
+          fetch-depth: ${{ inputs.checkout-depth }}
+
+      - name: Resolve target commit SHA
+        id: determine_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore ./dotnet
+
+      - name: Build (warnings as errors)
+        run: dotnet build ./dotnet -warnaserror --no-restore
+
+      - name: Test
+        run: dotnet test ./dotnet --no-build --verbosity normal
+
+      - name: Set commit status (success)
+        if: success() && steps.determine_sha.outputs.sha != ''
+        env:
+          SHA: ${{ steps.determine_sha.outputs.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X POST repos/${{ github.repository }}/statuses/$SHA \
+            -f state=success \
+            -f context=reusable-ci-dispatch \
+            -f target_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            -f description="CI passed"
+
+      - name: Set commit status (failure)
+        if: failure() && steps.determine_sha.outputs.sha != ''
+        env:
+          SHA: ${{ steps.determine_sha.outputs.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X POST repos/${{ github.repository }}/statuses/$SHA \
+            -f state=failure \
+            -f context=reusable-ci-dispatch \
+            -f target_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            -f description="CI failed"

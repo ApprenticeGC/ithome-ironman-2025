@@ -30,4 +30,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AUTO_APPROVE_PAT: ${{ secrets.AUTO_APPROVE_TOKEN }}
           REPO: ${{ github.repository }}
-        run: python3 scripts/python/production/auto_approve_or_dispatch.py
+        run: python3 scripts/python/production/orchestrator_cli.py approve --repo "$REPO"
