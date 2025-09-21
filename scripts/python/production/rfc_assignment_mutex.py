@@ -20,11 +20,14 @@ import sys
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 API_URL = "https://api.github.com/graphql"
 SERIES_PATTERN = re.compile(r"(?:Game-)?RFC-(\d{1,4})-(\d{1,3})", re.IGNORECASE)
 TRACKING_TITLE_TEMPLATE = "{series} Series State"
+DEPENDENCY_CONFIG_PATH = Path("docs/status/rfc-dependencies.json")
 
 
 class MutexError(RuntimeError):
@@ -72,6 +75,30 @@ def extract_series_micro(title: str) -> Optional[str]:
     if not match:
         return None
     return f"RFC-{int(match.group(1)):03d}-{int(match.group(2)):02d}"
+
+
+@lru_cache(maxsize=1)
+def load_dependency_map() -> Dict[str, List[str]]:
+    if not DEPENDENCY_CONFIG_PATH.exists():
+        return {}
+    try:
+        data = json.loads(DEPENDENCY_CONFIG_PATH.read_text(encoding="utf-8"))
+        deps = data.get("dependencies", {})
+        return {k: list(v) for k, v in deps.items()}
+    except Exception:
+        return {}
+
+
+@lru_cache(maxsize=1)
+def load_architecture_titles() -> Dict[str, str]:
+    if not DEPENDENCY_CONFIG_PATH.exists():
+        return {}
+    try:
+        data = json.loads(DEPENDENCY_CONFIG_PATH.read_text(encoding="utf-8"))
+        arch = data.get("architecture", {})
+        return {k: v.get("title", "") for k, v in arch.items()}
+    except Exception:
+        return {}
 
 
 @dataclass
@@ -190,6 +217,14 @@ mutation($issueId:ID!,$body:String!){
 }
 """
 
+DEPENDENCY_SEARCH_QUERY = """
+query($query:String!){
+  search(query:$query, type:ISSUE, first:1){
+    issueCount
+  }
+}
+"""
+
 
 def load_issue(owner: str, name: str, number: int) -> Dict[str, Any]:
     data = gql(ISSUE_QUERY, {"owner": owner, "name": name, "number": number})
@@ -200,6 +235,36 @@ def load_issue(owner: str, name: str, number: int) -> Dict[str, Any]:
         "repo_id": repo["id"],
         "issue": repo["issue"],
     }
+
+
+def dependency_has_open_issue(owner: str, name: str, token_str: str) -> bool:
+    query = f'repo:{owner}/{name} is:issue is:open in:title "{token_str}"'
+    try:
+        data = gql(DEPENDENCY_SEARCH_QUERY, {"query": query})
+        search = data.get("search") or {}
+        return (search.get("issueCount") or 0) > 0
+    except Exception:
+        # On API failure, be conservative and assume dependency still open
+        return True
+
+
+def dependencies_blocked(owner: str, name: str, identifier: Optional[str]) -> List[str]:
+    if not identifier:
+        return []
+    dep_map = load_dependency_map()
+    deps = dep_map.get(identifier, [])
+    if not deps:
+        return []
+    arch_titles = load_architecture_titles()
+    blocked: List[str] = []
+    for dep in deps:
+        tokens = [dep]
+        title = arch_titles.get(dep)
+        if title:
+            tokens.append(title)
+        if any(dependency_has_open_issue(owner, name, token) for token in tokens):
+            blocked.append(dep)
+    return blocked
 
 
 def search_tracking_issue(owner: str, name: str, series: str) -> Optional[Dict[str, Any]]:
@@ -241,6 +306,34 @@ def ensure_series_state(owner: str, name: str, issue_number: int) -> Dict[str, A
     original_body = tracking_issue.get("body") or ""
     state = SeriesState.from_body(series, original_body)
 
+    identifier = None
+    series_micro = extract_series_micro(issue["title"])
+    if series_micro:
+        identifier = series_micro if series_micro.startswith("GAME-") else f"GAME-{series_micro}"
+
+    blocked_deps = dependencies_blocked(owner, name, identifier)
+    if blocked_deps:
+        if state.active_issue == issue_number:
+            state.active_issue = None
+        if issue_number not in state.queue:
+            state.queue.append(issue_number)
+        state.updated_at = now_iso()
+        new_body = state.to_body()
+        if new_body != original_body:
+            tracking_info = update_tracking_issue(tracking_issue["id"], new_body)
+            tracking_number = tracking_info["number"]
+        else:
+            tracking_number = tracking_issue.get("number")
+        return {
+            "status": "queued-dependency",
+            "series": series,
+            "chain": series_full,
+            "active_issue": state.active_issue,
+            "queue": state.queue,
+            "blocked_dependencies": blocked_deps,
+            "tracking_issue_number": tracking_number,
+        }
+
     active_issue_open: Optional[bool] = None
     if state.active_issue and state.active_issue != issue_number:
         active = load_issue(owner, name, state.active_issue)["issue"]
@@ -258,6 +351,7 @@ def ensure_series_state(owner: str, name: str, issue_number: int) -> Dict[str, A
         "chain": series_full,
         "active_issue": state.active_issue,
         "queue": state.queue,
+        "blocked_dependencies": [],
         "tracking_issue_number": tracking_number,
     }
     return result
@@ -279,7 +373,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(json.dumps({"status": "error", "message": str(exc)}))
         return 1
     print(json.dumps(result))
-    if result.get("status") == "queued":
+    if result.get("status") in {"queued", "queued-dependency"}:
         return 1
     return 0
 
