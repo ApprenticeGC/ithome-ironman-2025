@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameConsole.Core.Abstractions\GameConsole.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\GameConsole.Plugins.Lifecycle\GameConsole.Plugins.Lifecycle.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
