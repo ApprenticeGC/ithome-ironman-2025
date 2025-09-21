@@ -5,7 +5,13 @@ on:
     inputs:
       rfc_path:
         description: 'Path to RFC file (e.g., docs/RFC/RFC-090-agent-flow-smoke-test.md)'
-        required: true
+        required: false
+      notion_page_id:
+        description: 'Notion page ID to ingest (takes precedence over rfc_path)'
+        required: false
+      notion_collection:
+        description: 'Notion collection page ID (discovers sub-pages named Game-RFC-XXX)'
+        required: false
       assign_mode:
         description: 'Assignee preference (bot|user|auto)'
         required: false
@@ -26,13 +32,52 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Generate micro issues from RFC
+      - name: Generate micro issues
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}  # pragma: allowlist secret
           REPO: ${{ github.repository }}
+        shell: bash
         run: |
-          python scripts/python/production/generate_micro_issues_from_rfc.py \
-            --rfc-path "${{ github.event.inputs.rfc_path }}" \
-            --owner "${{ github.repository_owner }}" \
-            --repo "${{ github.event.repository.name }}" \
-            --assign-mode "${{ github.event.inputs.assign_mode }}"
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          RFC_PATH="${{ github.event.inputs.rfc_path || '' }}"
+          NOTION_PAGE_ID="${{ github.event.inputs.notion_page_id || '' }}"
+          NOTION_COLLECTION="${{ github.event.inputs.notion_collection || '' }}"
+          ASSIGN_MODE="${{ github.event.inputs.assign_mode }}"
+
+          if [ -n "$NOTION_PAGE_ID" ]; then
+            python scripts/python/production/generate_micro_issues_from_rfc.py \
+              --notion-page-id "$NOTION_PAGE_ID" \
+              --owner "$OWNER" \
+              --repo "$REPO_NAME" \
+              --assign-mode "$ASSIGN_MODE"
+          elif [ -n "$NOTION_COLLECTION" ]; then
+            export PYTHONPATH="scripts/python/production${PYTHONPATH:+:$PYTHONPATH}"
+            export NOTION_COLLECTION="$NOTION_COLLECTION"
+            mapfile -t PAGE_IDS < <(python scripts/python/production/list_notion_collection_pages.py --collection-id "$NOTION_COLLECTION")
+
+            if [ "${#PAGE_IDS[@]}" -eq 0 ]; then
+              echo "No implementation pages discovered under $NOTION_COLLECTION"
+              exit 0
+            fi
+
+            for PAGE_ID in "${PAGE_IDS[@]}"; do
+              echo "Processing Notion page $PAGE_ID"
+              python scripts/python/production/generate_micro_issues_from_rfc.py \
+                --notion-page-id "$PAGE_ID" \
+                --owner "$OWNER" \
+                --repo "$REPO_NAME" \
+                --assign-mode "$ASSIGN_MODE"
+            done
+          elif [ -n "$RFC_PATH" ]; then
+            python scripts/python/production/generate_micro_issues_from_rfc.py \
+              --rfc-path "$RFC_PATH" \
+              --owner "$OWNER" \
+              --repo "$REPO_NAME" \
+              --assign-mode "$ASSIGN_MODE"
+          else
+            echo "::error::Provide either rfc_path, notion_page_id, or notion_collection input." >&2
+            exit 1
+          fi
