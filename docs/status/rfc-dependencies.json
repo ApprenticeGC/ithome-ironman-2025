@@ -1,0 +1,135 @@
+{
+  "architecture": {
+    "ARCH-RFC-002": {
+      "title": "Architecture RFC 002"
+    },
+    "ARCH-RFC-003": {
+      "title": "Architecture RFC 003"
+    },
+    "ARCH-RFC-004": {
+      "title": "Architecture RFC 004"
+    },
+    "ARCH-RFC-005": {
+      "title": "Architecture RFC 005"
+    },
+    "ARCH-RFC-006": {
+      "title": "Architecture RFC 006"
+    },
+    "ARCH-RFC-007": {
+      "title": "Architecture RFC 007"
+    },
+    "ARCH-RFC-008": {
+      "title": "Architecture RFC 008"
+    },
+    "ARCH-RFC-009": {
+      "title": "Architecture RFC 009"
+    },
+    "ARCH-RFC-010": {
+      "title": "Architecture RFC 010"
+    },
+    "ARCH-RFC-011": {
+      "title": "Architecture RFC 011"
+    },
+    "ARCH-RFC-012": {
+      "title": "Architecture RFC 012"
+    },
+    "ARCH-RFC-013": {
+      "title": "Architecture RFC 013"
+    },
+    "ARCH-RFC-014": {
+      "title": "Architecture RFC 014"
+    }
+  },
+  "dependencies": {
+    "GAME-RFC-002-03": [
+      "ARCH-RFC-002"
+    ],
+    "GAME-RFC-003-01": [
+      "ARCH-RFC-003"
+    ],
+    "GAME-RFC-003-02": [
+      "ARCH-RFC-003"
+    ],
+    "GAME-RFC-003-03": [
+      "ARCH-RFC-003"
+    ],
+    "GAME-RFC-004-01": [
+      "ARCH-RFC-004"
+    ],
+    "GAME-RFC-004-02": [
+      "ARCH-RFC-004"
+    ],
+    "GAME-RFC-004-03": [
+      "ARCH-RFC-004"
+    ],
+    "GAME-RFC-005-01": [
+      "ARCH-RFC-005"
+    ],
+    "GAME-RFC-005-02": [
+      "ARCH-RFC-005"
+    ],
+    "GAME-RFC-006-01": [
+      "ARCH-RFC-006"
+    ],
+    "GAME-RFC-006-02": [
+      "ARCH-RFC-006"
+    ],
+    "GAME-RFC-007-01": [
+      "ARCH-RFC-007"
+    ],
+    "GAME-RFC-007-02": [
+      "ARCH-RFC-007"
+    ],
+    "GAME-RFC-008-01": [
+      "ARCH-RFC-008"
+    ],
+    "GAME-RFC-008-02": [
+      "ARCH-RFC-008"
+    ],
+    "GAME-RFC-009-01": [
+      "ARCH-RFC-009"
+    ],
+    "GAME-RFC-009-02": [
+      "ARCH-RFC-009"
+    ],
+    "GAME-RFC-009-03": [
+      "ARCH-RFC-009"
+    ],
+    "GAME-RFC-010-01": [
+      "ARCH-RFC-010"
+    ],
+    "GAME-RFC-010-02": [
+      "ARCH-RFC-010"
+    ],
+    "GAME-RFC-010-03": [
+      "ARCH-RFC-010"
+    ],
+    "GAME-RFC-010-04": [
+      "ARCH-RFC-010"
+    ],
+    "GAME-RFC-011-01": [
+      "ARCH-RFC-011"
+    ],
+    "GAME-RFC-011-02": [
+      "ARCH-RFC-011"
+    ],
+    "GAME-RFC-012-01": [
+      "ARCH-RFC-012"
+    ],
+    "GAME-RFC-012-02": [
+      "ARCH-RFC-012"
+    ],
+    "GAME-RFC-013-01": [
+      "ARCH-RFC-013"
+    ],
+    "GAME-RFC-013-02": [
+      "ARCH-RFC-013"
+    ],
+    "GAME-RFC-014-01": [
+      "ARCH-RFC-014"
+    ],
+    "GAME-RFC-014-02": [
+      "ARCH-RFC-014"
+    ]
+  }
+}
