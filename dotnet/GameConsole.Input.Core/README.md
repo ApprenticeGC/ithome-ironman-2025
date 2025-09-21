@@ -97,8 +97,7 @@ if (inputService is IInputMappingCapability mappingCap)
 ## Dependencies
 
 - **GameConsole.Core.Abstractions** - For base `IService` and `ICapabilityProvider` interfaces
-- **System.Reactive** - For `IObservable<T>` event streams
-- **.NET 8.0** - Target framework
+- **.NET Standard 2.0** - Target framework for maximum compatibility
 
 ## Design Principles
 
@@ -106,7 +105,7 @@ if (inputService is IInputMappingCapability mappingCap)
 All types are designed to work across different platforms and input systems without platform-specific dependencies.
 
 ### Event-Driven + Polling
-Supports both reactive event streams and traditional polling for maximum flexibility.
+Supports both .NET event streams and traditional polling for maximum flexibility.
 
 ### Extensible Architecture
 Capability interfaces allow services to expose additional features without breaking existing contracts.

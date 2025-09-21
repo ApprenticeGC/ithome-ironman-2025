@@ -90,7 +90,7 @@ public class InputPrediction
     public InputPrediction(InputEvent predictedEvent, float confidence, DateTime predictedTime)
     {
         PredictedEvent = predictedEvent ?? throw new ArgumentNullException(nameof(predictedEvent));
-        Confidence = Math.Clamp(confidence, 0.0f, 1.0f);
+        Confidence = Math.Max(0.0f, Math.Min(confidence, 1.0f));
         PredictedTime = predictedTime;
     }
 }
@@ -124,7 +124,7 @@ public class InputSuggestion
     public InputSuggestion(IEnumerable<InputEvent> suggestedSequence, float confidence, string description)
     {
         SuggestedSequence = suggestedSequence?.ToList().AsReadOnly() ?? throw new ArgumentNullException(nameof(suggestedSequence));
-        Confidence = Math.Clamp(confidence, 0.0f, 1.0f);
+        Confidence = Math.Max(0.0f, Math.Min(confidence, 1.0f));
         Description = description ?? throw new ArgumentNullException(nameof(description));
     }
 }
@@ -209,7 +209,7 @@ public class InputMappingConfiguration
     {
         ProfileName = profileName ?? throw new ArgumentNullException(nameof(profileName));
         _mappings = mappings ?? new Dictionary<string, string>();
-        Mappings = _mappings.AsReadOnly();
+        Mappings = new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(_mappings);
         LastModified = DateTime.UtcNow;
     }
     

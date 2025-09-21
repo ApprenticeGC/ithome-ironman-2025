@@ -1,5 +1,4 @@
 using GameConsole.Core.Abstractions;
-using System.Reactive;
 using GameConsole.Input.Core;
 
 namespace GameConsole.Input.Services;
@@ -54,19 +53,19 @@ public interface IService : GameConsole.Core.Abstractions.IService
 
     // Input events (event-driven)
     /// <summary>
-    /// Observable stream of keyboard events.
+    /// Event raised when keyboard input occurs.
     /// </summary>
-    IObservable<KeyEvent> KeyEvents { get; }
+    event EventHandler<KeyEvent>? KeyEvent;
 
     /// <summary>
-    /// Observable stream of mouse events.
+    /// Event raised when mouse input occurs.
     /// </summary>
-    IObservable<MouseEvent> MouseEvents { get; }
+    event EventHandler<MouseEvent>? MouseEvent;
 
     /// <summary>
-    /// Observable stream of gamepad events.
+    /// Event raised when gamepad input occurs.
     /// </summary>
-    IObservable<GamepadEvent> GamepadEvents { get; }
+    event EventHandler<GamepadEvent>? GamepadEvent;
 
     // Device management
     /// <summary>
