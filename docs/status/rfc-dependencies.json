@@ -2,59 +2,153 @@
   "architecture": {
     "ARCH-RFC-001": {
       "title": "RFC-001: GameConsole 4-Tier Service Architecture",
-      "page_id": "2722b68a-e800-81ff-aae5-d234517d233e"
+      "page_id": "2722b68a-e800-81ff-aae5-d234517d233e",
+      "depends_on": []
     },
     "ARCH-RFC-002": {
       "title": "RFC-002: Category-Based Service Organization",
-      "page_id": "2722b68a-e800-819b-93a9-fa6be418a000"
+      "page_id": "2722b68a-e800-819b-93a9-fa6be418a000",
+      "depends_on": [
+        "ARCH-RFC-001"
+      ]
     },
     "ARCH-RFC-003": {
       "title": "RFC-003: Hierarchical Dependency Injection with Pure.DI",
-      "page_id": "2722b68a-e800-81d4-a99b-d814033a19f4"
+      "page_id": "2722b68a-e800-81d4-a99b-d814033a19f4",
+      "depends_on": [
+        "ARCH-RFC-001",
+        "ARCH-RFC-002"
+      ]
     },
     "ARCH-RFC-004": {
       "title": "RFC-004: Plugin-Centric Architecture",
-      "page_id": "2722b68a-e800-810d-93b9-d82e3701f519"
+      "page_id": "2722b68a-e800-810d-93b9-d82e3701f519",
+      "depends_on": [
+        "ARCH-RFC-001",
+        "ARCH-RFC-002",
+        "ARCH-RFC-003"
+      ]
     },
     "ARCH-RFC-005": {
       "title": "RFC-005: Service Provider Pattern",
-      "page_id": "2722b68a-e800-813b-9b4a-ec127e7cc41b"
+      "page_id": "2722b68a-e800-813b-9b4a-ec127e7cc41b",
+      "depends_on": [
+        "ARCH-RFC-002",
+        "ARCH-RFC-004"
+      ]
     },
     "ARCH-RFC-006": {
       "title": "RFC-006: Plugin Management Service",
-      "page_id": "2722b68a-e800-816c-9e97-cbe8e03ceae5"
+      "page_id": "2722b68a-e800-816c-9e97-cbe8e03ceae5",
+      "depends_on": [
+        "ARCH-RFC-001",
+        "ARCH-RFC-003",
+        "ARCH-RFC-004"
+      ]
     },
     "ARCH-RFC-007": {
       "title": "RFC-007: AI Agent Integration",
-      "page_id": "2722b68a-e800-81ad-8589-ec3c2b816f16"
+      "page_id": "2722b68a-e800-81ad-8589-ec3c2b816f16",
+      "depends_on": [
+        "ARCH-RFC-001",
+        "ARCH-RFC-002",
+        "ARCH-RFC-004"
+      ]
     },
     "ARCH-RFC-008": {
       "title": "RFC-008: Local vs Remote AI Deployment Strategy",
-      "page_id": "2722b68a-e800-81b6-b92a-ee7c01f34432"
+      "page_id": "2722b68a-e800-81b6-b92a-ee7c01f34432",
+      "depends_on": [
+        "ARCH-RFC-007"
+      ]
     },
     "ARCH-RFC-009": {
       "title": "RFC-009: Akka.NET AI Orchestration",
-      "page_id": "2722b68a-e800-819c-9fa1-c55d7521f4d5"
+      "page_id": "2722b68a-e800-819c-9fa1-c55d7521f4d5",
+      "depends_on": [
+        "ARCH-RFC-007",
+        "ARCH-RFC-008"
+      ]
     },
     "ARCH-RFC-010": {
       "title": "RFC-010: Multi-Modal UI System",
-      "page_id": "2722b68a-e800-8112-8078-f49a01e54cb1"
+      "page_id": "2722b68a-e800-8112-8078-f49a01e54cb1",
+      "depends_on": [
+        "ARCH-RFC-002"
+      ]
     },
     "ARCH-RFC-011": {
       "title": "RFC-011: Mode-Based UI Profiles",
-      "page_id": "2722b68a-e800-81ab-9a0c-ce02b936f24f"
+      "page_id": "2722b68a-e800-81ab-9a0c-ce02b936f24f",
+      "depends_on": [
+        "ARCH-RFC-010"
+      ]
     },
     "ARCH-RFC-012": {
       "title": "RFC-012: Container-Native Deployment",
-      "page_id": "2722b68a-e800-8144-b716-e15f6591a119"
+      "page_id": "2722b68a-e800-8144-b716-e15f6591a119",
+      "depends_on": [
+        "ARCH-RFC-001",
+        "ARCH-RFC-007"
+      ]
     },
     "ARCH-RFC-013": {
       "title": "RFC-013: Configuration Management",
-      "page_id": "2722b68a-e800-8122-80b4-f449899772a2"
+      "page_id": "2722b68a-e800-8122-80b4-f449899772a2",
+      "depends_on": [
+        "ARCH-RFC-001",
+        "ARCH-RFC-002"
+      ]
     },
     "ARCH-RFC-014": {
       "title": "RFC-014: ECS Behavior Composition",
-      "page_id": "2722b68a-e800-811b-bb14-c7b24a264431"
+      "page_id": "2722b68a-e800-811b-bb14-c7b24a264431",
+      "depends_on": [
+        "ARCH-RFC-001",
+        "ARCH-RFC-002",
+        "ARCH-RFC-003",
+        "ARCH-RFC-004"
+      ]
+    },
+    "ARCH-RFC-090": {
+      "title": "ARCH-RFC-090",
+      "depends_on": []
+    },
+    "ARCH-RFC-091": {
+      "title": "ARCH-RFC-091",
+      "depends_on": []
+    },
+    "ARCH-RFC-092": {
+      "title": "ARCH-RFC-092",
+      "depends_on": []
+    },
+    "ARCH-RFC-093": {
+      "title": "ARCH-RFC-093",
+      "depends_on": []
+    },
+    "ARCH-RFC-094": {
+      "title": "ARCH-RFC-094",
+      "depends_on": []
+    },
+    "ARCH-RFC-095": {
+      "title": "ARCH-RFC-095",
+      "depends_on": []
+    },
+    "ARCH-RFC-096": {
+      "title": "ARCH-RFC-096",
+      "depends_on": []
+    },
+    "ARCH-RFC-097": {
+      "title": "ARCH-RFC-097",
+      "depends_on": []
+    },
+    "ARCH-RFC-100": {
+      "title": "ARCH-RFC-100",
+      "depends_on": []
+    },
+    "ARCH-RFC-998": {
+      "title": "ARCH-RFC-998",
+      "depends_on": []
     }
   },
   "dependencies": {
@@ -62,115 +156,245 @@
       "ARCH-RFC-001"
     ],
     "GAME-RFC-001-02": [
-      "ARCH-RFC-001"
+      "ARCH-RFC-001",
+      "GAME-RFC-001-01"
     ],
     "GAME-RFC-001-03": [
-      "ARCH-RFC-001"
+      "ARCH-RFC-001",
+      "GAME-RFC-001-02"
     ],
     "GAME-RFC-001-04": [
-      "ARCH-RFC-001"
+      "ARCH-RFC-001",
+      "GAME-RFC-001-03"
     ],
     "GAME-RFC-001-05": [
-      "ARCH-RFC-001"
+      "ARCH-RFC-001",
+      "GAME-RFC-001-04"
     ],
     "GAME-RFC-001-06": [
-      "ARCH-RFC-001"
+      "ARCH-RFC-001",
+      "GAME-RFC-001-05"
     ],
     "GAME-RFC-002-01": [
-      "ARCH-RFC-002"
+      "ARCH-RFC-002",
+      "ARCH-RFC-001"
     ],
     "GAME-RFC-002-02": [
-      "ARCH-RFC-002"
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "GAME-RFC-002-01"
     ],
     "GAME-RFC-002-03": [
-      "ARCH-RFC-002"
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "GAME-RFC-002-02"
     ],
     "GAME-RFC-003-01": [
-      "ARCH-RFC-003"
+      "ARCH-RFC-003",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002"
     ],
     "GAME-RFC-003-02": [
-      "ARCH-RFC-003"
+      "ARCH-RFC-003",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "GAME-RFC-003-01"
     ],
     "GAME-RFC-003-03": [
-      "ARCH-RFC-003"
+      "ARCH-RFC-003",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "GAME-RFC-003-02"
     ],
     "GAME-RFC-004-01": [
-      "ARCH-RFC-004"
+      "ARCH-RFC-004",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-003"
     ],
     "GAME-RFC-004-02": [
-      "ARCH-RFC-004"
+      "ARCH-RFC-004",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-003",
+      "GAME-RFC-004-01"
     ],
     "GAME-RFC-004-03": [
-      "ARCH-RFC-004"
+      "ARCH-RFC-004",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-003",
+      "GAME-RFC-004-02"
     ],
     "GAME-RFC-005-01": [
-      "ARCH-RFC-005"
+      "ARCH-RFC-005",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003"
     ],
     "GAME-RFC-005-02": [
-      "ARCH-RFC-005"
+      "ARCH-RFC-005",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003",
+      "GAME-RFC-005-01"
     ],
     "GAME-RFC-006-01": [
-      "ARCH-RFC-006"
+      "ARCH-RFC-006",
+      "ARCH-RFC-001",
+      "ARCH-RFC-003",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004"
     ],
     "GAME-RFC-006-02": [
-      "ARCH-RFC-006"
+      "ARCH-RFC-006",
+      "ARCH-RFC-001",
+      "ARCH-RFC-003",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "GAME-RFC-006-01"
     ],
     "GAME-RFC-007-01": [
-      "ARCH-RFC-007"
+      "ARCH-RFC-007",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003"
     ],
     "GAME-RFC-007-02": [
-      "ARCH-RFC-007"
+      "ARCH-RFC-007",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003",
+      "GAME-RFC-007-01"
     ],
     "GAME-RFC-008-01": [
-      "ARCH-RFC-008"
+      "ARCH-RFC-008",
+      "ARCH-RFC-007",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003"
     ],
     "GAME-RFC-008-02": [
-      "ARCH-RFC-008"
+      "ARCH-RFC-008",
+      "ARCH-RFC-007",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003",
+      "GAME-RFC-008-01"
     ],
     "GAME-RFC-009-01": [
-      "ARCH-RFC-009"
+      "ARCH-RFC-009",
+      "ARCH-RFC-007",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003",
+      "ARCH-RFC-008"
     ],
     "GAME-RFC-009-02": [
-      "ARCH-RFC-009"
+      "ARCH-RFC-009",
+      "ARCH-RFC-007",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003",
+      "ARCH-RFC-008",
+      "GAME-RFC-009-01"
     ],
     "GAME-RFC-009-03": [
-      "ARCH-RFC-009"
+      "ARCH-RFC-009",
+      "ARCH-RFC-007",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003",
+      "ARCH-RFC-008",
+      "GAME-RFC-009-02"
     ],
     "GAME-RFC-010-01": [
-      "ARCH-RFC-010"
+      "ARCH-RFC-010",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001"
     ],
     "GAME-RFC-010-02": [
-      "ARCH-RFC-010"
+      "ARCH-RFC-010",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "GAME-RFC-010-01"
     ],
     "GAME-RFC-010-03": [
-      "ARCH-RFC-010"
+      "ARCH-RFC-010",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "GAME-RFC-010-02"
     ],
     "GAME-RFC-010-04": [
-      "ARCH-RFC-010"
+      "ARCH-RFC-010",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "GAME-RFC-010-03"
     ],
     "GAME-RFC-011-01": [
-      "ARCH-RFC-011"
+      "ARCH-RFC-011",
+      "ARCH-RFC-010",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001"
     ],
     "GAME-RFC-011-02": [
-      "ARCH-RFC-011"
+      "ARCH-RFC-011",
+      "ARCH-RFC-010",
+      "ARCH-RFC-002",
+      "ARCH-RFC-001",
+      "GAME-RFC-011-01"
     ],
     "GAME-RFC-012-01": [
-      "ARCH-RFC-012"
+      "ARCH-RFC-012",
+      "ARCH-RFC-001",
+      "ARCH-RFC-007",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003"
     ],
     "GAME-RFC-012-02": [
-      "ARCH-RFC-012"
+      "ARCH-RFC-012",
+      "ARCH-RFC-001",
+      "ARCH-RFC-007",
+      "ARCH-RFC-002",
+      "ARCH-RFC-004",
+      "ARCH-RFC-003",
+      "GAME-RFC-012-01"
     ],
     "GAME-RFC-013-01": [
-      "ARCH-RFC-013"
+      "ARCH-RFC-013",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002"
     ],
     "GAME-RFC-013-02": [
-      "ARCH-RFC-013"
+      "ARCH-RFC-013",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "GAME-RFC-013-01"
     ],
     "GAME-RFC-014-01": [
-      "ARCH-RFC-014"
+      "ARCH-RFC-014",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-003",
+      "ARCH-RFC-004"
     ],
     "GAME-RFC-014-02": [
-      "ARCH-RFC-014"
+      "ARCH-RFC-014",
+      "ARCH-RFC-001",
+      "ARCH-RFC-002",
+      "ARCH-RFC-003",
+      "ARCH-RFC-004",
+      "GAME-RFC-014-01"
     ]
   }
 }
