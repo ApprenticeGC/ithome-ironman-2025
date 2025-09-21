@@ -35,6 +35,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Graphics.Servic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Plugins.Lifecycle", "GameConsole.Plugins.Lifecycle\GameConsole.Plugins.Lifecycle.csproj", "{D5E6F7G8-H901-2CDE-FGHI-345678901CDE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Core", "GameConsole.AI.Core\GameConsole.AI.Core.csproj", "{E6F7G8H9-I012-3DEF-GHIJ-456789012DEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Core.Tests", "GameConsole.AI.Core.Tests\GameConsole.AI.Core.Tests.csproj", "{F7G8H9I0-J123-4EFG-HIJK-567890123EFG}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Remote", "GameConsole.AI.Remote\GameConsole.AI.Remote.csproj", "{G8H9I0J1-K234-5FGH-IJKL-678901234FGH}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Remote.Tests", "GameConsole.AI.Remote.Tests\GameConsole.AI.Remote.Tests.csproj", "{H9I0J1K2-L345-6GHI-JKLM-789012345GHI}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,5 +116,21 @@ Global
 		{D5E6F7G8-H901-2CDE-FGHI-345678901CDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5E6F7G8-H901-2CDE-FGHI-345678901CDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5E6F7G8-H901-2CDE-FGHI-345678901CDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6F7G8H9-I012-3DEF-GHIJ-456789012DEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6F7G8H9-I012-3DEF-GHIJ-456789012DEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6F7G8H9-I012-3DEF-GHIJ-456789012DEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6F7G8H9-I012-3DEF-GHIJ-456789012DEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7G8H9I0-J123-4EFG-HIJK-567890123EFG}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7G8H9I0-J123-4EFG-HIJK-567890123EFG}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7G8H9I0-J123-4EFG-HIJK-567890123EFG}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7G8H9I0-J123-4EFG-HIJK-567890123EFG}.Release|Any CPU.Build.0 = Release|Any CPU
+		{G8H9I0J1-K234-5FGH-IJKL-678901234FGH}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{G8H9I0J1-K234-5FGH-IJKL-678901234FGH}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{G8H9I0J1-K234-5FGH-IJKL-678901234FGH}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{G8H9I0J1-K234-5FGH-IJKL-678901234FGH}.Release|Any CPU.Build.0 = Release|Any CPU
+		{H9I0J1K2-L345-6GHI-JKLM-789012345GHI}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{H9I0J1K2-L345-6GHI-JKLM-789012345GHI}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{H9I0J1K2-L345-6GHI-JKLM-789012345GHI}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{H9I0J1K2-L345-6GHI-JKLM-789012345GHI}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
