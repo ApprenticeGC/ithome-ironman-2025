@@ -1,0 +1,34 @@
+name: export-rfc-dependencies
+
+on:
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    environment: copilot
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Export Notion RFC metadata
+        env:
+          NOTION_TOKEN: ${{ secrets.COPILOT_MCP_NOTION_API_KEY }}
+        run: |
+          set -euo pipefail
+          python scripts/python/production/export_rfc_page_metadata.py \
+            --architecture-collection 2722b68ae80081608911f6375c111676 \
+            --implementation-collection 2722b68ae8008115b215cfa0c4aa3908 \
+            --output notion_rfc_pages.json
+          cat notion_rfc_pages.json
+
+      - name: Upload metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: notion-rfc-pages
+          path: notion_rfc_pages.json

@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   assign:
+    if: ${{ vars.COPILOT_ASSIGN_DISABLED != '1' }}
     environment: copilot
     runs-on: ubuntu-latest
     steps:
