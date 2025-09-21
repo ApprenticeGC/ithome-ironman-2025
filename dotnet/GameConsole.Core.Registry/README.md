@@ -46,12 +46,13 @@ The `ServiceLifetimePolicies` class provides Pure.DI lifetime management:
 ```csharp
 var composition = new ServiceComposition();
 
-// Get services directly
-var serviceProvider = composition.GetService(typeof(IServiceProvider));
+// Get services directly - Pure.DI bound services resolve efficiently
+var singletonService = composition.GetService(typeof(IExampleSingletonService));
+var transientService = composition.GetService(typeof(IExampleTransientService));
 
 // Or use as IServiceProvider
 IServiceProvider provider = composition;
-var service = provider.GetService<IMyService>();
+var service = provider.GetService<IExampleSingletonService>();
 ```
 
 ### Hierarchical Containers
@@ -85,16 +86,17 @@ var scopedProvider = scope.ServiceProvider;
 
 ### Dependency Validation
 
-Pure.DI validates dependencies at compile time:
+Pure.DI validates dependencies at compile time and generates efficient resolution code:
 
 ```csharp
 private static void Setup() => DI.Setup(nameof(ServiceComposition))
-    .Bind<IMyService>().To<MyService>()  // Validates MyService constructor
-    .Bind<IDependency>().To<Dependency>() // Validates Dependency is available
-    .Root<IMyService>("MyService");
+    .Bind<IExampleSingletonService>().As(Pure.DI.Lifetime.Singleton).To<ExampleSingletonService>()
+    .Bind<IExampleServiceWithDependency>().To<ExampleServiceWithDependency>()  
+    .Bind<IExampleDependency>().To<ExampleDependency>()
+    .Root<IExampleSingletonService>("ExampleSingletonService");
 ```
 
-If `MyService` requires `IDependency` but it's not registered, you get a compile error.
+If `ExampleServiceWithDependency` requires `IExampleDependency` but it's not registered, you get a compile error.
 
 ### Performance Hints
 
@@ -110,10 +112,12 @@ private static void Setup() => DI.Setup(nameof(ServiceComposition))
 Pure.DI detects circular dependencies at compile time:
 
 ```csharp
-// This would cause a compile error:
+// This would cause a compile error if added to the Setup() method:
 .Bind<IServiceA>().To<ServiceA>()  // ServiceA depends on IServiceB
 .Bind<IServiceB>().To<ServiceB>()  // ServiceB depends on IServiceA
 ```
+
+The current ServiceComposition compiles successfully, proving there are no circular dependencies in the bound services.
 
 ## Integration with Existing Code
 

@@ -1,6 +1,7 @@
 using GameConsole.Core.Registry;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using static GameConsole.Core.Registry.ServiceComposition;
 
 namespace GameConsole.Core.Registry.Tests;
 
@@ -151,6 +152,77 @@ public class ServiceCompositionTests
         // Assert
         Assert.NotNull(result);
         Assert.IsType<TestLogger>(result);
+    }
+
+    [Fact]
+    public void PureDI_Services_Can_Be_Resolved()
+    {
+        // Arrange
+        var composition = new ServiceComposition();
+
+        // Act - Test Pure.DI bound services
+        var singletonService = composition.GetService(typeof(IExampleSingletonService));
+        var scopedService = composition.GetService(typeof(IExampleScopedService));
+        var transientService = composition.GetService(typeof(IExampleTransientService));
+        var serviceWithDependency = composition.GetService(typeof(IExampleServiceWithDependency));
+
+        // Assert
+        Assert.NotNull(singletonService);
+        Assert.NotNull(scopedService);
+        Assert.NotNull(transientService);
+        Assert.NotNull(serviceWithDependency);
+        
+        Assert.IsType<ExampleSingletonService>(singletonService);
+        Assert.IsType<ExampleScopedService>(scopedService);
+        Assert.IsType<ExampleTransientService>(transientService);
+        Assert.IsType<ExampleServiceWithDependency>(serviceWithDependency);
+    }
+
+    [Fact] 
+    public void PureDI_Singleton_Lifetime_Works()
+    {
+        // Arrange
+        var composition = new ServiceComposition();
+
+        // Act - Get singleton service multiple times
+        var instance1 = composition.GetService(typeof(IExampleSingletonService));
+        var instance2 = composition.GetService(typeof(IExampleSingletonService));
+
+        // Assert - Should be the same instance
+        Assert.NotNull(instance1);
+        Assert.NotNull(instance2);
+        Assert.Same(instance1, instance2);
+    }
+
+    [Fact]
+    public void PureDI_Transient_Lifetime_Works()
+    {
+        // Arrange
+        var composition = new ServiceComposition();
+
+        // Act - Get transient service multiple times
+        var instance1 = composition.GetService(typeof(IExampleTransientService));
+        var instance2 = composition.GetService(typeof(IExampleTransientService));
+
+        // Assert - Should be different instances
+        Assert.NotNull(instance1);
+        Assert.NotNull(instance2);
+        Assert.NotSame(instance1, instance2);
+    }
+
+    [Fact]
+    public void PureDI_Dependency_Injection_Works()
+    {
+        // Arrange
+        var composition = new ServiceComposition();
+
+        // Act
+        var service = composition.GetService(typeof(IExampleServiceWithDependency)) as IExampleServiceWithDependency;
+
+        // Assert - Service should be resolved with its dependency injected
+        Assert.NotNull(service);
+        var message = service.GetMessageWithDependency();
+        Assert.Contains("Dependency message", message);
     }
 
     /// <summary>

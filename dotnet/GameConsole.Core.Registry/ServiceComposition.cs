@@ -1,5 +1,6 @@
 using Pure.DI;
 using GameConsole.Core.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace GameConsole.Core.Registry;
 
@@ -36,7 +37,21 @@ public partial class ServiceComposition : IServiceProvider
         // Default service lifetime policies
         .DefaultLifetime(Pure.DI.Lifetime.Transient)
         
-        // Root composition for ServiceProvider itself
+        // Core service bindings with different lifetimes to demonstrate hierarchical scoping
+        .Bind<IExampleSingletonService>().As(Pure.DI.Lifetime.Singleton).To<ExampleSingletonService>()
+        .Bind<IExampleScopedService>().As(Pure.DI.Lifetime.Scoped).To<ExampleScopedService>()
+        .Bind<IExampleTransientService>().As(Pure.DI.Lifetime.Transient).To<ExampleTransientService>()
+        
+        // Example services with dependencies to demonstrate compile-time validation
+        .Bind<IExampleServiceWithDependency>().To<ExampleServiceWithDependency>()
+        .Bind<IExampleDependency>().To<ExampleDependency>()
+        
+        // Root composition - expose example services for resolution and Pure.DI container itself
+        .Root<IExampleSingletonService>("ExampleSingletonService")
+        .Root<IExampleScopedService>("ExampleScopedService") 
+        .Root<IExampleTransientService>("ExampleTransientService")
+        .Root<IExampleServiceWithDependency>("ExampleServiceWithDependency")
+        .Root<IExampleDependency>("ExampleDependency")
         .Root<ServiceComposition>("Root");
 
     /// <summary>
@@ -49,6 +64,26 @@ public partial class ServiceComposition : IServiceProvider
         // Handle IServiceProvider requests directly
         if (serviceType == typeof(IServiceProvider))
             return this;
+
+        // Try to resolve from Pure.DI first for bound services
+        try
+        {
+            // Pure.DI will generate specific resolution code for bound services
+            if (serviceType == typeof(IExampleSingletonService))
+                return ExampleSingletonService;
+            if (serviceType == typeof(IExampleScopedService))
+                return ExampleScopedService;
+            if (serviceType == typeof(IExampleTransientService))
+                return ExampleTransientService;
+            if (serviceType == typeof(IExampleServiceWithDependency))
+                return ExampleServiceWithDependency;
+            if (serviceType == typeof(IExampleDependency))
+                return ExampleDependency;
+        }
+        catch
+        {
+            // If Pure.DI resolution fails, fall back to parent
+        }
 
         // Fallback to parent container for any other service
         return _parent?.GetService(serviceType);
@@ -123,4 +158,93 @@ internal static class ServiceLifetimePolicies
         // Default to transient for safety
         return Transient;
     }
+}
+
+// Example services for Pure.DI demonstration and compile-time validation
+
+/// <summary>
+/// Example singleton service interface for Pure.DI demonstration.
+/// </summary>
+public interface IExampleSingletonService
+{
+    string GetMessage();
+}
+
+/// <summary>
+/// Example scoped service interface for Pure.DI demonstration.
+/// </summary>
+public interface IExampleScopedService
+{
+    string GetScopedMessage();
+}
+
+/// <summary>
+/// Example transient service interface for Pure.DI demonstration.
+/// </summary>
+public interface IExampleTransientService
+{
+    string GetTransientMessage();
+}
+
+/// <summary>
+/// Example service with dependency to demonstrate compile-time validation.
+/// </summary>
+public interface IExampleServiceWithDependency
+{
+    string GetMessageWithDependency();
+}
+
+/// <summary>
+/// Example dependency interface for compile-time validation.
+/// </summary>
+public interface IExampleDependency
+{
+    string GetDependencyMessage();
+}
+
+/// <summary>
+/// Example singleton service implementation.
+/// </summary>
+public class ExampleSingletonService : IExampleSingletonService
+{
+    public string GetMessage() => "Singleton service instance";
+}
+
+/// <summary>
+/// Example scoped service implementation.
+/// </summary>
+public class ExampleScopedService : IExampleScopedService
+{
+    public string GetScopedMessage() => "Scoped service instance";
+}
+
+/// <summary>
+/// Example transient service implementation.
+/// </summary>
+public class ExampleTransientService : IExampleTransientService
+{
+    public string GetTransientMessage() => "Transient service instance";
+}
+
+/// <summary>
+/// Example service with dependency implementation.
+/// </summary>
+public class ExampleServiceWithDependency : IExampleServiceWithDependency
+{
+    private readonly IExampleDependency _dependency;
+
+    public ExampleServiceWithDependency(IExampleDependency dependency)
+    {
+        _dependency = dependency;
+    }
+
+    public string GetMessageWithDependency() => $"Service with dependency: {_dependency.GetDependencyMessage()}";
+}
+
+/// <summary>
+/// Example dependency implementation.
+/// </summary>
+public class ExampleDependency : IExampleDependency
+{
+    public string GetDependencyMessage() => "Dependency message";
 }
