@@ -11,6 +11,8 @@ import sqlite3
 import sys
 import urllib.request
 from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # Support both old RFC pattern and new Game-RFC pattern
@@ -118,6 +120,34 @@ class NotionClient:
 # Legacy TrackingDatabase (v1) retained for backward compatibility.
 USE_DB_V2 = os.environ.get("RFC_DB_V2") == "1"
 USE_RELIABLE_NOTION = os.environ.get("NOTION_RELIABLE") == "1"
+
+
+DEPENDENCY_CONFIG_PATH = Path("docs/status/rfc-dependencies.json")
+
+
+@lru_cache(maxsize=1)
+def load_dependency_map() -> Dict[str, List[str]]:
+    if not DEPENDENCY_CONFIG_PATH.exists():
+        return {}
+    try:
+        data = json.loads(DEPENDENCY_CONFIG_PATH.read_text(encoding="utf-8"))
+        deps = data.get("dependencies", {})
+        return {k: list(v) for k, v in deps.items()}
+    except Exception:
+        return {}
+
+
+@lru_cache(maxsize=1)
+def load_architecture_titles() -> Dict[str, str]:
+    if not DEPENDENCY_CONFIG_PATH.exists():
+        return {}
+    try:
+        data = json.loads(DEPENDENCY_CONFIG_PATH.read_text(encoding="utf-8"))
+        arch = data.get("architecture", {})
+        return {k: v.get("title", "") for k, v in arch.items()}
+    except Exception:
+        return {}
+
 
 if USE_RELIABLE_NOTION:
     try:
@@ -554,6 +584,9 @@ def main(argv: list[str]) -> int:
             assignee = None
             aids = None
 
+        dependency_map = load_dependency_map()
+        architecture_titles = load_architecture_titles()
+
         # Helper: skip creating duplicate issues by exact title (open issues only)
         SEARCH_Q = """
         query($q:String!) {
@@ -573,6 +606,29 @@ def main(argv: list[str]) -> int:
                 return cnt > 0
             except Exception:
                 return False
+
+        def dependencies_blocked(ident: str) -> List[str]:
+            deps = dependency_map.get(ident, [])
+            blocked: List[str] = []
+            for dep in deps:
+                tokens = [dep]
+                arch_title = architecture_titles.get(dep)
+                if arch_title:
+                    tokens.append(arch_title)
+                dep_blocked = False
+                for token in tokens:
+                    q = f'repo:{args.owner}/{args.repo} is:issue is:open in:title "{token}"'
+                    try:
+                        search = gql(SEARCH_Q, {"q": q}, github_token).get("search") or {}
+                        if (search.get("issueCount") or 0) > 0:
+                            dep_blocked = True
+                            break
+                    except Exception:
+                        dep_blocked = True
+                        break
+                if dep_blocked:
+                    blocked.append(dep)
+            return blocked
 
         results = []
         micros_sorted = sorted(micro_items, key=lambda x: (x["rfc_num"], x["micro_num"]))
@@ -599,6 +655,11 @@ def main(argv: list[str]) -> int:
                 if exists_open_issue_with_title(args.owner, args.repo, title):
                     results.append({"title": title, "skipped": "found_on_github"})
                     continue
+
+            blocked = dependencies_blocked(it["ident"])
+            if blocked:
+                results.append({"title": title, "skipped": "dependency_open", "dependencies": blocked})
+                continue
 
             if args.dry_run:
                 results.append({"title": title, "action": "would_create"})
