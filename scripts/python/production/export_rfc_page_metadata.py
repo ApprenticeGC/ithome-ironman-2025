@@ -13,6 +13,8 @@ from notion_page_discovery import NotionPageDiscovery
 
 def extract_series_from_title(title: str) -> Optional[str]:
     match = re.search(r"(?:Game|Architecture)[-\s]?RFC[-\s]?(\d{3})", title, re.IGNORECASE)
+    if not match:
+        match = re.search(r"RFC[-\s]?(\d{3})", title, re.IGNORECASE)
     if match:
         return f"RFC-{int(match.group(1)):03d}"
     return None
