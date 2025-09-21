@@ -2,7 +2,6 @@ using GameConsole.Core.Abstractions;
 using GameConsole.Input.Core;
 using GameConsole.Input.Services;
 using Microsoft.Extensions.Logging;
-using System.Reactive.Subjects;
 
 namespace GameConsole.Input.Services;
 
@@ -12,18 +11,12 @@ namespace GameConsole.Input.Services;
 public abstract class BaseInputService : GameConsole.Input.Services.IService
 {
     protected readonly ILogger _logger;
-    private readonly Subject<KeyEvent> _keyEvents;
-    private readonly Subject<MouseEvent> _mouseEvents;
-    private readonly Subject<GamepadEvent> _gamepadEvents;
     private long _currentFrame = 0;
     private bool _isRunning = false;
 
     protected BaseInputService(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _keyEvents = new Subject<KeyEvent>();
-        _mouseEvents = new Subject<MouseEvent>();
-        _gamepadEvents = new Subject<GamepadEvent>();
     }
 
     #region IService Implementation
@@ -59,10 +52,6 @@ public abstract class BaseInputService : GameConsole.Input.Services.IService
         {
             await StopAsync();
         }
-
-        _keyEvents.Dispose();
-        _mouseEvents.Dispose();
-        _gamepadEvents.Dispose();
         
         await OnDisposeAsync();
     }
@@ -71,9 +60,9 @@ public abstract class BaseInputService : GameConsole.Input.Services.IService
 
     #region Input Service Implementation
 
-    public IObservable<KeyEvent> KeyEvents => _keyEvents;
-    public IObservable<MouseEvent> MouseEvents => _mouseEvents;
-    public IObservable<GamepadEvent> GamepadEvents => _gamepadEvents;
+    public event EventHandler<KeyEvent>? KeyEvent;
+    public event EventHandler<MouseEvent>? MouseEvent;
+    public event EventHandler<GamepadEvent>? GamepadEvent;
 
     public abstract Task<bool> IsKeyPressedAsync(KeyCode key, CancellationToken cancellationToken = default);
     public abstract Task<Vector2> GetMousePositionAsync(CancellationToken cancellationToken = default);
@@ -95,17 +84,17 @@ public abstract class BaseInputService : GameConsole.Input.Services.IService
 
     protected void PublishKeyEvent(KeyEvent keyEvent)
     {
-        _keyEvents.OnNext(keyEvent);
+        KeyEvent?.Invoke(this, keyEvent);
     }
 
     protected void PublishMouseEvent(MouseEvent mouseEvent)
     {
-        _mouseEvents.OnNext(mouseEvent);
+        MouseEvent?.Invoke(this, mouseEvent);
     }
 
     protected void PublishGamepadEvent(GamepadEvent gamepadEvent)
     {
-        _gamepadEvents.OnNext(gamepadEvent);
+        GamepadEvent?.Invoke(this, gamepadEvent);
     }
 
     protected long GetCurrentFrame() => _currentFrame;

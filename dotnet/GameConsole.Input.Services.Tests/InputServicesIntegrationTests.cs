@@ -240,10 +240,10 @@ public class InputServicesIntegrationTests
         await gamepadService.InitializeAsync();
         await gamepadService.StartAsync();
 
-        // Subscribe to event streams
-        var keySubscription = keyboardService.KeyEvents.Subscribe(e => keyEvents.Add(e));
-        var mouseSubscription = mouseService.MouseEvents.Subscribe(e => mouseEvents.Add(e));
-        var gamepadSubscription = gamepadService.GamepadEvents.Subscribe(e => gamepadEvents.Add(e));
+        // Subscribe to events
+        keyboardService.KeyEvent += (sender, e) => keyEvents.Add(e);
+        mouseService.MouseEvent += (sender, e) => mouseEvents.Add(e);
+        gamepadService.GamepadEvent += (sender, e) => gamepadEvents.Add(e);
 
         // Wait a bit for potential events
         await Task.Delay(2000);
@@ -256,10 +256,6 @@ public class InputServicesIntegrationTests
         _output.WriteLine($"Received {keyEvents.Count} key events, {mouseEvents.Count} mouse events, {gamepadEvents.Count} gamepad events during test period");
 
         // Cleanup
-        keySubscription.Dispose();
-        mouseSubscription.Dispose();
-        gamepadSubscription.Dispose();
-        
         await keyboardService.StopAsync();
         await keyboardService.DisposeAsync();
         await mouseService.StopAsync();
