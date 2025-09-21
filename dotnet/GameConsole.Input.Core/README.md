@@ -31,31 +31,34 @@ This package contains the Tier 1 contracts and domain models for the GameConsole
 - **`InputState`** - Input state tracking (Released, Pressed, Held, JustReleased)
 
 #### Advanced Models
-- **`InputHistory`** - Time-windowed collection of input events for analysis
-- **`InputPrediction`** - AI prediction results with confidence levels
-- **`InputSequence`** - Recorded input sequences for macro playback
-- **`InputMappingConfiguration`** - Key binding configuration with profiles
+
+Advanced input features like input history, prediction, suggestion, sequence recording, and mapping configuration are provided through capability interfaces in the higher-tier services projects. This maintains clean separation between core contracts (Tier 1) and implementation features (Tier 2+).
 
 ### Capability Interfaces
 
+Advanced input features are exposed through capability interfaces implemented in service tiers:
+
 #### `IPredictiveInputCapability`
-Enables AI-powered input prediction and suggestions:
+Enables AI-powered input prediction and suggestions (implemented in service tiers):
 ```csharp
+// Available in GameConsole.Input.Services
 Task<InputPrediction> PredictNextInputAsync(InputHistory history, CancellationToken ct);
 Task<IEnumerable<InputSuggestion>> GetInputSuggestionsAsync(IEnumerable<InputEvent> partialInput, CancellationToken ct);
 ```
 
 #### `IInputRecordingCapability`
-Provides macro recording and playback:
+Provides macro recording and playback (implemented in service tiers):
 ```csharp
+// Available in GameConsole.Input.Services
 Task<string> StartRecordingAsync(string name, CancellationToken ct);
 Task<InputSequence> StopRecordingAsync(string sessionId, CancellationToken ct);
 Task PlaybackSequenceAsync(InputSequence sequence, CancellationToken ct);
 ```
 
 #### `IInputMappingCapability`
-Enables customizable key bindings:
+Enables customizable key bindings (implemented in service tiers):
 ```csharp
+// Available in GameConsole.Input.Services
 Task MapInputAsync(string physicalInput, string logicalAction, CancellationToken ct);
 Task<InputMappingConfiguration> GetMappingConfigurationAsync(CancellationToken ct);
 Task SaveMappingConfigurationAsync(InputMappingConfiguration config, CancellationToken ct);
@@ -148,8 +151,7 @@ GameConsole.Input.Core
 ├── Vector.cs              // Vector2, Vector3 types
 ├── InputTypes.cs          // Enums: KeyCode, MouseButton, GamepadButton, etc.
 ├── InputEvents.cs         // Event classes: KeyEvent, MouseEvent, GamepadEvent
-├── InputModels.cs         // Advanced models: InputHistory, InputSequence, etc.
-└── IService.cs           // Main service interface and capability interfaces
+└── IService.cs           // Main service interface (core contracts only)
 ```
 
-This organization keeps related types together while maintaining a clean public API surface.
+This organization keeps related contract types together while maintaining a clean Tier 1 API surface. Advanced features like input history, prediction, and recording are implemented as capability interfaces in higher-tier projects.

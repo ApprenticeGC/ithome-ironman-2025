@@ -1,4 +1,6 @@
-namespace GameConsole.Input.Core;
+using GameConsole.Input.Core;
+
+namespace GameConsole.Input.Services;
 
 /// <summary>
 /// Represents a collection of input events that occurred over time.
