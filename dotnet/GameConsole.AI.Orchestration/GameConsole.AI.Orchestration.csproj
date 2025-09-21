@@ -13,6 +13,8 @@
   <ItemGroup>
     <PackageReference Include="Akka" Version="1.5.13" />
     <PackageReference Include="Akka.Streams" Version="1.5.13" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
   </ItemGroup>
 
 </Project>
