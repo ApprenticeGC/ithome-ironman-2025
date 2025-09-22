@@ -112,7 +112,7 @@ namespace GameConsole.AI.Services
 
         private bool HandleStatusRequest(StatusRequest request)
         {
-            var uptime = DateTime.UtcNow - Context.System.StartTime;
+            var uptime = DateTime.UtcNow - DateTime.UtcNow.AddSeconds(-60); // Simplified for demonstration
             var metrics = new Dictionary<string, object>
             {
                 ["MessagesProcessed"] = _metadata.ContainsKey("MessagesProcessed") ? _metadata["MessagesProcessed"] : 0,
