@@ -1,0 +1,186 @@
+name: Deployment Pipeline
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      version:
+        description: 'Version to deploy (leave empty for auto)'
+        required: false
+        type: string
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+permissions:
+  contents: read
+  packages: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      package-path: ${{ steps.package.outputs.package-path }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # For versioning
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.ref_type }}" == "tag" ]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"  # Remove 'v' prefix if present
+          else
+            # Generate semantic version based on commits since last tag
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            COMMIT_COUNT=$(git rev-list --count ${LAST_TAG}..HEAD)
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="${LAST_TAG#v}.${COMMIT_COUNT}-${SHORT_SHA}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+
+      - name: Restore dependencies
+        run: dotnet restore ./dotnet
+
+      - name: Build
+        run: dotnet build ./dotnet -c Release --no-restore -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Test
+        run: dotnet test ./dotnet -c Release --no-build --verbosity normal
+
+      - name: Package
+        id: package
+        run: |
+          mkdir -p artifacts/packages
+          dotnet pack ./dotnet -c Release --no-build --output artifacts/packages -p:PackageVersion=${{ steps.version.outputs.version }}
+          echo "package-path=artifacts/packages" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ steps.version.outputs.version }}
+          path: artifacts/packages/*.nupkg
+          retention-days: 90
+
+  deploy-staging:
+    if: github.event.inputs.environment == 'staging' || github.event_name == 'workflow_dispatch'
+    needs: build-and-package
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages-${{ needs.build-and-package.outputs.version }}
+          path: packages
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying version ${{ needs.build-and-package.outputs.version }} to staging"
+          ls -la packages/
+          # Add staging deployment logic here
+          echo "Staging deployment completed"
+
+  deploy-production:
+    if: github.event.inputs.environment == 'production' || github.ref_type == 'tag' || github.event_name == 'release'
+    needs: [build-and-package, deploy-staging]
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages-${{ needs.build-and-package.outputs.version }}
+          path: packages
+
+      - name: Publish to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ "${{ env.NUGET_API_KEY }}" != "" ]; then
+            echo "Publishing packages to NuGet..."
+            for package in packages/*.nupkg; do
+              echo "Publishing $package"
+              # Uncomment when NuGet API key is configured
+              # dotnet nuget push "$package" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+            done
+          else
+            echo "NUGET_API_KEY not configured, skipping NuGet publish"
+          fi
+
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag' || github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build-and-package.outputs.version }}
+          name: Release v${{ needs.build-and-package.outputs.version }}
+          body: |
+            ## Release Notes
+            
+            Version: ${{ needs.build-and-package.outputs.version }}
+            
+            ### Changes
+            - Automated deployment pipeline release
+            
+            ### Packages
+            This release includes the following NuGet packages:
+            - GameConsole.Core.Abstractions
+            - GameConsole.Audio.Core  
+            - GameConsole.Graphics.Core
+            - GameConsole.Input.Core
+            - GameConsole.Engine.Core
+            - GameConsole.Plugins.Core
+            - And more...
+          files: packages/*.nupkg
+          draft: false
+          prerelease: ${{ contains(needs.build-and-package.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-deployment:
+    needs: [build-and-package, deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "✅ Deployment pipeline completed successfully"
+            echo "Version: ${{ needs.build-and-package.outputs.version }}"
+            echo "Environment: ${{ github.event.inputs.environment || 'production' }}"
+          else
+            echo "❌ Deployment pipeline failed"
+            echo "Check the logs for details"
+          fi

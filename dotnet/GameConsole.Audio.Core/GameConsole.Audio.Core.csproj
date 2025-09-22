@@ -5,6 +5,20 @@
     <LangVersion>10.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- Package metadata -->
+    <PackageId>GameConsole.Audio.Core</PackageId>
+    <Title>Game Console Audio Core</Title>
+    <Description>Core audio functionality for the Game Console system</Description>
+    <PackageTags>gameconsole;audio;core;sound</PackageTags>
+    <RepositoryUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>ApprenticeGC</Authors>
+    <Company>ApprenticeGC</Company>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
