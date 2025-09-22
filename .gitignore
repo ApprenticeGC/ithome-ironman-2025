@@ -20,3 +20,9 @@ logs/
 
 # Game RFCs (archived externally)
 docs/game-rfcs/
+
+# Build artifacts
+artifacts/
+build/nuke/.nuke/temp/
+dotnet/**/bin/
+dotnet/**/obj/

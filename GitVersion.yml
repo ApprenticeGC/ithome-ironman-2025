@@ -1,0 +1,53 @@
+mode: ContinuousDeployment
+increment: Patch
+continuous-delivery-fallback-tag: ci
+major-version-bump-message: '\+semver:\s?(breaking|major)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)'
+patch-version-bump-message: '\+semver:\s?(fix|patch)'
+legacy-semver-padding: 4
+build-metadata-padding: 4
+commits-since-version-source-padding: 4
+commit-message-incrementing: Enabled
+
+branches:
+  main:
+    mode: ContinuousDeployment
+    tag: ''
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    regex: '^main$'
+    source-branches: ['develop', 'release']
+    is-release-branch: true
+  copilot:
+    mode: ContinuousDeployment
+    tag: 'alpha'
+    increment: Patch
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: true
+    regex: '^copilot/.*'
+    source-branches: ['main']
+    is-release-branch: false
+  develop:
+    mode: ContinuousDeployment
+    tag: 'beta'
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: true
+    regex: '^develop$'
+    source-branches: []
+    is-release-branch: false
+  pull-request:
+    mode: ContinuousDeployment
+    tag: 'pr'
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: true
+    tag-number-pattern: '[/-](?<number>\d+)'
+    track-merge-target: false
+    regex: '^(pull|pull\-requests|pr)[/-]'
+    source-branches: ['main', 'develop', 'feature', 'support', 'hotfix']
+    is-release-branch: false
+
+ignore:
+  sha: []
+merge-message-formats: {}

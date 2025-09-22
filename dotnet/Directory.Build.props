@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <PackageId>$(AssemblyName)</PackageId>
+    <PackageDescription>GameConsole library - $(AssemblyName)</PackageDescription>
+    <PackageProjectUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>ApprenticeGC</Authors>
+    <Company>ApprenticeGC</Company>
+    <Copyright>Copyright (c) ApprenticeGC $(Year)</Copyright>
+    <PackageTags>gamedev;console;engine</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <!-- Only pack non-test projects -->
+  <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>
