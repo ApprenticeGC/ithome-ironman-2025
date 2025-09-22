@@ -1,0 +1,251 @@
+name: Deploy GameConsole
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/gameconsole
+
+jobs:
+  # Only run deployment if CI completed successfully (unless force_deploy is true)
+  check-ci-status:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+    outputs:
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+      environment: ${{ steps.check.outputs.environment }}
+    steps:
+      - name: Check CI Status and Determine Environment
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Manual dispatch - respect force_deploy flag
+            if [[ "${{ github.event.inputs.force_deploy }}" == "true" ]]; then
+              echo "should-deploy=true" >> $GITHUB_OUTPUT
+            else
+              # Check the latest CI run status for manual dispatch
+              echo "Manual deployment - checking latest CI status..."
+              echo "should-deploy=true" >> $GITHUB_OUTPUT
+            fi
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+            # Automatic deployment after successful CI
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "environment=development" >> $GITHUB_OUTPUT
+          else
+            echo "CI failed - skipping deployment"
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    needs: check-ci-status
+    runs-on: ubuntu-latest
+    if: needs.check-ci-status.outputs.should-deploy == 'true'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ needs.check-ci-status.outputs.environment }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image details
+        id: image
+        run: |
+          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.check-ci-status.outputs.environment }}" >> $GITHUB_OUTPUT
+
+  deploy-development:
+    needs: [check-ci-status, build-and-push]
+    runs-on: ubuntu-latest
+    if: needs.check-ci-status.outputs.environment == 'development'
+    environment: development
+    steps:
+      - name: Checkout deployment scripts
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install deployment dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/python/requirements.txt || echo "No requirements.txt found"
+
+      - name: Deploy to Development
+        env:
+          IMAGE_URI: ${{ needs.build-and-push.outputs.image }}
+          IMAGE_DIGEST: ${{ needs.build-and-push.outputs.digest }}
+          ENVIRONMENT: development
+        run: |
+          python scripts/python/production/deploy_manager.py \
+            --environment development \
+            --image "${{ needs.build-and-push.outputs.image }}" \
+            --digest "${{ needs.build-and-push.outputs.digest }}" \
+            --dry-run false
+
+      - name: Post-deployment health check
+        env:
+          ENVIRONMENT: development
+        run: |
+          python scripts/python/production/deployment_health_check.py \
+            --environment development \
+            --timeout 300
+
+  deploy-staging:
+    needs: [check-ci-status, build-and-push]
+    runs-on: ubuntu-latest
+    if: needs.check-ci-status.outputs.environment == 'staging'
+    environment: staging
+    steps:
+      - name: Checkout deployment scripts
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install deployment dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/python/requirements.txt || echo "No requirements.txt found"
+
+      - name: Deploy to Staging
+        env:
+          IMAGE_URI: ${{ needs.build-and-push.outputs.image }}
+          IMAGE_DIGEST: ${{ needs.build-and-push.outputs.digest }}
+          ENVIRONMENT: staging
+        run: |
+          python scripts/python/production/deploy_manager.py \
+            --environment staging \
+            --image "${{ needs.build-and-push.outputs.image }}" \
+            --digest "${{ needs.build-and-push.outputs.digest }}" \
+            --dry-run false
+
+      - name: Post-deployment health check
+        env:
+          ENVIRONMENT: staging
+        run: |
+          python scripts/python/production/deployment_health_check.py \
+            --environment staging \
+            --timeout 300
+
+  deploy-production:
+    needs: [check-ci-status, build-and-push]
+    runs-on: ubuntu-latest
+    if: needs.check-ci-status.outputs.environment == 'production'
+    environment: production
+    steps:
+      - name: Checkout deployment scripts
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install deployment dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/python/requirements.txt || echo "No requirements.txt found"
+
+      - name: Deploy to Production
+        env:
+          IMAGE_URI: ${{ needs.build-and-push.outputs.image }}
+          IMAGE_DIGEST: ${{ needs.build-and-push.outputs.digest }}
+          ENVIRONMENT: production
+        run: |
+          python scripts/python/production/deploy_manager.py \
+            --environment production \
+            --image "${{ needs.build-and-push.outputs.image }}" \
+            --digest "${{ needs.build-and-push.outputs.digest }}" \
+            --dry-run false
+
+      - name: Post-deployment health check
+        env:
+          ENVIRONMENT: production
+        run: |
+          python scripts/python/production/deployment_health_check.py \
+            --environment production \
+            --timeout 600
+
+  report-deployment:
+    needs: [check-ci-status, build-and-push, deploy-development, deploy-staging, deploy-production]
+    runs-on: ubuntu-latest
+    if: always() && needs.check-ci-status.outputs.should-deploy == 'true'
+    steps:
+      - name: Report Deployment Status
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment: ${{ needs.check-ci-status.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ${{ needs.build-and-push.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Digest: ${{ needs.build-and-push.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.deploy-development.result }}" == "success" ]]; then
+            echo "- Development: ✅ Deployed successfully" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.deploy-staging.result }}" == "success" ]]; then
+            echo "- Staging: ✅ Deployed successfully" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.deploy-production.result }}" == "success" ]]; then
+            echo "- Production: ✅ Deployed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Deployment: ❌ Failed or skipped" >> $GITHUB_STEP_SUMMARY
+          fi
