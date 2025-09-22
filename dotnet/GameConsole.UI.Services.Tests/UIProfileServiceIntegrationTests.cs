@@ -227,4 +227,11 @@ public class UIProfileServiceIntegrationTests
         // Assert
         Assert.Equal("Test Name (test-id)", result);
     }
+
+    [Fact]
+    public async Task UIProfile_Usage_Example_Should_Run_Successfully()
+    {
+        // Act & Assert - This should not throw any exceptions
+        await UIProfileUsageExample.RunExampleAsync();
+    }
 }
