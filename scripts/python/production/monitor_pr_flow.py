@@ -223,10 +223,10 @@ def has_recent_ci_activity(repo: str, branch: str) -> bool:
                     for run_item in runs:
                         created_at = datetime.fromisoformat(run_item.get("createdAt", "").replace("Z", "+00:00"))
                         if created_at > cutoff_time:
-                            status = run_item.get("status")
-                            conclusion = run_item.get("conclusion")
-                            # If there's a recent run that's pending, in progress, or successful, don't dispatch
-                            if status in ["pending", "in_progress"] or conclusion == "success":
+                            status = (run_item.get("status") or "").lower()
+                            conclusion = (run_item.get("conclusion") or "").lower()
+                            active_statuses = {"queued", "pending", "in_progress", "waiting", "requested"}
+                            if status in active_statuses or conclusion in {"success", "action_required"}:
                                 return True
             except (subprocess.CalledProcessError, ValueError):
                 continue
@@ -289,7 +289,7 @@ def dispatch_ci(repo: str, branch: str) -> bool:
     # Fallback to generic dispatcher with input
     try:
         run(
-            ["gh", "workflow", "run", "ci-dispatch", "-f", f"target_ref={branch}"],
+            ["gh", "workflow", "run", "ci-dispatch", "-f", f"target_ref={resolved_sha}"],
             check=True,
             extra_env=env_pat,
         )
@@ -432,13 +432,16 @@ def main():
             print(f"Monitor PR #{number} {branch} draft={is_draft}")
 
             # Ensure CI ran successfully
-            if not has_success_ci(REPO, branch):
+            ci_succeeded = has_success_ci(REPO, branch)
+            if not ci_succeeded:
+                if is_draft:
+                    print(f"Skipping CI dispatch for draft PR {branch}")
+                    continue
                 if dispatch_ci(REPO, branch):
                     print(f"Dispatched CI for {branch}")
                 else:
                     print(f"Could not dispatch CI for {branch}")
                 continue  # Wait for CI
-
             # Undraft and enable auto-merge
             if is_draft:
                 if mark_ready(REPO, number):
