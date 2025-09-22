@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="../GameConsole.Engine.Core/GameConsole.Engine.Core.csproj" />
     <ProjectReference Include="../GameConsole.Core.Abstractions/GameConsole.Core.Abstractions.csproj" />
+    <ProjectReference Include="../GameConsole.Plugins.Core/GameConsole.Plugins.Core.csproj" />
   </ItemGroup>
 
 </Project>
