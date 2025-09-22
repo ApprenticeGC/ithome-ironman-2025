@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core.Tests", "GameConsole.Audio.Core.Tests\GameConsole.Audio.Core.Tests.csproj", "{5E8FF5B8-F7CB-4414-8C15-556837B009E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.UI.Core", "GameConsole.UI.Core\GameConsole.UI.Core.csproj", "{A7B8C9D0-E1F2-3456-7890-ABCDEF123456}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -120,5 +122,9 @@ Global
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-ABCDEF123456}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-ABCDEF123456}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-ABCDEF123456}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-ABCDEF123456}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
