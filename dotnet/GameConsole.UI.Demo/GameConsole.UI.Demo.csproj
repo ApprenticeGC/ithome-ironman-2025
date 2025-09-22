@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../GameConsole.Core.Abstractions/GameConsole.Core.Abstractions.csproj" />
+    <ProjectReference Include="../GameConsole.UI.Core/GameConsole.UI.Core.csproj" />
+    <ProjectReference Include="../GameConsole.UI.Services/GameConsole.UI.Services.csproj" />
+    <ProjectReference Include="../GameConsole.Input.Core/GameConsole.Input.Core.csproj" />
+    <ProjectReference Include="../GameConsole.Input.Services/GameConsole.Input.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
