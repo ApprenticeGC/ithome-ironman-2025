@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  gameconsole-base:
+    build: .
+    image: gameconsole:latest
+    container_name: gameconsole-base
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    volumes:
+      - ./dotnet:/app/src
+    networks:
+      - gameconsole-network
+    
+  # Example service showing how to use the base image
+  gameconsole-dev:
+    depends_on:
+      - gameconsole-base
+    build: .
+    image: gameconsole:dev
+    container_name: gameconsole-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    networks:
+      - gameconsole-network
+
+networks:
+  gameconsole-network:
+    driver: bridge
