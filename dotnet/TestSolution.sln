@@ -39,6 +39,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core.Tests", "GameConsole.Audio.Core.Tests\GameConsole.Audio.Core.Tests.csproj", "{5E8FF5B8-F7CB-4414-8C15-556837B009E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Profile.Core", "GameConsole.Profile.Core\GameConsole.Profile.Core.csproj", "{C9780535-AE27-4402-BDB3-5E3A3444945D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Profile.Services", "GameConsole.Profile.Services\GameConsole.Profile.Services.csproj", "{1ACFEFF0-B781-4999-9DB9-C3EFC804B994}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Profile.Core.Tests", "GameConsole.Profile.Core.Tests\GameConsole.Profile.Core.Tests.csproj", "{B2E58BC7-60A7-413B-A9CC-3A94B2AC8C47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -120,5 +126,17 @@ Global
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9780535-AE27-4402-BDB3-5E3A3444945D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9780535-AE27-4402-BDB3-5E3A3444945D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9780535-AE27-4402-BDB3-5E3A3444945D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9780535-AE27-4402-BDB3-5E3A3444945D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1ACFEFF0-B781-4999-9DB9-C3EFC804B994}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ACFEFF0-B781-4999-9DB9-C3EFC804B994}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ACFEFF0-B781-4999-9DB9-C3EFC804B994}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ACFEFF0-B781-4999-9DB9-C3EFC804B994}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2E58BC7-60A7-413B-A9CC-3A94B2AC8C47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2E58BC7-60A7-413B-A9CC-3A94B2AC8C47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2E58BC7-60A7-413B-A9CC-3A94B2AC8C47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2E58BC7-60A7-413B-A9CC-3A94B2AC8C47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
