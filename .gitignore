@@ -18,5 +18,8 @@ logs/
 # Editor
 .vscode/
 
+# Build artifacts
+artifacts/
+
 # Game RFCs (archived externally)
 docs/game-rfcs/

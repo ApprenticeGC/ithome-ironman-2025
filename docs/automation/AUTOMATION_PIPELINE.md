@@ -65,6 +65,16 @@ Located in `.github/workflows/`:
 - **Purpose**: Posts diagnostic comments on PRs showing auto-merge blockers
 - **Features**: Comprehensive GraphQL-based analysis with actionable feedback
 
+#### `deploy-release.yml` (NEW - RFC-012-02)
+- **Triggers**: Push to main branch, manual workflow dispatch
+- **Purpose**: Automated deployment pipeline for GameConsole framework
+- **Features**: 
+  - Creates NuGet packages for all GameConsole components
+  - Generates semantic version (1.0.{commit-count}-{short-sha})
+  - Creates GitHub releases automatically
+  - Uploads build artifacts to releases
+- **Integration**: Completes the automation chain: Code → CI → Deploy
+
 ### 3. Unicode Validation Framework
 Located in `scripts/python/tools/`:
 
@@ -77,14 +87,15 @@ Located in `scripts/python/tools/`:
 
 ## Automation Flow
 
-### Happy Path: Issue → PR → Merge
+### Happy Path: Issue → PR → Merge → Deploy
 1. **Issue Created**: RFC-format issue triggers Copilot
 2. **Copilot Creates PR**: Implementation generated automatically
 3. **Auto-Review**: `auto-review-copilot.yml` approves if criteria met
 4. **Workflow Approval**: `auto_approve_or_dispatch.py` enables CI
 5. **CI Completion**: Automated tests run successfully
 6. **Auto-Merge**: `monitor_pr_flow.py` merges PR automatically
-7. **Cleanup**: Branch deleted, issue closed
+7. **Deployment**: `deploy-release.yml` creates packages and GitHub release
+8. **Cleanup**: Branch deleted, issue closed
 
 ### Fallback Handling
 - **Auto-merge fails**: Direct merge fallback in monitor script
