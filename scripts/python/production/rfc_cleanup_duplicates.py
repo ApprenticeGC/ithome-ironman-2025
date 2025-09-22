@@ -468,6 +468,21 @@ class RFCCleanupRunner:
         print("🎉 Cleanup process completed!")
         return success
 
+    def _clean_recreated_title(self, title: str) -> str:
+        """
+        Remove any existing 'Recreated broken chain: ' prefixes from the title.
+        
+        This prevents recursive prefix accumulation when recreating already-recreated issues.
+        """
+        prefix = "Recreated broken chain: "
+        cleaned_title = title
+        
+        # Remove all leading instances of the prefix
+        while cleaned_title.startswith(prefix):
+            cleaned_title = cleaned_title[len(prefix):]
+        
+        return cleaned_title
+
     def _recreate_broken_issue(self, issue_number: int, title: str) -> bool:
         """Recreate a broken issue using the cleanup_recreate_issue.py script."""
         try:
@@ -480,13 +495,16 @@ class RFCCleanupRunner:
             cleanup_script = os.path.join(script_dir, "cleanup_recreate_issue.py")
 
             owner, name = self.repo.split("/")
+            
+            # Clean the title to prevent recursive prefixing
+            cleaned_title = self._clean_recreated_title(title)
 
             cmd = [
                 sys.executable, cleanup_script,
                 "--owner", owner,
                 "--repo", name,
                 "--issue-number", str(issue_number),
-                "--title", f"Recreated broken chain: {title}",
+                "--title", f"Recreated broken chain: {cleaned_title}",
                 "--assign-mode", "bot"
             ]
 
