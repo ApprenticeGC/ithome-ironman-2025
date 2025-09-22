@@ -39,6 +39,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core.Tests", "GameConsole.Audio.Core.Tests\GameConsole.Audio.Core.Tests.csproj", "{5E8FF5B8-F7CB-4414-8C15-556837B009E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.UI.Core", "GameConsole.UI.Core\GameConsole.UI.Core.csproj", "{F54BAE53-3969-4B13-95BD-30816B72E1FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.UI.Console", "GameConsole.UI.Console\GameConsole.UI.Console.csproj", "{EABAE1DA-551C-4BB3-BA10-2D9852113DEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.UI.Console.Tests", "GameConsole.UI.Console.Tests\GameConsole.UI.Console.Tests.csproj", "{A6C5147E-29D0-4040-B3F8-6FB467ED67D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -120,5 +126,17 @@ Global
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F54BAE53-3969-4B13-95BD-30816B72E1FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F54BAE53-3969-4B13-95BD-30816B72E1FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F54BAE53-3969-4B13-95BD-30816B72E1FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F54BAE53-3969-4B13-95BD-30816B72E1FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EABAE1DA-551C-4BB3-BA10-2D9852113DEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EABAE1DA-551C-4BB3-BA10-2D9852113DEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EABAE1DA-551C-4BB3-BA10-2D9852113DEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EABAE1DA-551C-4BB3-BA10-2D9852113DEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6C5147E-29D0-4040-B3F8-6FB467ED67D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6C5147E-29D0-4040-B3F8-6FB467ED67D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6C5147E-29D0-4040-B3F8-6FB467ED67D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6C5147E-29D0-4040-B3F8-6FB467ED67D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
