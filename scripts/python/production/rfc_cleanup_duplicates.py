@@ -249,6 +249,28 @@ class RFCCleanupLogic:
         return None
 
     @staticmethod
+    def normalize_recreated_title(title: str) -> str:
+        """
+        Normalize a title for recreation, removing any existing 'Recreated broken chain:' prefixes
+        and ensuring clean formatting.
+        
+        Args:
+            title: The original title that may contain prefixes
+            
+        Returns:
+            Clean title without any 'Recreated broken chain:' prefixes
+        """
+        # Remove all instances of "Recreated broken chain:" (case-insensitive)
+        # This handles multiple nested prefixes from previous recreations
+        clean_title = re.sub(r"(?i)(?:recreated\s+broken\s+chain:\s*)+", "", title).strip()
+        
+        # If we somehow stripped everything, return the original title
+        if not clean_title:
+            return title.strip()
+            
+        return clean_title
+
+    @staticmethod
     def find_duplicate_rfcs(prs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Find RFC series that have multiple open PRs.
@@ -481,12 +503,15 @@ class RFCCleanupRunner:
 
             owner, name = self.repo.split("/")
 
+            # Normalize the title to remove any existing prefixes before adding our own
+            clean_title = RFCCleanupLogic.normalize_recreated_title(title)
+            
             cmd = [
                 sys.executable, cleanup_script,
                 "--owner", owner,
                 "--repo", name,
                 "--issue-number", str(issue_number),
-                "--title", f"Recreated broken chain: {title}",
+                "--title", f"Recreated broken chain: {clean_title}",
                 "--assign-mode", "bot"
             ]
 
