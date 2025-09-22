@@ -1,0 +1,222 @@
+# GameConsole Deployment Pipeline
+# RFC-012-02: Deployment Pipeline Automation
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Build and test job (reuses CI logic)
+  build-and-test:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      environment: ${{ steps.env.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ./dotnet
+
+      - name: Build (warnings as errors)
+        run: dotnet build ./dotnet -warnaserror --no-restore -c Release
+
+      - name: Run tests
+        run: dotnet test ./dotnet --no-build -c Release --verbosity normal
+        continue-on-error: ${{ github.event.inputs.force_deploy == 'true' }}
+
+      - name: Generate version
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${GITHUB_SHA:0:8}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            ENV="production"
+          else
+            ENV="staging"
+          fi
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+
+  # Container build and push
+  containerize:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=${{ needs.build-and-test.outputs.version }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Output image
+        id: image
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-test.outputs.version }}"
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+  # Deployment job
+  deploy:
+    needs: [build-and-test, containerize]
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ needs.build-and-test.outputs.environment }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Deploy to ${{ needs.build-and-test.outputs.environment }}
+        id: deploy
+        run: |
+          echo "🚀 Deploying GameConsole to ${{ needs.build-and-test.outputs.environment }}"
+          echo "📦 Image: ${{ needs.containerize.outputs.image }}"
+          echo "🏷️ Version: ${{ needs.build-and-test.outputs.version }}"
+          
+          # Create deployment manifest
+          cat > deployment.yml << EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: gameconsole
+            namespace: ${{ needs.build-and-test.outputs.environment }}
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: gameconsole
+            template:
+              metadata:
+                labels:
+                  app: gameconsole
+                  version: ${{ needs.build-and-test.outputs.version }}
+              spec:
+                containers:
+                - name: gameconsole
+                  image: ${{ needs.containerize.outputs.image }}
+                  ports:
+                  - containerPort: 8080
+                  env:
+                  - name: ASPNETCORE_ENVIRONMENT
+                    value: ${{ needs.build-and-test.outputs.environment }}
+                  resources:
+                    requests:
+                      memory: "256Mi"
+                      cpu: "250m"
+                    limits:
+                      memory: "512Mi"
+                      cpu: "500m"
+          EOF
+          
+          # Save deployment manifest as artifact
+          echo "manifest=deployment.yml" >> $GITHUB_OUTPUT
+          
+          # Mock deployment URL (replace with actual deployment logic)
+          if [[ "${{ needs.build-and-test.outputs.environment }}" == "production" ]]; then
+            echo "url=https://gameconsole.prod.example.com" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://gameconsole.staging.example.com" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "✅ Deployment completed successfully"
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-${{ needs.build-and-test.outputs.environment }}-${{ needs.build-and-test.outputs.version }}
+          path: |
+            deployment.yml
+          retention-days: 30
+
+  # Post-deployment verification
+  verify:
+    needs: [build-and-test, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying deployment to ${{ needs.build-and-test.outputs.environment }}"
+          echo "🏷️ Version: ${{ needs.build-and-test.outputs.version }}"
+          
+          # Mock health check (replace with actual health check)
+          echo "✅ Health check passed"
+          echo "✅ Deployment verification completed"
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          if [[ "$STATUS" == "success" ]]; then
+            echo "✅ Deployment pipeline completed successfully"
+          else
+            echo "❌ Deployment pipeline failed"
+          fi

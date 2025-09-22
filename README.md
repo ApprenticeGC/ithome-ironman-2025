@@ -25,16 +25,40 @@ Concise repo for notes, demos, and artifacts related to the 2025 iThome Ironman 
 Prerequisites depend on what you want to run. For .NET examples:
 
 - Install .NET SDK 8.0+
+- Optionally: Docker for containerized development
 - Optionally: a recent Node/Python runtime if examples appear later
 
 Common actions:
 
-- Build .NET: `dotnet build`
-- Test .NET: `dotnet test`
+- Build .NET: `dotnet build ./dotnet -warnaserror`
+- Test .NET: `dotnet test ./dotnet --no-build`
 - Test Python scripts: `python scripts/python/tools/run_tests.py`
 - Setup development environment: `python scripts/python/tools/setup_dev.py`
 - Install dependencies: `pip install -r scripts/python/requirements/test-requirements.txt`
 - Run pre-commit hooks: `pre-commit run --all-files`
+
+## Container Development (RFC-012-02)
+
+GameConsole supports container-native deployment with Docker:
+
+### Local Development with Docker
+- Build container: `./scripts/dev.sh build`
+- Run application: `./scripts/dev.sh run`
+- View logs: `./scripts/dev.sh logs`
+- Stop application: `./scripts/dev.sh stop`
+- Clean up: `./scripts/dev.sh clean`
+
+### Manual Docker Commands
+- Build: `docker build -t gameconsole:latest .`
+- Run: `docker-compose up -d`
+- Stop: `docker-compose down`
+
+### Deployment Pipeline
+The repository includes automated deployment pipeline via GitHub Actions:
+- **Trigger**: Push to `main` branch or workflow dispatch
+- **Stages**: Build → Test → Containerize → Deploy → Verify
+- **Environments**: Staging (automatic), Production (manual approval)
+- **Deployment Script**: `./scripts/deploy.sh -e staging -v latest`
 
 ## Python Testing
 

@@ -1,0 +1,95 @@
+# GameConsole Docker ignore file
+# RFC-012-02: Deployment Pipeline Automation
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+README*
+LICENSE
+CONTRIBUTING*
+CODE_OF_CONDUCT*
+
+# CI/CD
+.github/
+.azure/
+
+# IDE and editor files
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build outputs (will be rebuilt in container)
+**/bin/
+**/obj/
+**/out/
+
+# NuGet packages (will be restored in container)
+packages/
+*.nupkg
+
+# Test results
+TestResults/
+test-results/
+test_results.json
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Runtime and cache directories
+node_modules/
+.npm/
+.cache/
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files (secrets)
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
+# Scripts (included selectively)
+scripts/
+!scripts/deploy.sh
+!scripts/dev.sh
+
+# Exclude build artifacts we don't need in container
+build/
+dist/
+coverage/

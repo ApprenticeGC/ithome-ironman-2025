@@ -1,0 +1,54 @@
+# GameConsole Development Environment
+# RFC-012-02: Deployment Pipeline Automation
+version: '3.8'
+
+services:
+  # Main GameConsole application
+  gameconsole:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Development database (if needed)
+  # Uncomment when database integration is implemented
+  # db:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_DB: gameconsole
+  #     POSTGRES_USER: gameuser
+  #     POSTGRES_PASSWORD: gamepass
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+  # Redis for caching (if needed)
+  # Uncomment when caching is implemented  
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   restart: unless-stopped
+
+volumes:
+  # postgres_data:
+  logs:
+
+networks:
+  default:
+    name: gameconsole-network
