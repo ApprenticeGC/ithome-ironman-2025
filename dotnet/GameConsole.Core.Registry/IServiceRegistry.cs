@@ -136,4 +136,31 @@ public interface IServiceRegistry
     /// </summary>
     /// <returns>An enumerable of service descriptors.</returns>
     IEnumerable<ServiceDescriptor> GetRegisteredServices();
+
+    /// <summary>
+    /// Scans an assembly for types decorated with <see cref="AgentAttribute"/> and registers them.
+    /// </summary>
+    /// <param name="assembly">The assembly to scan.</param>
+    /// <param name="categories">Optional categories to filter by.</param>
+    void RegisterAgentsFromAttributes(System.Reflection.Assembly assembly, params string[] categories);
+
+    /// <summary>
+    /// Gets all registered agents.
+    /// </summary>
+    /// <returns>An enumerable of registered agent service descriptors.</returns>
+    IEnumerable<ServiceDescriptor> GetRegisteredAgents();
+
+    /// <summary>
+    /// Gets all registered agents that have the specified capability.
+    /// </summary>
+    /// <param name="capability">The capability to filter by.</param>
+    /// <returns>An enumerable of agent service descriptors with the specified capability.</returns>
+    IEnumerable<ServiceDescriptor> GetAgentsWithCapability(string capability);
+
+    /// <summary>
+    /// Gets all registered agents in the specified categories.
+    /// </summary>
+    /// <param name="categories">The categories to filter by.</param>
+    /// <returns>An enumerable of agent service descriptors in the specified categories.</returns>
+    IEnumerable<ServiceDescriptor> GetAgentsByCategory(params string[] categories);
 }

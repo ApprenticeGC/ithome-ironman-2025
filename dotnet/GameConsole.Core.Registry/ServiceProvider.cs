@@ -14,6 +14,7 @@ public sealed class ServiceProvider : IServiceProvider, IServiceRegistry, IAsync
     private readonly ConcurrentDictionary<Type, ServiceDescriptor> _services = new();
     private readonly ConcurrentDictionary<Type, object> _singletonInstances = new();
     private readonly ThreadLocal<HashSet<Type>> _resolutionPath = new(() => new HashSet<Type>());
+    private readonly ConcurrentDictionary<Type, AgentAttribute> _agentMetadata = new();
     private readonly ILogger<ServiceProvider>? _logger;
     private bool _disposed;
 
@@ -283,6 +284,92 @@ public sealed class ServiceProvider : IServiceProvider, IServiceRegistry, IAsync
     public IEnumerable<ServiceDescriptor> GetRegisteredServices()
     {
         return _services.Values.ToList();
+    }
+
+    /// <summary>
+    /// Scans an assembly for types decorated with <see cref="AgentAttribute"/> and registers them.
+    /// </summary>
+    public void RegisterAgentsFromAttributes(Assembly assembly, params string[] categories)
+    {
+        if (_disposed) throw new ObjectDisposedException(nameof(ServiceProvider));
+        ArgumentNullException.ThrowIfNull(assembly);
+
+        var categorySet = categories.Length > 0 ? new HashSet<string>(categories) : null;
+
+        foreach (var type in assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract))
+        {
+            var attribute = type.GetCustomAttribute<AgentAttribute>();
+            if (attribute == null) continue;
+
+            // Filter by categories if specified
+            if (categorySet != null && !attribute.Categories.Any(categorySet.Contains))
+                continue;
+
+            // Check if the type implements IAgent
+            if (!typeof(IAgent).IsAssignableFrom(type))
+            {
+                _logger?.LogWarning("Type {TypeName} has AgentAttribute but does not implement IAgent", type.Name);
+                continue;
+            }
+
+            // Register as IAgent and as the specific type
+            var agentDescriptor = new ServiceDescriptor(typeof(IAgent), type, attribute.Lifetime);
+            var typeDescriptor = new ServiceDescriptor(type, type, attribute.Lifetime);
+
+            if (TryRegister(agentDescriptor))
+            {
+                _agentMetadata.TryAdd(type, attribute);
+                _logger?.LogDebug("Auto-registered agent {AgentName} -> {ImplementationType} from attribute", 
+                    attribute.Name, type.Name);
+            }
+
+            TryRegister(typeDescriptor);
+        }
+    }
+
+    /// <summary>
+    /// Gets all registered agents.
+    /// </summary>
+    public IEnumerable<ServiceDescriptor> GetRegisteredAgents()
+    {
+        return _services.Values.Where(descriptor => typeof(IAgent).IsAssignableFrom(descriptor.ServiceType) ||
+                                                   _agentMetadata.ContainsKey(descriptor.ImplementationType ?? descriptor.ServiceType))
+                                .ToList();
+    }
+
+    /// <summary>
+    /// Gets all registered agents that have the specified capability.
+    /// </summary>
+    public IEnumerable<ServiceDescriptor> GetAgentsWithCapability(string capability)
+    {
+        ArgumentNullException.ThrowIfNull(capability);
+
+        return GetRegisteredAgents().Where(descriptor =>
+        {
+            var implementationType = descriptor.ImplementationType ?? descriptor.ServiceType;
+            return _agentMetadata.TryGetValue(implementationType, out var metadata) &&
+                   metadata.Capabilities.Contains(capability, StringComparer.OrdinalIgnoreCase);
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Gets all registered agents in the specified categories.
+    /// </summary>
+    public IEnumerable<ServiceDescriptor> GetAgentsByCategory(params string[] categories)
+    {
+        ArgumentNullException.ThrowIfNull(categories);
+
+        if (categories.Length == 0)
+            return GetRegisteredAgents();
+
+        var categorySet = new HashSet<string>(categories, StringComparer.OrdinalIgnoreCase);
+
+        return GetRegisteredAgents().Where(descriptor =>
+        {
+            var implementationType = descriptor.ImplementationType ?? descriptor.ServiceType;
+            return _agentMetadata.TryGetValue(implementationType, out var metadata) &&
+                   metadata.Categories.Any(categorySet.Contains);
+        }).ToList();
     }
 
     #endregion
