@@ -1,8 +1,6 @@
 using GameConsole.AI.Remote.Configuration;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Extensions.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -20,7 +18,7 @@ public sealed class AIServiceClient : IDisposable
     private readonly ILogger<AIServiceClient> _logger;
     private readonly AIEndpointConfig _endpointConfig;
     private readonly CachingConfig _cachingConfig;
-    private readonly ResilienceStrategy _resilienceStrategy;
+    private readonly FailoverConfig _failoverConfig;
     private readonly SemaphoreSlim _concurrencySemaphore;
 
     private bool _disposed;
@@ -48,9 +46,9 @@ public sealed class AIServiceClient : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _endpointConfig = endpointConfig ?? throw new ArgumentNullException(nameof(endpointConfig));
         _cachingConfig = cachingConfig ?? throw new ArgumentNullException(nameof(cachingConfig));
+        _failoverConfig = failoverConfig ?? throw new ArgumentNullException(nameof(failoverConfig));
 
         _concurrencySemaphore = new SemaphoreSlim(endpointConfig.MaxConcurrentRequests, endpointConfig.MaxConcurrentRequests);
-        _resilienceStrategy = CreateResilienceStrategy(failoverConfig);
 
         ConfigureHttpClient();
     }
@@ -73,7 +71,7 @@ public sealed class AIServiceClient : IDisposable
     /// <returns>The AI completion response.</returns>
     public async Task<AICompletionResponse> GetCompletionAsync(AICompletionRequest request, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
         ArgumentNullException.ThrowIfNull(request);
 
         var cacheKey = GenerateCacheKey(request);
@@ -82,14 +80,14 @@ public sealed class AIServiceClient : IDisposable
         if (_cachingConfig.IsEnabled && _cache.TryGetValue(cacheKey, out AICompletionResponse? cachedResponse))
         {
             _logger.LogDebug("Returning cached response for request {RequestId}", request.GetHashCode());
-            return cachedResponse with { FromCache = true };
+            return cachedResponse! with { FromCache = true };
         }
 
         await _concurrencySemaphore.WaitAsync(cancellationToken);
         
         try
         {
-            var response = await _resilienceStrategy.ExecuteAsync(async _ =>
+            var response = await ExecuteWithRetry(async () =>
             {
                 using var httpRequest = CreateHttpRequest(request);
                 using var httpResponse = await _httpClient.SendAsync(httpRequest, cancellationToken);
@@ -98,7 +96,7 @@ public sealed class AIServiceClient : IDisposable
 
                 var responseContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
                 return ParseCompletionResponse(responseContent, request);
-            });
+            }, cancellationToken);
 
             // Cache the response
             if (_cachingConfig.IsEnabled)
@@ -124,7 +122,7 @@ public sealed class AIServiceClient : IDisposable
     /// <returns>An async enumerable of streaming response chunks.</returns>
     public async IAsyncEnumerable<AIStreamingChunk> GetStreamingCompletionAsync(AICompletionRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
         ArgumentNullException.ThrowIfNull(request);
 
         await _concurrencySemaphore.WaitAsync(cancellationToken);
@@ -183,7 +181,7 @@ public sealed class AIServiceClient : IDisposable
     /// <returns>Health information for the endpoint.</returns>
     public async Task<EndpointHealth> HealthCheckAsync(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -261,45 +259,55 @@ public sealed class AIServiceClient : IDisposable
         }
     }
 
-    private ResilienceStrategy CreateResilienceStrategy(FailoverConfig failoverConfig)
+    private async Task<T> ExecuteWithRetry<T>(Func<Task<T>> operation, CancellationToken cancellationToken)
     {
-        var strategyBuilder = new ResilienceStrategyBuilder()
-            .AddRetry(new Polly.Retry.RetryStrategyOptions
-            {
-                MaxRetryAttempts = failoverConfig.MaxRetryAttempts,
-                Delay = failoverConfig.BaseRetryDelay,
-                MaxDelay = failoverConfig.MaxRetryDelay,
-                BackoffType = Polly.DelayBackoffType.Exponential,
-                UseJitter = true,
-                OnRetry = args =>
-                {
-                    _logger.LogWarning("Retrying request (attempt {Attempt}): {Exception}", 
-                        args.AttemptNumber, args.Outcome.Exception?.Message);
-                    return ValueTask.CompletedTask;
-                }
-            });
+        var maxRetries = _failoverConfig.MaxRetryAttempts;
+        var exceptions = new List<Exception>();
 
-        if (failoverConfig.CircuitBreaker.IsEnabled)
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
         {
-            strategyBuilder.AddCircuitBreaker(new Polly.CircuitBreaker.CircuitBreakerStrategyOptions
+            try
             {
-                FailureRatio = failoverConfig.CircuitBreaker.FailureThreshold / 10.0,
-                MinimumThroughput = failoverConfig.CircuitBreaker.MinimumThroughput,
-                BreakDuration = failoverConfig.CircuitBreaker.RecoveryTimeout,
-                OnOpened = args =>
+                return await operation();
+            }
+            catch (Exception ex) when (ShouldRetry(ex, attempt))
+            {
+                exceptions.Add(ex);
+                _logger.LogWarning(ex, "Request failed on attempt {Attempt}: {Message}", attempt + 1, ex.Message);
+
+                if (attempt < maxRetries)
                 {
-                    _logger.LogError("Circuit breaker opened for {Provider}", Provider);
-                    return ValueTask.CompletedTask;
-                },
-                OnClosed = args =>
-                {
-                    _logger.LogInformation("Circuit breaker closed for {Provider}", Provider);
-                    return ValueTask.CompletedTask;
+                    var delay = CalculateRetryDelay(attempt);
+                    await Task.Delay(delay, cancellationToken);
                 }
-            });
+            }
         }
 
-        return strategyBuilder.Build();
+        throw new AggregateException("All retry attempts failed", exceptions);
+    }
+
+    private bool ShouldRetry(Exception exception, int attemptNumber)
+    {
+        if (attemptNumber >= _failoverConfig.MaxRetryAttempts)
+            return false;
+
+        return exception switch
+        {
+            HttpRequestException => true,
+            TaskCanceledException when !exception.Message.Contains("timeout") => false,
+            TaskCanceledException => true,
+            System.Net.Sockets.SocketException => true,
+            System.IO.IOException => true,
+            _ => false
+        };
+    }
+
+    private TimeSpan CalculateRetryDelay(int attemptNumber)
+    {
+        var baseDelay = _failoverConfig.BaseRetryDelay.TotalMilliseconds;
+        var exponentialDelay = baseDelay * Math.Pow(_failoverConfig.BackoffMultiplier, attemptNumber);
+        var finalDelay = Math.Min(exponentialDelay, _failoverConfig.MaxRetryDelay.TotalMilliseconds);
+        return TimeSpan.FromMilliseconds(Math.Max(finalDelay, 0));
     }
 
     private HttpRequestMessage CreateHttpRequest(AICompletionRequest request)

@@ -118,7 +118,7 @@ public sealed class AICompletionRequest
 /// <summary>
 /// Represents an AI completion response.
 /// </summary>
-public sealed class AICompletionResponse
+public sealed record AICompletionResponse
 {
     /// <summary>
     /// The generated text response from the AI model.

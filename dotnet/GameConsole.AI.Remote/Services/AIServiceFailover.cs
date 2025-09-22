@@ -168,6 +168,18 @@ public sealed class AIServiceFailover
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        var chunks = await ExecuteStreamingRequestWithRetry(request, cancellationToken);
+
+        foreach (var chunk in chunks)
+        {
+            yield return chunk;
+        }
+    }
+
+    private async Task<List<AIStreamingChunk>> ExecuteStreamingRequestWithRetry(
+        AICompletionRequest request,
+        CancellationToken cancellationToken)
+    {
         var exceptions = new List<Exception>();
         var startTime = DateTimeOffset.UtcNow;
 
@@ -181,25 +193,26 @@ public sealed class AIServiceFailover
                     throw new AIServiceException("No healthy endpoints available for streaming request");
                 }
 
-                var hasYieldedAny = false;
+                var chunks = new List<AIStreamingChunk>();
                 await foreach (var chunk in client.GetStreamingCompletionAsync(request, cancellationToken))
                 {
-                    hasYieldedAny = true;
-                    yield return chunk;
-
+                    chunks.Add(chunk);
+                    
                     if (chunk.IsComplete)
                     {
                         // Record successful streaming request
                         _loadBalancer.RecordRequestCompletion(chunk.Provider,
                             (DateTimeOffset.UtcNow - startTime).TotalMilliseconds, true);
-                        yield break;
+                        break;
                     }
                 }
 
-                if (!hasYieldedAny)
+                if (chunks.Count == 0)
                 {
                     throw new AIServiceException("Streaming request completed but no chunks were received");
                 }
+
+                return chunks;
             }
             catch (Exception ex) when (ShouldRetry(ex, attempt) && attempt <= _config.MaxRetryAttempts)
             {

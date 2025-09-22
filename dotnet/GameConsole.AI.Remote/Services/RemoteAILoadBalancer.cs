@@ -326,6 +326,7 @@ public sealed class EndpointMetrics
     private readonly Queue<double> _recentResponseTimes = new();
     private readonly Queue<bool> _recentResults = new();
     private const int MaxSampleSize = 100;
+    private int _currentConnections;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EndpointMetrics"/> class.
@@ -350,7 +351,7 @@ public sealed class EndpointMetrics
     /// <summary>
     /// Gets the current number of active connections.
     /// </summary>
-    public int CurrentConnections { get; private set; }
+    public int CurrentConnections => _currentConnections;
 
     /// <summary>
     /// Gets the average response time in milliseconds.
@@ -420,7 +421,7 @@ public sealed class EndpointMetrics
     /// </summary>
     public void IncrementConnections()
     {
-        Interlocked.Increment(ref CurrentConnections);
+        Interlocked.Increment(ref _currentConnections);
     }
 
     /// <summary>
@@ -428,7 +429,7 @@ public sealed class EndpointMetrics
     /// </summary>
     public void DecrementConnections()
     {
-        Interlocked.Decrement(ref CurrentConnections);
+        Interlocked.Decrement(ref _currentConnections);
     }
 
     /// <summary>

@@ -37,11 +37,13 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <param name="configuration">Configuration for the remote AI service.</param>
     /// <param name="httpClientFactory">Factory for creating HTTP clients.</param>
     /// <param name="cache">Memory cache for response caching.</param>
+    /// <param name="loggerFactory">Logger factory for creating specific loggers.</param>
     public RemoteAIService(
         ILogger<RemoteAIService> logger,
         RemoteAIConfiguration configuration,
         IHttpClientFactory httpClientFactory,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        ILoggerFactory loggerFactory)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -55,7 +57,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
             var client = new AIServiceClient(
                 httpClient,
                 _cache,
-                logger,
+                loggerFactory.CreateLogger<AIServiceClient>(),
                 endpoint.Value,
                 _configuration.Caching,
                 _configuration.Failover)
@@ -68,12 +70,12 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
 
         // Initialize load balancer and failover
         _loadBalancer = new RemoteAILoadBalancer(
-            logger,
+            loggerFactory.CreateLogger<RemoteAILoadBalancer>(),
             _configuration.LoadBalancer,
             _clients);
 
         _failover = new AIServiceFailover(
-            logger,
+            loggerFactory.CreateLogger<AIServiceFailover>(),
             _configuration.Failover,
             _loadBalancer);
 
@@ -91,7 +93,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
 
         if (_isRunning)
         {
@@ -121,7 +123,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
 
         if (_isRunning)
         {
@@ -153,7 +155,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public async Task<AICompletionResponse> GetCompletionAsync(AICompletionRequest request, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
         ArgumentNullException.ThrowIfNull(request);
 
         if (!_isRunning)
@@ -192,7 +194,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public async IAsyncEnumerable<AIStreamingChunk> GetStreamingCompletionAsync(AICompletionRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
         ArgumentNullException.ThrowIfNull(request);
 
         if (!_isRunning)
@@ -242,7 +244,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public async Task<ServiceHealthStatus> GetHealthStatusAsync(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
 
         await _loadBalancer.ForceHealthCheckAsync(cancellationToken);
 
@@ -269,7 +271,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public Task<AIUsageMetrics> GetUsageMetricsAsync(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
 
         return Task.FromResult(_usageTracker.GetMetrics());
     }
@@ -277,7 +279,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public async Task<IEnumerable<AICompletionResponse>> ProcessBatchAsync(IEnumerable<AICompletionRequest> requests, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
         ArgumentNullException.ThrowIfNull(requests);
 
         if (!_isRunning)
@@ -310,7 +312,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public Task<RateLimitStatus> GetRateLimitStatusAsync(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
 
         return Task.FromResult(_rateLimiter.GetStatus());
     }
@@ -318,7 +320,7 @@ public sealed class RemoteAIService : IRemoteAIService, IBatchProcessingCapabili
     /// <inheritdoc />
     public Task SetRateLimitConfigAsync(RateLimitConfig config, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIfDisposed(_disposed, this);
+        ServiceHelpers.ThrowIfDisposed(_disposed);
         ArgumentNullException.ThrowIfNull(config);
 
         _rateLimiter.UpdateConfig(config);
