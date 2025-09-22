@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Akka" Version="1.5.27" />
+    <PackageReference Include="Akka.Cluster" Version="1.5.27" />
+    <PackageReference Include="Akka.Remote" Version="1.5.27" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameConsole.AI.Clustering.Core\GameConsole.AI.Clustering.Core.csproj" />
+    <ProjectReference Include="..\GameConsole.Core.Abstractions\GameConsole.Core.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
