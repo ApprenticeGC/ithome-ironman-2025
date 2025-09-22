@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <!-- Package metadata -->
+    <PackageId>$(AssemblyName)</PackageId>
+    <Authors>ApprenticeGC</Authors>
+    <Company>ApprenticeGC</Company>
+    <Product>GameConsole Framework</Product>
+    <Description>A modular game console framework for .NET applications</Description>
+    <Copyright>© 2025 ApprenticeGC</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>game;console;framework;dotnet;gaming</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Only pack non-test projects -->
+    <IsPackable Condition="$(MSBuildProjectName.Contains('.Tests'))">false</IsPackable>
+    <IsPackable Condition="$(MSBuildProjectName.Contains('TestLib'))">false</IsPackable>
+    
+    <!-- Version will be set by build pipeline -->
+    <Version Condition="'$(Version)' == ''">1.0.0-dev</Version>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(IsPackable) != 'false'">
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

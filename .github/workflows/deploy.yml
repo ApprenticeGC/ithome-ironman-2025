@@ -1,0 +1,108 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${{ github.ref_name }}"
+            # Remove 'v' prefix if present
+            VERSION="${VERSION#v}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+
+      - name: Restore dependencies
+        run: dotnet restore ./dotnet
+
+      - name: Build Release
+        run: dotnet build ./dotnet --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ./dotnet --configuration Release --no-build --verbosity normal
+
+      - name: Pack NuGet packages
+        run: |
+          dotnet pack ./dotnet --configuration Release --no-build --output ./artifacts \
+            -p:PackageVersion=${{ steps.version.outputs.VERSION }} \
+            -p:Version=${{ steps.version.outputs.VERSION }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ steps.version.outputs.VERSION }}
+          path: ./artifacts/*.nupkg
+
+      - name: Publish to GitHub Packages
+        run: |
+          dotnet nuget push "./artifacts/*.nupkg" \
+            --api-key ${{ secrets.GITHUB_TOKEN }} \
+            --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json \
+            --skip-duplicate
+
+      - name: Create release archive
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        run: |
+          cd ./artifacts
+          zip -r ../nuget-packages-${{ steps.version.outputs.VERSION }}.zip *.nupkg
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## GameConsole Framework ${{ steps.version.outputs.VERSION }}
+            
+            ### NuGet Packages
+            This release includes the following NuGet packages:
+            - GameConsole.Core.Abstractions
+            - GameConsole.Core.Registry  
+            - GameConsole.Engine.Core
+            - GameConsole.Audio.Core
+            - GameConsole.Graphics.Core
+            - GameConsole.Graphics.Services
+            - GameConsole.Input.Core
+            - GameConsole.Input.Services
+            - GameConsole.Plugins.Core
+            - GameConsole.Plugins.Lifecycle
+            
+            ### Installation
+            ```
+            dotnet add package GameConsole.Core.Abstractions --version ${{ steps.version.outputs.VERSION }}
+            ```
+            
+            All packages are available on [GitHub Packages](https://github.com/${{ github.repository_owner }}?tab=packages&repo_name=${{ github.event.repository.name }}).
+          files: |
+            nuget-packages-${{ steps.version.outputs.VERSION }}.zip
+            artifacts/*.nupkg
+          draft: false
+          prerelease: false
