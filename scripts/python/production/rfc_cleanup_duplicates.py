@@ -468,6 +468,14 @@ class RFCCleanupRunner:
         print("🎉 Cleanup process completed!")
         return success
 
+    def _clean_recreated_title(self, title: str) -> str:
+        """Remove any existing 'Recreated broken chain: ' prefixes from title."""
+        # Remove repeated "Recreated broken chain: " prefixes from the beginning
+        # First strip whitespace, then remove prefixes, then strip again
+        cleaned = title.strip()
+        cleaned = re.sub(r'^(?:Recreated broken chain: )*', '', cleaned)
+        return cleaned.strip()
+
     def _recreate_broken_issue(self, issue_number: int, title: str) -> bool:
         """Recreate a broken issue using the cleanup_recreate_issue.py script."""
         try:
@@ -481,12 +489,15 @@ class RFCCleanupRunner:
 
             owner, name = self.repo.split("/")
 
+            # Clean the title to avoid recursive prefixes
+            clean_title = self._clean_recreated_title(title)
+
             cmd = [
                 sys.executable, cleanup_script,
                 "--owner", owner,
                 "--repo", name,
                 "--issue-number", str(issue_number),
-                "--title", f"Recreated broken chain: {title}",
+                "--title", f"Recreated broken chain: {clean_title}",
                 "--assign-mode", "bot"
             ]
 
