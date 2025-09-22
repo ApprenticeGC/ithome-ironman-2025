@@ -312,13 +312,15 @@ public sealed class ServiceProvider : IServiceProvider, IServiceRegistry, IAsync
                 continue;
             }
 
+            // Store metadata for the implementation type
+            _agentMetadata.TryAdd(type, attribute);
+
             // Register as IAgent and as the specific type
             var agentDescriptor = new ServiceDescriptor(typeof(IAgent), type, attribute.Lifetime);
             var typeDescriptor = new ServiceDescriptor(type, type, attribute.Lifetime);
 
             if (TryRegister(agentDescriptor))
             {
-                _agentMetadata.TryAdd(type, attribute);
                 _logger?.LogDebug("Auto-registered agent {AgentName} -> {ImplementationType} from attribute", 
                     attribute.Name, type.Name);
             }
@@ -346,7 +348,12 @@ public sealed class ServiceProvider : IServiceProvider, IServiceRegistry, IAsync
 
         return GetRegisteredAgents().Where(descriptor =>
         {
-            var implementationType = descriptor.ImplementationType ?? descriptor.ServiceType;
+            // Get the actual implementation type
+            var implementationType = descriptor.ImplementationType ?? 
+                                   (descriptor.ServiceType != typeof(IAgent) ? descriptor.ServiceType : null);
+            
+            if (implementationType == null) return false;
+
             return _agentMetadata.TryGetValue(implementationType, out var metadata) &&
                    metadata.Capabilities.Contains(capability, StringComparer.OrdinalIgnoreCase);
         }).ToList();
@@ -366,7 +373,12 @@ public sealed class ServiceProvider : IServiceProvider, IServiceRegistry, IAsync
 
         return GetRegisteredAgents().Where(descriptor =>
         {
-            var implementationType = descriptor.ImplementationType ?? descriptor.ServiceType;
+            // Get the actual implementation type
+            var implementationType = descriptor.ImplementationType ?? 
+                                   (descriptor.ServiceType != typeof(IAgent) ? descriptor.ServiceType : null);
+            
+            if (implementationType == null) return false;
+
             return _agentMetadata.TryGetValue(implementationType, out var metadata) &&
                    metadata.Categories.Any(categorySet.Contains);
         }).ToList();
