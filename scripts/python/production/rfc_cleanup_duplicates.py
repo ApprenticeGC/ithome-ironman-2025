@@ -468,6 +468,25 @@ class RFCCleanupRunner:
         print("🎉 Cleanup process completed!")
         return success
 
+    def _normalize_recreated_title(self, title: str) -> str:
+        """
+        Normalize title to ensure only one 'Recreated broken chain:' prefix.
+        
+        Args:
+            title: The original title which may already contain the prefix
+            
+        Returns:
+            Normalized title with exactly one 'Recreated broken chain:' prefix
+        """
+        prefix = "Recreated broken chain: "
+        
+        # Remove all existing prefixes
+        while title.startswith(prefix):
+            title = title[len(prefix):]
+        
+        # Add single prefix back
+        return prefix + title
+
     def _recreate_broken_issue(self, issue_number: int, title: str) -> bool:
         """Recreate a broken issue using the cleanup_recreate_issue.py script."""
         try:
@@ -480,13 +499,16 @@ class RFCCleanupRunner:
             cleanup_script = os.path.join(script_dir, "cleanup_recreate_issue.py")
 
             owner, name = self.repo.split("/")
+            
+            # Normalize title to prevent duplicate "Recreated broken chain:" prefixes
+            normalized_title = self._normalize_recreated_title(title)
 
             cmd = [
                 sys.executable, cleanup_script,
                 "--owner", owner,
                 "--repo", name,
                 "--issue-number", str(issue_number),
-                "--title", f"Recreated broken chain: {title}",
+                "--title", normalized_title,
                 "--assign-mode", "bot"
             ]
 
