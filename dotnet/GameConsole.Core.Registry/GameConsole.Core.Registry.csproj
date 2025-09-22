@@ -4,6 +4,23 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Properties -->
+    <PackageId>GameConsole.Core.Registry</PackageId>
+    <Title>GameConsole Core Registry</Title>
+    <Description>Service registry and dependency injection for the GameConsole framework</Description>
+    <Authors>iThome Ironman 2025</Authors>
+    <Company>ApprenticeGC</Company>
+    <Product>GameConsole Framework</Product>
+    <Copyright>Copyright © 2025 ApprenticeGC</Copyright>
+    <PackageTags>game;console;framework;registry;di</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ApprenticeGC/ithome-ironman-2025.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>

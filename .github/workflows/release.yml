@@ -1,0 +1,202 @@
+name: Release and Deploy
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+      create_release:
+        description: 'Create GitHub release'
+        type: boolean
+        default: true
+      publish_packages:
+        description: 'Publish to NuGet'
+        type: boolean
+        default: false
+
+jobs:
+  validate:
+    name: Validate Release Prerequisites
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG="v${VERSION}"
+          else
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+          fi
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Releasing version: ${VERSION} (tag: ${TAG})"
+
+      - name: Validate version format
+        run: |
+          if ! echo "${{ steps.version.outputs.version }}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$'; then
+            echo "❌ Invalid version format. Expected: x.y.z or x.y.z-suffix"
+            exit 1
+          fi
+          echo "✅ Version format valid: ${{ steps.version.outputs.version }}"
+
+  build-and-test:
+    name: Build and Test
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ./dotnet
+
+      - name: Build (warnings as errors)
+        run: dotnet build ./dotnet -warnaserror --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test ./dotnet --no-build --configuration Release --verbosity normal
+
+      - name: Create packages
+        run: |
+          mkdir -p ./artifacts/packages
+          
+          # Package only library projects (exclude test projects and TestLib)
+          for project in ./dotnet/GameConsole.*/GameConsole.*.csproj; do
+            if [[ ! "$project" =~ \.Tests\. ]]; then
+              echo "Packaging: $project"
+              dotnet pack "$project" --no-build --configuration Release --output ./artifacts/packages \
+                -p:PackageVersion=${{ needs.validate.outputs.version }} \
+                -p:AssemblyVersion=${{ needs.validate.outputs.version }} \
+                -p:FileVersion=${{ needs.validate.outputs.version }}
+            fi
+          done
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts/packages/*.nupkg
+          retention-days: 30
+
+  create-release:
+    name: Create GitHub Release  
+    needs: [validate, build-and-test]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.create_release != 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts/packages
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Create a simple changelog from recent commits
+          echo "## What's Changed" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          
+          # Get commits since last tag (if any)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            git log --oneline --pretty=format:"- %s" ${LAST_TAG}..HEAD >> CHANGELOG.md
+          else
+            git log --oneline --pretty=format:"- %s" -10 >> CHANGELOG.md
+          fi
+          
+          echo "" >> CHANGELOG.md
+          echo "## Packages Included" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          
+          # List packages
+          for pkg in ./artifacts/packages/*.nupkg; do
+            if [ -f "$pkg" ]; then
+              basename "$pkg" | sed 's/^/- /'
+            fi
+          done >> CHANGELOG.md
+          
+          # Output for GitHub
+          {
+            echo 'CHANGELOG<<EOF'
+            cat CHANGELOG.md
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: Release ${{ needs.validate.outputs.version }}
+          body: ${{ steps.changelog.outputs.CHANGELOG }}
+          files: ./artifacts/packages/*.nupkg
+          draft: false
+          prerelease: ${{ contains(needs.validate.outputs.version, '-') }}
+
+  publish-packages:
+    name: Publish NuGet Packages
+    needs: [validate, build-and-test]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.publish_packages == 'true' && secrets.NUGET_API_KEY != ''
+    environment: production
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./artifacts/packages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish to NuGet
+        run: |
+          for pkg in ./artifacts/packages/*.nupkg; do
+            if [ -f "$pkg" ]; then
+              echo "Publishing: $(basename "$pkg")"
+              dotnet nuget push "$pkg" \
+                --api-key "${{ secrets.NUGET_API_KEY }}" \
+                --source https://api.nuget.org/v3/index.json \
+                --skip-duplicate
+            fi
+          done
+
+      - name: Summary
+        run: |
+          echo "## Published Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for pkg in ./artifacts/packages/*.nupkg; do
+            if [ -f "$pkg" ]; then
+              echo "- $(basename "$pkg")" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Version: ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY

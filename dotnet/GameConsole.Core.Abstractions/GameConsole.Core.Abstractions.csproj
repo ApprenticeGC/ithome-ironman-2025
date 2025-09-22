@@ -5,6 +5,23 @@
     <LangVersion>10.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Properties -->
+    <PackageId>GameConsole.Core.Abstractions</PackageId>
+    <Title>GameConsole Core Abstractions</Title>
+    <Description>Core abstractions and interfaces for the GameConsole framework</Description>
+    <Authors>iThome Ironman 2025</Authors>
+    <Company>ApprenticeGC</Company>
+    <Product>GameConsole Framework</Product>
+    <Copyright>Copyright © 2025 ApprenticeGC</Copyright>
+    <PackageTags>game;console;framework;abstractions</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ApprenticeGC/ithome-ironman-2025</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ApprenticeGC/ithome-ironman-2025.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
