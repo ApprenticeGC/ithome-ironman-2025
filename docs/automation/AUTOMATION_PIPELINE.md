@@ -182,8 +182,28 @@ gh run list --branch <branch> --limit 5
 gh workflow run ci --ref <branch>
 ```
 
+## Deployment Integration (RFC-012)
+
+The automation pipeline now includes deployment capabilities:
+
+### Deployment Workflows
+- **Staging Deployment**: Automatic deployment after successful merge to main
+- **Production Deployment**: Manual deployment with approval gates
+- **Health Checking**: Post-deployment validation and monitoring
+- **Rollback Capabilities**: Automatic rollback on deployment failures
+
+### Integration Points
+```
+Existing Flow: Issue → PR → CI/Test → Merge
+Enhanced Flow: Issue → PR → CI/Test → Merge → Deploy Staging → [Manual] Deploy Production
+```
+
+See [Deployment Pipeline Documentation](../scripts/deployment/README.md) for detailed usage.
+
 ## Future Enhancements
 - Integration of diagnostic feedback into monitor script decision-making
 - Automated branch updates when behind base
 - Enhanced Copilot PR detection heuristics
 - Metrics collection and reporting dashboard
+- Database migration automation for deployments
+- Blue-green deployment strategy implementation

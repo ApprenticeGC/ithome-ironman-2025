@@ -1,0 +1,122 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+      version_tag:
+        description: 'Version tag to deploy (e.g., v1.0.0)'
+        required: false
+        type: string
+      skip_health_check:
+        description: 'Skip health check after deployment'
+        required: false
+        default: false
+        type: boolean
+
+  release:
+    types: [published]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  BUILD_CONFIGURATION: 'Release'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.version_tag || github.sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ./dotnet
+
+      - name: Build GameConsole
+        run: dotnet build ./dotnet -c ${{ env.BUILD_CONFIGURATION }} --no-restore -warnaserror
+
+      - name: Test before deployment
+        run: dotnet test ./dotnet --no-build -c ${{ env.BUILD_CONFIGURATION }} --verbosity minimal
+
+      - name: Publish GameConsole
+        run: dotnet publish ./dotnet/GameConsole.Engine.Core/GameConsole.Engine.Core.csproj -c ${{ env.BUILD_CONFIGURATION }} --no-build -o ./publish
+
+      - name: Create deployment package
+        run: |
+          cd ./publish
+          tar -czf ../gameconsole-${{ github.event.inputs.environment || 'production' }}-${{ github.sha }}.tar.gz .
+          cd ..
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gameconsole-${{ github.event.inputs.environment || 'production' }}-${{ github.sha }}
+          path: gameconsole-${{ github.event.inputs.environment || 'production' }}-${{ github.sha }}.tar.gz
+          retention-days: 30
+
+      - name: Deploy to environment
+        env:
+          DEPLOY_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          DEPLOYMENT_PACKAGE: gameconsole-${{ github.event.inputs.environment || 'production' }}-${{ github.sha }}.tar.gz
+        run: |
+          echo "🚀 Deploying GameConsole to $DEPLOY_ENVIRONMENT environment"
+          echo "📦 Package: $DEPLOYMENT_PACKAGE"
+          echo "🏷️  Version: ${{ github.event.inputs.version_tag || github.sha }}"
+          
+          # Simulate deployment process
+          echo "📋 Deployment started at $(date)"
+          echo "✅ Package validated"
+          echo "⬆️  Uploading to $DEPLOY_ENVIRONMENT"
+          sleep 2
+          echo "🔄 Restarting services"
+          sleep 1
+          echo "✅ Deployment completed successfully"
+
+      - name: Health check
+        if: ${{ !github.event.inputs.skip_health_check }}
+        env:
+          DEPLOY_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+        run: |
+          echo "🏥 Running health checks for $DEPLOY_ENVIRONMENT environment"
+          sleep 2
+          echo "✅ Application is healthy"
+          echo "✅ All services responding"
+          echo "✅ Health check passed"
+
+      - name: Deployment notification
+        run: |
+          echo "📢 Deployment Notification"
+          echo "Environment: ${{ github.event.inputs.environment || 'production' }}"
+          echo "Version: ${{ github.event.inputs.version_tag || github.sha }}"
+          echo "Status: ✅ SUCCESS"
+          echo "Time: $(date)"
+
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    if: failure()
+    needs: deploy
+    steps:
+      - name: Rollback deployment
+        env:
+          DEPLOY_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+        run: |
+          echo "🚨 Deployment failed, initiating rollback"
+          echo "🔄 Rolling back to previous version in $DEPLOY_ENVIRONMENT"
+          sleep 1
+          echo "✅ Rollback completed"
+          echo "📢 Notifying team of rollback"

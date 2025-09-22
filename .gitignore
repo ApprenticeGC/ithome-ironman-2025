@@ -18,5 +18,11 @@ logs/
 # Editor
 .vscode/
 
-# Game RFCs (archived externally)
+# Deployment packages and build artifacts
+*.tar.gz
+test-publish/
+publish/
+
+# Game RFCs (archived externally) - but allow RFC-012
 docs/game-rfcs/
+!docs/game-rfcs/RFC-012-deployment-pipeline-automation.md
