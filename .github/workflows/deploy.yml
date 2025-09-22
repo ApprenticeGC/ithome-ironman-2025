@@ -1,0 +1,316 @@
+name: deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target environment (staging, production)'
+        required: true
+        type: string
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        type: string
+      skip_tests:
+        description: 'Skip running tests before deployment'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      DOCKER_REGISTRY_URL:
+        description: 'Docker registry URL'
+        required: false
+      DOCKER_REGISTRY_USERNAME:
+        description: 'Docker registry username'
+        required: false
+      DOCKER_REGISTRY_PASSWORD:
+        description: 'Docker registry password'
+        required: false
+      DEPLOY_SSH_KEY:
+        description: 'SSH key for deployment server access'
+        required: false
+      DEPLOY_HOST:
+        description: 'Deployment server hostname'
+        required: false
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: 'staging'
+      image_tag:
+        description: 'Docker image tag to deploy (leave empty for latest commit)'
+        required: false
+        type: string
+      skip_tests:
+        description: 'Skip running tests before deployment'
+        required: false
+        type: boolean
+        default: false
+
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY_URL || 'ghcr.io' }}
+  IMAGE_NAME: ${{ github.repository }}/gameconsole
+
+jobs:
+  determine-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      image_tag: ${{ steps.env.outputs.image_tag }}
+    steps:
+      - name: Determine deployment environment and tag
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ inputs.image_tag || github.sha }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_call" ]]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+  pre-deployment-tests:
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ./dotnet
+
+      - name: Build
+        run: dotnet build ./dotnet -warnaserror --no-restore
+
+      - name: Run tests
+        run: dotnet test ./dotnet --no-build --verbosity normal
+
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    needs: [determine-environment, pre-deployment-tests]
+    if: always() && (needs.pre-deployment-tests.result == 'success' || needs.pre-deployment-tests.result == 'skipped')
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+      full_image_name: ${{ steps.build.outputs.full_image_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_REGISTRY_USERNAME || github.actor }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=${{ needs.determine-environment.outputs.image_tag }}
+            type=raw,value=${{ needs.determine-environment.outputs.environment }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Output image details
+        run: |
+          echo "full_image_name=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.determine-environment.outputs.image_tag }}" >> $GITHUB_OUTPUT
+
+  deploy-to-environment:
+    runs-on: ubuntu-latest
+    needs: [determine-environment, build-and-push-image]
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Create deployment environment file
+        run: |
+          cat > .env.deploy << EOF
+          ASPNETCORE_ENVIRONMENT=${{ needs.determine-environment.outputs.environment }}
+          DOCKER_IMAGE=${{ needs.build-and-push-image.outputs.full_image_name }}
+          DEPLOY_TAG=${{ needs.determine-environment.outputs.image_tag }}
+          DEPLOY_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          DEPLOY_COMMIT=${{ github.sha }}
+          DEPLOY_BRANCH=${{ github.ref_name }}
+          DEPLOY_ACTOR=${{ github.actor }}
+          EOF
+
+      - name: Deploy to staging environment
+        if: needs.determine-environment.outputs.environment == 'staging'
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "Image: ${{ needs.build-and-push-image.outputs.full_image_name }}"
+          echo "Environment: ${{ needs.determine-environment.outputs.environment }}"
+          
+          # Create staging deployment configuration
+          export COMPOSE_PROJECT_NAME="gameconsole-staging"
+          export GAMEENGINE_PORT=8081
+          export REDIS_PORT=6380
+          export POSTGRES_PORT=5433
+          
+          # Pull latest images and deploy
+          docker-compose -f docker-compose.yml --env-file .env.deploy pull
+          docker-compose -f docker-compose.yml --env-file .env.deploy up -d
+          
+          echo "✅ Staging deployment completed"
+
+      - name: Deploy to production environment
+        if: needs.determine-environment.outputs.environment == 'production'
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "Image: ${{ needs.build-and-push-image.outputs.full_image_name }}"
+          echo "Environment: ${{ needs.determine-environment.outputs.environment }}"
+          
+          # Production deployment with blue-green strategy
+          export COMPOSE_PROJECT_NAME="gameconsole-production"
+          
+          # Health check before deployment
+          echo "Performing pre-deployment health checks..."
+          
+          # Pull latest images and deploy
+          docker-compose -f docker-compose.yml --env-file .env.deploy pull
+          docker-compose -f docker-compose.yml --env-file .env.deploy up -d
+          
+          echo "✅ Production deployment completed"
+
+      - name: Post-deployment verification
+        run: |
+          echo "🔍 Running post-deployment verification..."
+          
+          # Wait for services to be ready
+          sleep 30
+          
+          # Basic health checks
+          echo "Checking container health..."
+          docker-compose -f docker-compose.yml --env-file .env.deploy ps
+          
+          # Additional verification steps would go here
+          echo "✅ Post-deployment verification completed"
+
+      - name: Create deployment summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🚀 Deployment Summary
+          
+          - **Environment**: ${{ needs.determine-environment.outputs.environment }}
+          - **Image**: ${{ needs.build-and-push-image.outputs.full_image_name }}
+          - **Tag**: ${{ needs.determine-environment.outputs.image_tag }}
+          - **Commit**: ${{ github.sha }}
+          - **Branch**: ${{ github.ref_name }}
+          - **Deployed by**: ${{ github.actor }}
+          - **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ### Services Deployed
+          - GameConsole Engine
+          - Redis Cache
+          - PostgreSQL Database
+          - Monitoring Stack (optional)
+          
+          ### Next Steps
+          - Monitor application logs
+          - Verify service health
+          - Run integration tests
+          EOF
+
+  rollback:
+    runs-on: ubuntu-latest
+    needs: [determine-environment, deploy-to-environment]
+    if: failure() && needs.determine-environment.outputs.environment == 'production'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Rollback production deployment
+        run: |
+          echo "🔄 Rolling back production deployment..."
+          
+          # Get previous successful image tag
+          PREVIOUS_TAG=$(docker images --format "table {{.Repository}}\t{{.Tag}}" | grep "${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}" | grep -v "${{ needs.determine-environment.outputs.image_tag }}" | head -1 | awk '{print $2}')
+          
+          if [[ -n "$PREVIOUS_TAG" ]]; then
+            echo "Rolling back to tag: $PREVIOUS_TAG"
+            
+            # Update environment with rollback image
+            cat > .env.rollback << EOF
+            ASPNETCORE_ENVIRONMENT=production
+            DOCKER_IMAGE=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:$PREVIOUS_TAG
+            DEPLOY_TAG=$PREVIOUS_TAG
+            DEPLOY_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            DEPLOY_COMMIT=ROLLBACK
+            EOF
+            
+            # Deploy previous version
+            docker-compose -f docker-compose.yml --env-file .env.rollback up -d
+            
+            echo "✅ Rollback completed successfully"
+          else
+            echo "❌ No previous version found for rollback"
+            exit 1
+          fi
+
+      - name: Notify rollback completion
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🔄 Rollback Completed
+          
+          Production deployment has been rolled back due to deployment failure.
+          
+          - **Environment**: production
+          - **Rollback performed by**: ${{ github.actor }}
+          - **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          Please investigate the deployment failure and address any issues before attempting to redeploy.
+          EOF

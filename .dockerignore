@@ -1,0 +1,79 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Dependencies
+**/packages/
+node_modules/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Visual Studio cache files
+.vs/
+.vscode/
+*.swp
+*.swo
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Deployment and CI/CD specific
+.git/
+.gitignore
+.github/
+README.md
+CHANGELOG.md
+LICENSE
+*.md
+docs/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+secrets/
+
+# IDE and editor files
+*.tmp
+*.temp
+*.log
+*.pid
+
+# Docker specific
+Dockerfile*
+docker-compose*.yml
+.dockerignore
