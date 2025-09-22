@@ -1,0 +1,224 @@
+---
+name: cd
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  BUILD_CONFIGURATION: 'Release'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ./dotnet
+
+      - name: Build (Release)
+        run: dotnet build ./dotnet -c ${{ env.BUILD_CONFIGURATION }} -warnaserror --no-restore
+
+      - name: Test
+        run: |
+          dotnet test ./dotnet --no-build --verbosity normal \
+            -c ${{ env.BUILD_CONFIGURATION }}
+
+      - name: Create deployment packages
+        run: |
+          echo "Creating deployment packages..."
+
+          # Create packages directory
+          mkdir -p packages
+
+          # Package core game console components (non-test projects)
+          dotnet publish ./dotnet/GameConsole.Engine.Core/GameConsole.Engine.Core.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o packages/GameConsole.Engine.Core --no-build
+          dotnet publish ./dotnet/GameConsole.Core.Registry/GameConsole.Core.Registry.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o packages/GameConsole.Core.Registry --no-build
+          dotnet publish ./dotnet/GameConsole.Plugins.Core/GameConsole.Plugins.Core.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o packages/GameConsole.Plugins.Core --no-build
+          dotnet publish ./dotnet/GameConsole.Plugins.Lifecycle/GameConsole.Plugins.Lifecycle.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o packages/GameConsole.Plugins.Lifecycle --no-build
+          dotnet publish ./dotnet/GameConsole.Input.Services/GameConsole.Input.Services.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o packages/GameConsole.Input.Services --no-build
+          dotnet publish ./dotnet/GameConsole.Graphics.Services/GameConsole.Graphics.Services.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} \
+            -o packages/GameConsole.Graphics.Services --no-build
+
+          # Create libraries package with standard 2.0 libraries
+          mkdir -p packages/GameConsole.Libraries
+          cp -r ./dotnet/GameConsole.Core.Abstractions/bin/${{ env.BUILD_CONFIGURATION }}/netstandard2.0/* packages/GameConsole.Libraries/
+          cp -r ./dotnet/GameConsole.Audio.Core/bin/${{ env.BUILD_CONFIGURATION }}/netstandard2.0/* packages/GameConsole.Libraries/
+          cp -r ./dotnet/GameConsole.Graphics.Core/bin/${{ env.BUILD_CONFIGURATION }}/netstandard2.0/* packages/GameConsole.Libraries/
+          cp -r ./dotnet/GameConsole.Input.Core/bin/${{ env.BUILD_CONFIGURATION }}/netstandard2.0/* packages/GameConsole.Libraries/
+
+      - name: Create archive for deployment
+        run: |
+          echo "Creating deployment archives..."
+          cd packages
+
+          # Create individual component archives
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              component_name=$(basename "$dir")
+              tar -czf "${component_name}.tar.gz" -C "$dir" .
+              echo "Created ${component_name}.tar.gz"
+            fi
+          done
+
+          # Create complete deployment package
+          tar -czf GameConsole-Complete-Deployment.tar.gz *
+
+          ls -la *.tar.gz
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-console-deployment-${{ github.run_number }}
+          path: |
+            packages/*.tar.gz
+          retention-days: 30
+
+      - name: Create NuGet packages
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "Creating NuGet packages for release..."
+
+          # Pack libraries that should be distributed as NuGet packages
+          dotnet pack ./dotnet/GameConsole.Core.Abstractions/GameConsole.Core.Abstractions.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} --no-build -o packages/nuget
+          dotnet pack ./dotnet/GameConsole.Audio.Core/GameConsole.Audio.Core.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} --no-build -o packages/nuget
+          dotnet pack ./dotnet/GameConsole.Graphics.Core/GameConsole.Graphics.Core.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} --no-build -o packages/nuget
+          dotnet pack ./dotnet/GameConsole.Input.Core/GameConsole.Input.Core.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} --no-build -o packages/nuget
+          dotnet pack ./dotnet/GameConsole.Engine.Core/GameConsole.Engine.Core.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} --no-build -o packages/nuget
+          dotnet pack ./dotnet/GameConsole.Plugins.Core/GameConsole.Plugins.Core.csproj \
+            -c ${{ env.BUILD_CONFIGURATION }} --no-build -o packages/nuget
+
+          ls -la packages/nuget/
+
+      - name: Upload NuGet packages
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ github.ref_name }}
+          path: packages/nuget/*.nupkg
+          retention-days: 90
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: GameConsole Release ${{ github.ref_name }}
+          body: |
+            ## GameConsole Release ${{ github.ref_name }}
+
+            ### Components Included
+            - GameConsole.Engine.Core - Main game engine
+            - GameConsole.Core.Registry - Component registry system
+            - GameConsole.Plugins.Core - Plugin architecture
+            - GameConsole.Plugins.Lifecycle - Plugin lifecycle management
+            - GameConsole.Input.Services - Input handling services
+            - GameConsole.Graphics.Services - Graphics rendering services
+            - GameConsole.Libraries - Core abstractions and libraries
+
+            ### Deployment Artifacts
+            - Complete deployment package: `GameConsole-Complete-Deployment.tar.gz`
+            - Individual component packages available as separate archives
+            - NuGet packages for library distribution
+
+            ### Installation
+            Download the appropriate package for your deployment needs:
+            - Use complete deployment package for full game console installation
+            - Use individual component packages for modular deployments
+            - Use NuGet packages for development dependencies
+
+            Built from commit: ${{ github.sha }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            packages/GameConsole-Complete-Deployment.tar.gz
+            packages/GameConsole.*.tar.gz
+
+      - name: Environment-specific deployment
+        if: github.event.inputs.environment || github.ref == 'refs/heads/main'
+        run: |
+          DEPLOY_ENV="${{ github.event.inputs.environment || 'staging' }}"
+          echo "Deploying to environment: $DEPLOY_ENV"
+
+          case $DEPLOY_ENV in
+            "staging")
+              echo "Configuring for staging deployment..."
+              echo "DEPLOY_TARGET=staging" >> $GITHUB_ENV
+              ;;
+            "production")
+              echo "Configuring for production deployment..."
+              echo "DEPLOY_TARGET=production" >> $GITHUB_ENV
+              ;;
+          esac
+
+          echo "Deployment configuration ready for $DEPLOY_ENV"
+          echo "Artifacts are available for deployment automation tools"
+          echo "Complete deployment package: GameConsole-Complete-Deployment.tar.gz"
+
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Configuration**: ${{ env.BUILD_CONFIGURATION }}" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment Target**: ${{ env.DEPLOY_TARGET || 'artifact-only' }}" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifacts Generated**: ✅" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
+            echo "- **Release Created**: ✅ ${{ github.ref_name }}" \
+              >> $GITHUB_STEP_SUMMARY
+            echo "- **NuGet Packages**: ✅" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Release Created**: ❌ (not a tag)" >> $GITHUB_STEP_SUMMARY
+            echo "- **NuGet Packages**: ❌ (not a tag)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Available Packages" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole.Engine.Core.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole.Core.Registry.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole.Plugins.Core.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole.Plugins.Lifecycle.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole.Input.Services.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole.Graphics.Services.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole.Libraries.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo "- GameConsole-Complete-Deployment.tar.gz" >> $GITHUB_STEP_SUMMARY
