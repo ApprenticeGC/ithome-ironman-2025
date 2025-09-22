@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameConsole.Core.Abstractions\GameConsole.Core.Abstractions.csproj" />
+    <ProjectReference Include="..\GameConsole.Input.Core\GameConsole.Input.Core.csproj" />
+  </ItemGroup>
+
+</Project>
