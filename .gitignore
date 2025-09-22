@@ -20,3 +20,12 @@ logs/
 
 # Game RFCs (archived externally)
 docs/game-rfcs/
+
+# Build artifacts
+build/
+bin/
+obj/
+*.nupkg
+*.snupkg
+*.symbols.nupkg
+packages/

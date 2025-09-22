@@ -1,0 +1,102 @@
+name: Deployment Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., 1.0.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (build packages but do not publish)'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  CONFIGURATION: Release
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Determine Version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            echo "Using manual version: $VERSION"
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "Using tag version: $VERSION"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Restore Dependencies
+        run: dotnet restore ./dotnet --verbosity normal
+
+      - name: Build Solution
+        run: dotnet build ./dotnet --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal
+
+      - name: Run Tests
+        run: dotnet test ./dotnet --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal
+
+      - name: Create Packages
+        run: |
+          echo "Creating NuGet packages for GameConsole libraries..."
+          python3 scripts/python/production/deployment_automation.py \
+            --action package \
+            --version ${{ env.VERSION }} \
+            --configuration ${{ env.CONFIGURATION }}
+
+      - name: Upload Package Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ env.VERSION }}
+          path: ./build/packages/**/*.nupkg
+          retention-days: 30
+
+      - name: Publish to GitHub Packages (Dry Run Check)
+        if: ${{ !inputs.dry_run && github.event_name != 'workflow_dispatch' }} || ${{ !inputs.dry_run && github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "Publishing packages to GitHub Packages..."
+          python3 scripts/python/production/deployment_automation.py \
+            --action publish \
+            --version ${{ env.VERSION }} \
+            --token ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run && github.event_name != 'workflow_dispatch' }} || ${{ !inputs.dry_run && github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "Creating GitHub release..."
+          python3 scripts/python/production/deployment_automation.py \
+            --action release \
+            --version ${{ env.VERSION }} \
+            --token ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Configuration**: ${{ env.CONFIGURATION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry Run**: ${{ inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Packages Built**: $(find ./build/packages -name '*.nupkg' | wc -l)" >> $GITHUB_STEP_SUMMARY

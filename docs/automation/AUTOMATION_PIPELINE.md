@@ -1,9 +1,10 @@
 # Complete End-to-End Automation Pipeline
 
 ## Overview
-This documents the complete automation pipeline that enables true end-to-end processing from issue creation to PR merge without manual intervention.
+This documents the complete automation pipeline that enables true end-to-end processing from issue creation to PR merge and deployment without manual intervention.
 
 **Status**: ✅ **FULLY OPERATIONAL** (September 17, 2025)
+**Enhancement**: ✅ **DEPLOYMENT PIPELINE ADDED** (RFC-012-02, September 22, 2025)
 **Latest Success**: RFC-015 test series - 3 issues processed end-to-end in under 1 hour
 **Success Rate**: 100% for all RFC implementations (8 consecutive PRs: #94, #95, #96, #98, #100, #102, #104, #106)
 **Validation Complete**: Automation pipeline confirmed working at production scale
@@ -12,6 +13,17 @@ This documents the complete automation pipeline that enables true end-to-end pro
 
 ### 1. Core Automation Scripts
 Located in `scripts/python/production/`:
+
+#### `deployment_automation.py` 🆕 **NEW - RFC-012-02**
+- **Purpose**: Handles automated deployment pipeline for GameConsole packages
+- **Key Features**:
+  - Automated NuGet package creation for all GameConsole.* libraries ✅ Working
+  - Version management with pre-release support ✅ Working  
+  - GitHub Packages publishing ✅ Working
+  - GitHub release creation with artifacts ✅ Working
+- **Actions**: `package`, `publish`, `release`
+- **Usage**: `python deployment_automation.py --action package --version 1.0.0`
+- **Integration**: Used by `deployment-pipeline.yml` workflow
 
 #### `monitor_pr_flow.py` 🔧 **CRITICAL FIXES DEPLOYED**
 - **Purpose**: Monitors Copilot PRs and orchestrates auto-merge flow
@@ -55,6 +67,17 @@ Located in `scripts/python/production/`:
 ### 2. GitHub Actions Workflows
 Located in `.github/workflows/`:
 
+#### `deployment-pipeline.yml` 🆕 **NEW - RFC-012-02**
+- **Triggers**: `push` to `v*` tags, manual `workflow_dispatch`
+- **Purpose**: Automated deployment pipeline for GameConsole packages
+- **Features**: 
+  - Build and package all GameConsole.* libraries
+  - Upload artifacts to GitHub
+  - Publish to GitHub Packages
+  - Create GitHub releases with package artifacts
+  - Support for dry-run testing
+- **Integration**: Uses `deployment_automation.py` script
+
 #### `auto-review-copilot.yml`
 - **Triggers**: `review_requested`, `ready_for_review`
 - **Purpose**: Automatically approve Copilot PRs
@@ -77,14 +100,16 @@ Located in `scripts/python/tools/`:
 
 ## Automation Flow
 
-### Happy Path: Issue → PR → Merge
+### Happy Path: Issue → PR → Merge → Deploy
 1. **Issue Created**: RFC-format issue triggers Copilot
 2. **Copilot Creates PR**: Implementation generated automatically
 3. **Auto-Review**: `auto-review-copilot.yml` approves if criteria met
 4. **Workflow Approval**: `auto_approve_or_dispatch.py` enables CI
 5. **CI Completion**: Automated tests run successfully
 6. **Auto-Merge**: `monitor_pr_flow.py` merges PR automatically
-7. **Cleanup**: Branch deleted, issue closed
+7. **Tag Creation**: Manual or automated tag creation triggers deployment
+8. **Deployment**: `deployment-pipeline.yml` builds, packages, and releases
+9. **Cleanup**: Branch deleted, issue closed, packages available
 
 ### Fallback Handling
 - **Auto-merge fails**: Direct merge fallback in monitor script
@@ -127,6 +152,21 @@ Created to validate complete end-to-end flow from issue creation.
   - Issues read/write
 
 ## Monitoring and Diagnostics
+
+### Deployment Pipeline Operations
+```bash
+# Create packages locally for testing
+python scripts/python/production/deployment_automation.py --action package --version 1.0.0
+
+# Test package creation with pre-release version
+python scripts/python/production/deployment_automation.py --action package --version 1.0.0-alpha --configuration Release
+
+# Trigger deployment workflow manually
+gh workflow run deployment-pipeline.yml --field version=1.0.0 --field dry_run=false
+
+# Check deployment workflow status
+gh run list --workflow=deployment-pipeline.yml --limit 5
+```
 
 ### Real-time Monitoring
 ```bash
