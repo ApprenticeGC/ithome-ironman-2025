@@ -39,6 +39,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.Audio.Core.Tests", "GameConsole.Audio.Core.Tests\GameConsole.Audio.Core.Tests.csproj", "{5E8FF5B8-F7CB-4414-8C15-556837B009E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Core", "GameConsole.AI.Core\GameConsole.AI.Core.csproj", "{1598CE8F-7AEB-4808-B843-ADAB683207AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Core.Tests", "GameConsole.AI.Core.Tests\GameConsole.AI.Core.Tests.csproj", "{AA92D6C1-9A35-4442-8618-1FF393A8E804}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Services", "GameConsole.AI.Services\GameConsole.AI.Services.csproj", "{76F7B45F-61AC-46D4-BB83-5A36E974706F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameConsole.AI.Services.Tests", "GameConsole.AI.Services.Tests\GameConsole.AI.Services.Tests.csproj", "{D9CFFAAE-F42F-40F5-B780-AB24A189900F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -120,5 +128,21 @@ Global
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E8FF5B8-F7CB-4414-8C15-556837B009E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1598CE8F-7AEB-4808-B843-ADAB683207AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1598CE8F-7AEB-4808-B843-ADAB683207AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1598CE8F-7AEB-4808-B843-ADAB683207AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1598CE8F-7AEB-4808-B843-ADAB683207AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA92D6C1-9A35-4442-8618-1FF393A8E804}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA92D6C1-9A35-4442-8618-1FF393A8E804}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA92D6C1-9A35-4442-8618-1FF393A8E804}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA92D6C1-9A35-4442-8618-1FF393A8E804}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76F7B45F-61AC-46D4-BB83-5A36E974706F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76F7B45F-61AC-46D4-BB83-5A36E974706F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76F7B45F-61AC-46D4-BB83-5A36E974706F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76F7B45F-61AC-46D4-BB83-5A36E974706F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9CFFAAE-F42F-40F5-B780-AB24A189900F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9CFFAAE-F42F-40F5-B780-AB24A189900F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9CFFAAE-F42F-40F5-B780-AB24A189900F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9CFFAAE-F42F-40F5-B780-AB24A189900F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
