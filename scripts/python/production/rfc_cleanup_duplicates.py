@@ -468,6 +468,23 @@ class RFCCleanupRunner:
         print("🎉 Cleanup process completed!")
         return success
 
+    def _clean_recreated_title(self, title: str) -> str:
+        """
+        Extract the clean RFC title by removing any 'Recreated broken chain: ' prefixes.
+        
+        This prevents accumulation of the prefix when issues are recreated multiple times.
+        
+        Args:
+            title: The potentially prefixed title
+            
+        Returns:
+            The clean title without any 'Recreated broken chain: ' prefixes
+        """
+        clean_title = title
+        while clean_title.startswith("Recreated broken chain: "):
+            clean_title = clean_title[len("Recreated broken chain: "):]
+        return clean_title
+
     def _recreate_broken_issue(self, issue_number: int, title: str) -> bool:
         """Recreate a broken issue using the cleanup_recreate_issue.py script."""
         try:
@@ -480,13 +497,16 @@ class RFCCleanupRunner:
             cleanup_script = os.path.join(script_dir, "cleanup_recreate_issue.py")
 
             owner, name = self.repo.split("/")
+            
+            # Clean the title to prevent prefix accumulation
+            clean_title = self._clean_recreated_title(title)
 
             cmd = [
                 sys.executable, cleanup_script,
                 "--owner", owner,
                 "--repo", name,
                 "--issue-number", str(issue_number),
-                "--title", f"Recreated broken chain: {title}",
+                "--title", f"Recreated broken chain: {clean_title}",
                 "--assign-mode", "bot"
             ]
 
