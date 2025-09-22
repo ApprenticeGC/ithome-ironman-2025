@@ -102,7 +102,7 @@ public class BaseDeploymentServiceTests
         await service.InitializeAsync();
 
         // Assert
-        Assert.True(_logger.LoggedMessages.Any(m => m.Contains("Initializing TestDeploymentService")));
+        Assert.Contains(_logger.LoggedMessages, m => m.Contains("Initializing TestDeploymentService"));
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class BaseDeploymentServiceTests
         await service.StartAsync();
 
         // Assert
-        Assert.True(_logger.LoggedMessages.Any(m => m.Contains("Starting TestDeploymentService")));
+        Assert.Contains(_logger.LoggedMessages, m => m.Contains("Starting TestDeploymentService"));
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class BaseDeploymentServiceTests
         await service.StopAsync();
 
         // Assert
-        Assert.True(_logger.LoggedMessages.Any(m => m.Contains("Stopping TestDeploymentService")));
+        Assert.Contains(_logger.LoggedMessages, m => m.Contains("Stopping TestDeploymentService"));
     }
 
     [Fact]
