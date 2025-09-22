@@ -1,0 +1,61 @@
+# .dockerignore for GameConsole Engine
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# Test results
+TestResults/
+test_results.json
+
+# Documentation
+**/*.md
+docs/
+*.txt
+
+# IDE/Editor files
+.vscode/
+.vs/
+**/.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build tools (keep source)
+!build/
+
+# Scripts
+scripts/
+.github/
+.gemini/
+
+# Environment files
+.env*
+!.env.example
+
+# Database files
+*.db
+
+# Temporary files
+**/temp/
+**/tmp/
+
+# Node modules (if any)
+**/node_modules/
+
+# Python cache
+**/__pycache__/
+*.pyc
+
+# Nuke build artifacts
+.nuke/
