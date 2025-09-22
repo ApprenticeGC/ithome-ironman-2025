@@ -481,12 +481,19 @@ class RFCCleanupRunner:
 
             owner, name = self.repo.split("/")
 
+            # Clean up title to avoid recursive "Recreated broken chain:" prefixes
+            cleaned_title = title
+            while cleaned_title.startswith("Recreated broken chain: "):
+                cleaned_title = cleaned_title[len("Recreated broken chain: "):]
+            
+            final_title = f"Recreated broken chain: {cleaned_title}"
+
             cmd = [
                 sys.executable, cleanup_script,
                 "--owner", owner,
                 "--repo", name,
                 "--issue-number", str(issue_number),
-                "--title", f"Recreated broken chain: {title}",
+                "--title", final_title,
                 "--assign-mode", "bot"
             ]
 
