@@ -407,6 +407,71 @@ class RFCCleanupLogic:
 
         return actions
 
+    @staticmethod
+    def normalize_recreation_title(title: str) -> tuple[str, int]:
+        """
+        Normalize a title that may have recreation prefixes and count them.
+        
+        Args:
+            title: The original title that may have multiple "Recreated broken chain:" prefixes
+            
+        Returns:
+            A tuple of (cleaned_title, recreation_count)
+            
+        Examples:
+            "RFC-012-02: Task" -> ("RFC-012-02: Task", 0)
+            "Recreated broken chain: RFC-012-02: Task" -> ("RFC-012-02: Task", 1)  
+            "Recreated broken chain: Recreated broken chain: RFC-012-02: Task" -> ("RFC-012-02: Task", 2)
+        """
+        recreation_prefix = "Recreated broken chain: "
+        recreation_count = 0
+        normalized_title = title
+        
+        # Count and remove all recreation prefixes
+        while normalized_title.startswith(recreation_prefix):
+            recreation_count += 1
+            normalized_title = normalized_title[len(recreation_prefix):]
+            
+        return normalized_title, recreation_count
+    
+    @staticmethod 
+    def should_recreate_issue(title: str, max_recreations: int = 3) -> tuple[bool, str]:
+        """
+        Determine if an issue should be recreated and what the new title should be.
+        
+        Args:
+            title: The current issue title
+            max_recreations: Maximum number of times an issue can be recreated
+            
+        Returns:
+            A tuple of (should_recreate, new_title_if_recreating)
+        """
+        normalized_title, recreation_count = RFCCleanupLogic.normalize_recreation_title(title)
+        
+        if recreation_count >= max_recreations:
+            # Too many recreations, don't recreate again
+            return False, ""
+            
+        # Create new title with recreation prefix (but don't accumulate)
+        new_title = f"Recreated broken chain: {normalized_title}"
+        return True, new_title
+    
+    @staticmethod
+    def get_cleaned_title(title: str) -> str:
+        """
+        Get a cleaned version of the title with all recreation prefixes removed.
+        
+        This is useful for fixing existing issues that have accumulated multiple prefixes.
+        
+        Args:
+            title: The title that may have multiple recreation prefixes
+            
+        Returns:
+            The cleaned title with all recreation prefixes removed
+        """
+        normalized_title, _ = RFCCleanupLogic.normalize_recreation_title(title)
+        return normalized_title
+
 
 class RFCCleanupRunner:
     """Main runner for RFC cleanup operations."""
@@ -469,11 +534,20 @@ class RFCCleanupRunner:
         return success
 
     def _recreate_broken_issue(self, issue_number: int, title: str) -> bool:
-        """Recreate a broken issue using the cleanup_recreate_issue.py script."""
+        """Recreate a broken issue using the cleanup_recreate_issue.py script with recreation loop protection."""
         try:
             import subprocess
             import sys
             import os
+
+            # Check if we should recreate this issue and get the safe title
+            should_recreate, new_title = RFCCleanupLogic.should_recreate_issue(title)
+            
+            if not should_recreate:
+                print(f"[SKIP] Issue #{issue_number} has reached maximum recreation attempts: {title}")
+                return True  # Return True to avoid treating this as an error
+                
+            print(f"[INFO] Recreating issue #{issue_number} with safe title: {new_title}")
 
             # Get the script path relative to this script
             script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -486,7 +560,7 @@ class RFCCleanupRunner:
                 "--owner", owner,
                 "--repo", name,
                 "--issue-number", str(issue_number),
-                "--title", f"Recreated broken chain: {title}",
+                "--title", new_title,
                 "--assign-mode", "bot"
             ]
 
